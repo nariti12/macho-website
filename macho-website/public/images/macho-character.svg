@@ -1,0 +1,10 @@
+<svg width="120" height="160" viewBox="0 0 120 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="120" height="160" rx="8" fill="#4a5568"/>
+<circle cx="60" cy="40" r="15" fill="#f7fafc"/>
+<rect x="45" y="60" width="30" height="40" rx="15" fill="#2d3748"/>
+<rect x="35" y="70" width="10" height="25" rx="5" fill="#4a5568"/>
+<rect x="75" y="70" width="10" height="25" rx="5" fill="#4a5568"/>
+<rect x="50" y="100" width="8" height="30" rx="4" fill="#4a5568"/>
+<rect x="62" y="100" width="8" height="30" rx="4" fill="#4a5568"/>
+<text x="60" y="145" text-anchor="middle" fill="#f7fafc" font-size="8" font-family="Arial, sans-serif">筋肉キャラ</text>
+</svg>

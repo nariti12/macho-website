@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(claude config list)",
+      "WebSearch",
+      "mcp__figma-dev-mode-mcp-server__get_screenshot",
+      "Bash(npx create-next-app:*)",
+      "mcp__figma-dev-mode-mcp-server__get_code",
+      "Bash(mkdir:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm run:*)",
+      "mcp__serena__check_onboarding_performed",
+      "mcp__serena__onboarding",
+      "mcp__serena__list_dir",
+      "mcp__filesystem__read_text_file",
+      "mcp__serena__write_memory",
+      "mcp__filesystem__edit_file",
+      "mcp__serena__read_memory",
+      "Bash(git init:*)",
+      "mcp__github__create_repository",
+      "Bash(gh repo create:*)",
+      "Bash(git add:*)",
+      "Bash(git rm:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

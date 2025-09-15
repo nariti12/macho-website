@@ -1,0 +1,21 @@
+{
+  "name": "macho",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "mcp:test": "node mcp-test.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.18.0"
+  },
+  "devDependencies": {
+    "@mcp_router/cli": "^0.1.7",
+    "mcpr-cli": "^0.1.4"
+  }
+}
