@@ -1,114 +1,207 @@
 "use client";
 import Image from "next/image";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function Home() {
+  const blogSectionRef = useRef<HTMLDivElement | null>(null);
+  const animationTimeouts = useRef<number[]>([]);
+  const [progress, setProgress] = useState(0);
+
   useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY || window.pageYOffset;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const ratio = docHeight > 0 ? Math.min(Math.max(scrollTop / docHeight, 0), 1) : 0;
+      setProgress(ratio);
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  useEffect(() => {
+    const section = blogSectionRef.current;
+    if (!section) return;
+
+    const tiles = Array.from(section.querySelectorAll<HTMLElement>(".blog-item"));
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.classList.add('animate-fade-in-up');
-            entry.target.classList.remove('opacity-0', 'translate-y-8');
+            section.classList.add("animate-fade-in-up");
+            section.classList.remove("opacity-0", "translate-y-8");
+
+            animationTimeouts.current.forEach((id) => window.clearTimeout(id));
+            animationTimeouts.current = [];
+
+            tiles.forEach((tile, index) => {
+              const timeoutId = window.setTimeout(() => {
+                tile.classList.add("animate-fade-in-up");
+                tile.classList.remove("opacity-0", "translate-y-8");
+              }, index * 150);
+              animationTimeouts.current.push(timeoutId);
+            });
+
+            return;
           }
+
+          section.classList.remove("animate-fade-in-up");
+          section.classList.add("opacity-0", "translate-y-8");
+          tiles.forEach((tile) => {
+            tile.classList.remove("animate-fade-in-up");
+            tile.classList.add("opacity-0", "translate-y-8");
+          });
         });
       },
       {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
+        threshold: 0.25,
+        rootMargin: "0px 0px -10%",
       }
     );
 
-    const blogItems = document.querySelectorAll('.blog-item');
-    blogItems.forEach((item, index) => {
-      setTimeout(() => {
-        observer.observe(item);
-      }, index * 100);
-    });
+    observer.observe(section);
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      animationTimeouts.current.forEach((id) => window.clearTimeout(id));
+      animationTimeouts.current = [];
+    };
   }, []);
+
   const menuItems = [
-    "相談別\n最適筋トレメニュー",
+    "用途別\n最強筋トレメニュー",
     "最新TOP3\nプロテインサプリ",
-    "俺たんぱく質一覧",
+    "高たんぱく質一覧",
     "トレーニングギア",
     "トレーニングウェア",
-    "消費カロリー/\nタンパク質計算機"
+    "消費カロリー/\nタンパク質計算機",
   ];
 
   const blogItems = [
-    { image: "/images/blog-placeholder.svg", title: "プロテイン", text: "プロテインに関する詳細な情報を\nお届けします。最新の研究結果や\n効果的な摂取方法について解説します。" },
-    { image: "/images/blog-placeholder.svg", title: "プロテイン", text: "プロテインに関する詳細な情報を\nお届けします。最新の研究結果や\n効果的な摂取方法について解説します。" },
-    { image: "/images/blog-placeholder.svg", title: "プロテイン", text: "プロテインに関する詳細な情報を\nお届けします。最新の研究結果や\n効果的な摂取方法について解説します。" },
-    { image: "/images/blog-placeholder.svg", title: "グッズ", text: "Lopovofが「Fire Emblems」をプレイ\nするときにいつも聞いているという\nゲーム音楽をシリーズ化しました。" },
-    { image: "/images/blog-placeholder.svg", title: "グッズ", text: "期間限定で「ポップアッププライベイト」\nの商品を販売いたします。今年も\nポップアップ企画をお楽しみください。" },
-    { image: "/images/blog-placeholder.svg", title: "グッズ", text: "ポップアップ企画第2弾として\n「ファンが集める」の商品を\n期間限定で販売いたします。" }
+    {
+      image: "/images/blog-placeholder.svg",
+      title: "プロテイン",
+      text: "プロテインに関する詳細な情報を\nお届けします。最新の研究結果や\n効果的な摂取方法について解説します。",
+    },
+    {
+      image: "/images/blog-placeholder.svg",
+      title: "プロテイン",
+      text: "プロテインに関する詳細な情報を\nお届けします。最新の研究結果や\n効果的な摂取方法について解説します。",
+    },
+    {
+      image: "/images/blog-placeholder.svg",
+      title: "プロテイン",
+      text: "プロテインに関する詳細な情報を\nお届けします。最新の研究結果や\n効果的な摂取方法について解説します。",
+    },
+    {
+      image: "/images/blog-placeholder.svg",
+      title: "グッズ",
+      text: "Lopovofが「Fire Emblems」をプレイ\nするときにいつも聞いているという\nゲーム音楽をシリーズ化しました。",
+    },
+    {
+      image: "/images/blog-placeholder.svg",
+      title: "グッズ",
+      text: "期間限定で「ポップアッププライベイト」\nの商品を販売いたします。今年も\nポップアップ企画をお楽しみください。",
+    },
+    {
+      image: "/images/blog-placeholder.svg",
+      title: "グッズ",
+      text: "ポップアップ企画第2弾として\n「ファンが集める」の商品を\n期間限定で販売いたします。",
+    },
   ];
 
+  const profileImageSrc = "/picture/ore.png";
+  const characterImageSrc = "/picture/man.png";
+
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#FCC081' }}>
+    <div className="min-h-screen" style={{ backgroundColor: "#FCC081" }}>
+      <div
+        className="fixed top-0 left-0 right-0 h-2 z-50"
+        style={{
+          backgroundColor: "rgba(255, 173, 51, 0.2)",
+          backdropFilter: "blur(10px)",
+        }}
+      >
+        <div
+          className="h-full"
+          style={{
+            width: `${progress * 100}%`,
+            backgroundColor: "#FF8A23",
+            transition: "width 0.1s ease-out",
+          }}
+        />
+      </div>
 
       {/* Header */}
-      <header className="flex justify-between items-start px-12 pt-12 pb-8">
+      <header className="sticky top-4 z-40 flex justify-between items-start px-12 pt-6 pb-4">
         <div>
           <h1 className="text-white text-6xl font-bold mb-2 leading-none tracking-tight">マチョ田の部屋</h1>
-          <p className="text-white text-xl font-medium">〜組織を結う筋トレ組織〜</p>
+          <p className="text-white text-xl font-medium">〜筋トレについてもう悩まなくていい〜</p>
         </div>
         <div className="text-center">
-          <div className="w-24 h-24 bg-white rounded-2xl mb-3 flex items-center justify-center shadow-lg hover:scale-110 transition-all duration-300">
-            <Image
-              src="/picture/ore.svg"
+          <div className="w-28 h-28 bg-white rounded-2xl mb-3 flex items-center justify-center shadow-lg hover:scale-110 transition-all duration-300">
+            <img
+              src={profileImageSrc}
               alt="Profile"
-              width={72}
-              height={72}
-              className="rounded-xl object-cover"
+              className="w-20 h-20 rounded-xl object-cover"
+              loading="eager"
             />
           </div>
           <p className="text-white text-base font-semibold">Profile</p>
-        </div>
+      </div>
       </header>
 
       {/* Main Content */}
-      <main className="px-12">
-        <div className="flex items-start gap-16 mb-20">
-          {/* Character */}
-          <div className="flex-shrink-0 mt-4">
-            <Image
-              src="/picture/man.svg"
-              alt="マチョ田キャラクター"
-              width={180}
-              height={240}
-              className="hover:scale-105 transition-transform duration-300 object-cover"
-            />
-          </div>
+      <main className="px-6 md:px-12">
+        <section className="min-h-screen flex items-center justify-center">
+          <div className="w-full max-w-6xl flex flex-col lg:flex-row items-center gap-12 lg:gap-16 transform lg:-translate-x-10 lg:-translate-y-28">
+            <div className="flex justify-center lg:justify-end w-full lg:w-auto">
+              <img
+                src={characterImageSrc}
+                alt="マチョ田キャラクター"
+                className="w-[200px] sm:w-[220px] lg:w-[240px] xl:w-[260px] h-auto hover:scale-105 transition-transform duration-300 drop-shadow-2xl"
+                loading="eager"
+              />
+            </div>
 
-          {/* Menu Buttons */}
-          <div className="grid grid-cols-2 gap-8 flex-1 max-w-4xl pt-8">
-            {menuItems.map((item, index) => (
-              <button
-                key={index}
-                className="text-white font-bold py-8 px-10 rounded-2xl shadow-lg transition-all duration-300 text-center text-xl leading-tight hover:scale-105 hover:shadow-xl"
-                style={{ backgroundColor: '#FF8A23' }}
-              >
-                {item.split('\n').map((line, lineIndex) => (
-                  <div key={lineIndex}>{line}</div>
-                ))}
-              </button>
-            ))}
+            <div className="w-full max-w-4xl grid grid-cols-1 sm:grid-cols-2 gap-10 text-center">
+              {menuItems.map((item, index) => (
+                <button
+                  key={index}
+                  className="w-full text-white font-bold py-9 px-12 rounded-3xl shadow-lg transition-all duration-300 text-2xl leading-tight hover:scale-105 hover:shadow-[0_25px_50px_-12px_rgba(255,138,35,0.5)]"
+                  style={{ backgroundColor: "#FF8A23" }}
+                >
+                  {item.split("\n").map((line, lineIndex) => (
+                    <div key={lineIndex}>{line}</div>
+                  ))}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        </section>
 
         {/* Blog Section */}
-        <div className="rounded-3xl p-12 max-w-8xl mx-auto mb-16" style={{ backgroundColor: 'rgba(188, 143, 80, 0.8)' }}>
+        <div
+          ref={blogSectionRef}
+          className="rounded-3xl p-12 w-full max-w-7xl mx-auto mt-0 mb-12 opacity-0 translate-y-8 transform md:-translate-y-24 lg:-translate-y-48"
+          style={{ backgroundColor: "rgba(188, 143, 80, 0.8)" }}
+        >
           <div className="flex items-center gap-4 mb-12">
-            <div className="w-12 h-12 bg-blue-500 rounded-xl shadow-lg flex items-center justify-center">
-              <div className="w-6 h-6 bg-white rounded-lg"></div>
-            </div>
-            <h2 className="text-white font-bold text-3xl">Blog</h2>
+            <img
+              src="/picture/image.png"
+              alt="Blog icon"
+              className="w-12 h-12 rounded-xl shadow-lg object-cover"
+              loading="lazy"
+            />
+            <h2 className="text-white text-3xl font-bold">Blog</h2>
           </div>
 
-          <div className="grid grid-cols-3 gap-10 mb-12">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 mb-12">
             {blogItems.map((item, index) => (
               <div
                 key={index}
@@ -116,15 +209,10 @@ export default function Home() {
                 style={{ transitionDelay: `${index * 150}ms` }}
               >
                 <div className="aspect-video relative">
-                  <Image
-                    src={item.image}
-                    alt={item.title}
-                    fill
-                    className="object-cover"
-                  />
+                  <Image src={item.image} alt={item.title} fill className="object-cover" />
                 </div>
                 <div className="p-8">
-                  <span className="inline-block text-white text-sm px-4 py-2 rounded-xl mb-6 font-semibold" style={{ backgroundColor: '#FF8A23' }}>
+                  <span className="inline-block text-white text-sm px-4 py-2 rounded-xl mb-6 font-semibold" style={{ backgroundColor: "#FF8A23" }}>
                     {item.title}
                   </span>
                   <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-line">
@@ -136,7 +224,10 @@ export default function Home() {
           </div>
 
           <div className="text-right">
-            <button className="text-white font-bold transition-all duration-300 text-xl px-6 py-3 rounded-2xl hover:scale-105" style={{ backgroundColor: '#FF8A23' }}>
+            <button
+              className="text-white font-bold transition-all duration-300 text-xl px-6 py-3 rounded-2xl hover:scale-105"
+              style={{ backgroundColor: "#FF8A23" }}
+            >
               MORE →
             </button>
           </div>
