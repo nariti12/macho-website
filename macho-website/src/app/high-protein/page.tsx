@@ -47,7 +47,7 @@ const highlightColorByCategory = (category: string) => {
     case "肉類":
       return "bg-[#f97316] text-white";
     case "魚類":
-      return "bg-[#0ea5e9] text-white";
+      return "bg-[#38bdf8] text-white";
     case "卵・豆類":
       return "bg-[#8b5cf6] text-white";
     case "乳製品":
@@ -56,6 +56,12 @@ const highlightColorByCategory = (category: string) => {
       return "bg-[#475569] text-white";
   }
 };
+
+const topBadgeStyles = [
+  "bg-[#22c55e] text-white",
+  "bg-[#16a34a] text-white",
+  "bg-[#15803d] text-white",
+];
 
 export default function HighProteinPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -108,16 +114,13 @@ export default function HighProteinPage() {
                   className="rounded-2xl border border-[#FCD27B] bg-[#FFF7EB] p-6 shadow-lg"
                 >
                   <span
-                    className={`mb-3 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${highlightColorByCategory(
-                      food.category
-                    )}`}
+                    className={`mb-3 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
+                      topBadgeStyles[index] ?? topBadgeStyles[0]
+                    }`}
                   >
                     TOP{index + 1}
                   </span>
                   <h2 className="text-xl font-bold text-[#7C2D12]">{food.name}</h2>
-                  <p className="mt-2 text-sm text-slate-600">
-                    100gあたり {food.proteinPer100g.toFixed(1)}g のたんぱく質。
-                  </p>
                   <p className="text-xs text-slate-500">※以下はすべて100gあたりの値です</p>
                   <dl className="mt-4 grid grid-cols-2 gap-3 text-sm text-slate-600">
                     <div>

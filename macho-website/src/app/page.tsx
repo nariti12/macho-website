@@ -34,11 +34,11 @@ export default function Home() {
 
   const menuItems = [
     { label: "用途別\n最強筋トレメニュー", href: "/menu" },
-    { label: "最新TOP3\nプロテインサプリ" },
-    { label: "高たんぱく質一覧" },
-    { label: "トレーニングギア" },
-    { label: "トレーニングウェア" },
-    { label: "消費カロリー/\nタンパク質計算機" },
+    { label: "１日摂取カロリー/\nたんぱく質 計算機", href: "/intake-calculator" },
+    { label: "高たんぱく質一覧", href: "/high-protein" },
+    { label: "プロテイン/サプリ 最強TOP3", href: "/supplements-top3" },
+    { label: "トレーニングウェア", href: "/training-wear" },
+    { label: "トレーニングギア", href: "/training-gear" },
   ];
 
   useEffect(() => {
