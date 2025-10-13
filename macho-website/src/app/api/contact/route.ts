@@ -59,7 +59,7 @@ export async function POST(request: Request) {
       from: "Machoda Contact <onboarding@resend.dev>",
       to: contactRecipient,
       subject: `[お問い合わせ] ${inferredSubject}`,
-      reply_to: email,
+      replyTo: email,
       html: htmlContent,
       text: textContent,
     });
