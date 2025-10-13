@@ -334,150 +334,145 @@ export function MenuWizard() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className="space-y-6 rounded-[32px] border border-white/70 bg-white/90 p-6 text-center shadow-xl shadow-[rgba(255,138,35,0.15)] backdrop-blur-sm md:text-left"
+          className="space-y-8 rounded-[32px] border border-white/60 bg-[rgba(255,255,255,0.9)] p-6 shadow-xl shadow-[rgba(255,138,35,0.15)] backdrop-blur-sm"
         >
-          <h1 className="text-2xl font-bold text-[#7C2D12] sm:text-3xl md:text-4xl">
-            用途別 最強筋トレメニュー
-          </h1>
-          <p className="text-sm leading-relaxed text-gray-700 sm:text-base">
-            性別・トレーニングタイプ・頻度を選ぶだけ。あなたに最適なメニューをご提案します。
-          </p>
-        </motion.section>
+          <div className="space-y-3 text-center md:text-left">
+            <h1 className="text-2xl font-bold text-[#7C2D12] sm:text-3xl md:text-4xl">
+              用途別 最強筋トレメニュー
+            </h1>
+            <p className="text-sm leading-relaxed text-gray-700 sm:text-base">
+              性別・トレーニングタイプ・頻度を選ぶだけ。あなたに最適なメニューをご提案します。
+            </p>
+          </div>
 
-        <section className="space-y-6 rounded-[32px] border border-white/60 bg-[rgba(255,255,255,0.82)] p-6 shadow-xl shadow-[rgba(255,138,35,0.15)] backdrop-blur-sm">
-          <header className="space-y-4">
-            <div className="h-2 w-full overflow-hidden rounded-full bg-white/60 shadow-inner">
-              <motion.div
-                className="h-full rounded-full bg-[var(--primary)]"
-                animate={{ width: `${progressRatio * 100}%` }}
-                transition={{ duration: 0.35, ease: "easeOut" }}
-              />
-            </div>
-            <div className="grid gap-3 md:grid-cols-3 md:gap-4">
-              {steps.map((step, index) => {
-                const Icon = step.icon;
-                const isCompleted = index < currentStepIndex || (isFinalStep && index <= currentStepIndex);
-                const isActive = !isFinalStep && currentStepIndex === index;
-                const isResultActive = isFinalStep && index === steps.length - 1;
-                const selectionText = step.id === 0
-                  ? selectedGenderLabel
-                  : step.id === 1
-                    ? selectedTypeLabel
-                    : step.id === 2
-                      ? selectedFreqLabel
-                      : null;
+          <div className="space-y-6">
+            <header className="space-y-4">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-white/60 shadow-inner">
+                <motion.div
+                  className="h-full rounded-full bg-[var(--primary)]"
+                  animate={{ width: `${progressRatio * 100}%` }}
+                  transition={{ duration: 0.35, ease: "easeOut" }}
+                />
+              </div>
+              <div className="grid gap-3 md:grid-cols-3 md:gap-4">
+                {steps.map((step, index) => {
+                  const Icon = step.icon;
+                  const isCompleted = index < currentStepIndex || (isFinalStep && index <= currentStepIndex);
+                  const isActive = !isFinalStep && currentStepIndex === index;
+                  const isResultActive = isFinalStep && index === steps.length - 1;
+                  const selectionText = step.id === 0
+                    ? selectedGenderLabel
+                    : step.id === 1
+                      ? selectedTypeLabel
+                      : step.id === 2
+                        ? selectedFreqLabel
+                        : null;
 
-                return (
-                  <div
-                    key={step.id}
-                    aria-current={isActive || isResultActive ? "step" : undefined}
-                    className={cn(
-                      "flex items-center gap-3 rounded-[28px] border px-4 py-3 shadow-sm transition-all",
-                      isCompleted
-                        ? "border-transparent bg-[var(--primary)] text-white shadow-lg"
-                        : isActive || isResultActive
-                          ? "border-[var(--primary)] bg-white text-[var(--primary)] shadow-md"
-                          : "border-transparent bg-white/70 text-gray-600",
-                    )}
-                  >
-                    <span
+                  return (
+                    <div
+                      key={step.id}
+                      aria-current={isActive || isResultActive ? "step" : undefined}
                       className={cn(
-                        "flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold transition-colors",
+                        "flex items-center gap-3 rounded-[28px] border px-4 py-3 shadow-sm transition-all",
                         isCompleted
-                          ? "bg-white/20 text-white"
+                          ? "border-transparent bg-[var(--primary)] text-white shadow-lg"
                           : isActive || isResultActive
-                            ? "bg-[var(--primary-soft)] text-[var(--primary)]"
-                            : "bg-white text-[var(--primary)]/70",
+                            ? "border-[var(--primary)] bg-white text-[var(--primary)] shadow-md"
+                            : "border-transparent bg-white/70 text-gray-600",
                       )}
                     >
-                      <Icon className="h-5 w-5" aria-hidden="true" />
-                    </span>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-semibold text-gray-900 md:text-base">
-                        {step.label}
+                      <span
+                        className={cn(
+                          "flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold transition-colors",
+                          isCompleted
+                            ? "bg-white/20 text-white"
+                            : isActive || isResultActive
+                              ? "bg-[var(--primary-soft)] text-[var(--primary)]"
+                              : "bg-white text-[var(--primary)]/70",
+                        )}
+                      >
+                        <Icon className="h-5 w-5" aria-hidden="true" />
                       </span>
-                      <span className="text-xs text-gray-500 md:text-sm">{step.description}</span>
-                      {(selectionText && (isCompleted || isActive || isResultActive)) && (
-                        <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-[var(--primary-soft)] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--primary)]">
-                          選択中 {selectionText}
+                      <div className="flex flex-col">
+                        <span className="text-sm font-semibold text-gray-900 md:text-base">
+                          {step.label}
                         </span>
-                      )}
+                        <span className="text-xs text-gray-500 md:text-sm">{step.description}</span>
+                        {(selectionText && (isCompleted || isActive || isResultActive)) && (
+                          <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-[var(--primary-soft)] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--primary)]">
+                            選択中 {selectionText}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </header>
+                  );
+                })}
+              </div>
+            </header>
 
-          <div className="relative min-h-[220px]">
-            <AnimatePresence mode="wait">
-              {!isFinalStep ? (
-                <motion.div
-                  key={`step-${currentStepIndex}`}
-                  initial={{ opacity: 0, y: 24 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -16 }}
-                  transition={{ duration: 0.25, ease: "easeOut" }}
-                >
-                  {currentStep?.id === 0 && (
-                    <StepGender
-                      value={selectedGender}
-                      onSelect={handleGenderSelect}
-                    />
-                  )}
-                  {currentStep?.id === 1 && (
-                    <StepType
-                      value={selectedType}
-                      onSelect={handleTypeSelect}
+            <div className="relative min-h-[220px]">
+              <AnimatePresence mode="wait">
+                {!isFinalStep ? (
+                  <motion.div
+                    key={`step-${currentStepIndex}`}
+                    initial={{ opacity: 0, y: 24 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -16 }}
+                    transition={{ duration: 0.25, ease: "easeOut" }}
+                  >
+                    {currentStep?.id === 0 && (
+                      <StepGender value={selectedGender} onSelect={handleGenderSelect} />
+                    )}
+                    {currentStep?.id === 1 && (
+                      <StepType value={selectedType} onSelect={handleTypeSelect} gender={selectedGender} />
+                    )}
+                    {currentStep?.id === 2 && !shouldSkipFrequency && (
+                      <StepFrequency
+                        value={selectedFreq}
+                        onSelect={handleFreqSelect}
+                        options={frequencyChoices}
+                      />
+                    )}
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="result"
+                    initial={{ opacity: 0, y: 24 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -16 }}
+                    transition={{ duration: 0.25, ease: "easeOut" }}
+                  >
+                    <ResultPanel
                       gender={selectedGender}
+                      type={selectedType}
+                      freq={selectedFreq}
+                      value={programValue}
+                      shouldSkipFrequency={shouldSkipFrequency}
                     />
-                  )}
-                  {currentStep?.id === 2 && !shouldSkipFrequency && (
-                    <StepFrequency
-                      value={selectedFreq}
-                      onSelect={handleFreqSelect}
-                      options={frequencyChoices}
-                    />
-                  )}
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="result"
-                  initial={{ opacity: 0, y: 24 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -16 }}
-                  transition={{ duration: 0.25, ease: "easeOut" }}
-                >
-                  <ResultPanel
-                    gender={selectedGender}
-                    type={selectedType}
-                    freq={selectedFreq}
-                    value={programValue}
-                    shouldSkipFrequency={shouldSkipFrequency}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
-        </section>
 
-        <BottomNavBar
-          onBack={handleBack}
-          onNext={() => {
-            if (activeStep === totalSteps - 1 && isReadyForResult) {
-              setActiveStep(totalSteps);
-              return;
-            }
-            handleNext();
-          }}
-          onReset={handleReset}
-          canGoBack={activeStep > 0}
-          canGoNext={canGoNext}
-          isResultStep={isFinalStep}
-          isReadyForResult={isReadyForResult}
-          activeStep={activeStep}
-          totalSteps={totalSteps}
-        />
+          <BottomNavBar
+            onBack={handleBack}
+            onNext={() => {
+              if (activeStep === totalSteps - 1 && isReadyForResult) {
+                setActiveStep(totalSteps);
+                return;
+              }
+              handleNext();
+            }}
+            onReset={handleReset}
+            canGoBack={activeStep > 0}
+            canGoNext={canGoNext}
+            isResultStep={isFinalStep}
+            isReadyForResult={isReadyForResult}
+            activeStep={activeStep}
+            totalSteps={totalSteps}
+          />
+        </motion.section>
 
         <AnimatePresence>
           {toast && (
@@ -837,48 +832,46 @@ function BottomNavBar({
   const isFinalSelectionStep = activeStep === totalSteps - 1;
   const nextLabel = isFinalSelectionStep && isReadyForResult ? "結果を見る" : "次へ";
   return (
-    <div className="mx-auto mt-6 w-full max-w-5xl rounded-[24px] border border-white/60 bg-white/90 p-4 shadow-lg backdrop-blur md:sticky md:bottom-4 md:rounded-[28px] md:border-white/70 md:shadow-xl">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={onBack}
-            disabled={!canGoBack}
-            className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/80 px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition-all hover:border-[var(--primary)]/40 hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-            戻る
-          </button>
-          {!isResultStep && (
-            <button
-              type="button"
-              onClick={onNext}
-              disabled={!canGoNext}
-              className="inline-flex items-center gap-2 rounded-full bg-[var(--primary)] px-5 py-2 text-sm font-semibold text-white shadow-lg transition-all hover:bg-orange-500 hover:shadow-xl disabled:cursor-not-allowed disabled:bg-orange-300/70 disabled:shadow-none"
-            >
-              {nextLabel}
-              <ChevronRight className="h-4 w-4" aria-hidden="true" />
-            </button>
-          )}
-          {isResultStep && (
-            <button
-              type="button"
-              disabled
-              className="inline-flex items-center gap-2 rounded-full bg-[var(--primary)] px-5 py-2 text-sm font-semibold text-white opacity-95 shadow-lg"
-            >
-              結果表示中
-            </button>
-          )}
-        </div>
+    <div className="mt-6 border-t border-white/60 pt-4 md:flex md:items-center md:justify-between">
+      <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
-          onClick={onReset}
-          className="inline-flex items-center gap-2 self-start rounded-full border border-white/70 bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-gray-600 shadow-sm transition hover:border-[var(--primary)]/40 hover:bg-white md:self-auto"
+          onClick={onBack}
+          disabled={!canGoBack}
+          className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/80 px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition-all hover:border-[var(--primary)]/40 hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <RotateCcw className="h-4 w-4" aria-hidden="true" />
-          リセット
+          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+          戻る
         </button>
+        {!isResultStep && (
+          <button
+            type="button"
+            onClick={onNext}
+            disabled={!canGoNext}
+            className="inline-flex items-center gap-2 rounded-full bg-[var(--primary)] px-5 py-2 text-sm font-semibold text-white shadow-lg transition-all hover:bg-orange-500 hover:shadow-xl disabled:cursor-not-allowed disabled:bg-orange-300/70 disabled:shadow-none"
+          >
+            {nextLabel}
+            <ChevronRight className="h-4 w-4" aria-hidden="true" />
+          </button>
+        )}
+        {isResultStep && (
+          <button
+            type="button"
+            disabled
+            className="inline-flex items-center gap-2 rounded-full bg-[var(--primary)] px-5 py-2 text-sm font-semibold text-white opacity-95 shadow-lg"
+          >
+            結果表示中
+          </button>
+        )}
       </div>
+      <button
+        type="button"
+        onClick={onReset}
+        className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-gray-600 shadow-sm transition hover:border-[var(--primary)]/40 hover:bg-white md:mt-0"
+      >
+        <RotateCcw className="h-4 w-4" aria-hidden="true" />
+        リセット
+      </button>
     </div>
   );
 }
