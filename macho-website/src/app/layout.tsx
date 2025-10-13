@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: buildUrl("/picture/man.png"),
+        url: buildUrl("/api/og"),
         width: 1200,
         height: 630,
         alt: "マチョ田のキャラクター",
@@ -48,7 +48,12 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "マチョ田の部屋",
     description: "筋トレの悩みを解決する統合プラットフォーム。用途別最強筋トレメニューやおすすめ情報をお届けします。",
-    images: [buildUrl("/picture/man.png")],
+    images: [buildUrl("/api/og")],
+  },
+  icons: {
+    icon: buildUrl("/picture/ore.png"),
+    shortcut: buildUrl("/picture/ore.png"),
+    apple: buildUrl("/picture/ore.png"),
   },
 };
 
