@@ -290,32 +290,32 @@ export function MenuWizard() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#FCC081" }}>
-      <header className="sticky top-4 z-40 px-12 pt-6 pb-4">
+      <header className="px-4 pt-4 pb-3 sm:px-6 md:sticky md:top-4 md:px-12 md:pt-6 md:pb-4">
         <Link
           href="/"
-          className="flex items-start justify-between gap-6 rounded-3xl px-0 py-0 text-white transition-transform hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/60"
+          className="flex flex-col items-center justify-between gap-3 rounded-3xl text-white transition-transform hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/60 md:flex-row md:items-start md:gap-6"
         >
-          <div>
-            <h1 className="text-6xl font-bold leading-none tracking-tight">マチョ田の部屋</h1>
-            <p className="text-xl font-medium">〜筋トレについてもう悩まなくていい〜</p>
+          <div className="text-center md:text-left">
+            <h1 className="text-2xl font-bold leading-tight tracking-tight sm:text-3xl md:text-6xl">マチョ田の部屋</h1>
+            <p className="mt-1 text-xs font-medium sm:text-sm md:text-xl">〜筋トレについてもう悩まなくていい〜</p>
           </div>
-          <div className="text-center">
-            <div className="w-28 h-28 bg-white rounded-2xl mb-3 flex items-center justify-center shadow-lg">
+          <div className="flex items-center gap-2 rounded-xl bg-white/95 px-3 py-2 text-left text-[#7C2D12] shadow-lg transition hover:scale-[1.02] hover:bg-white md:flex-col md:bg-white md:px-5 md:py-4 md:text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white md:h-24 md:w-24 md:rounded-2xl">
               <Image
                 src={profileImageSrc}
                 alt="Profile"
                 width={80}
                 height={80}
                 priority
-                className="w-20 h-20 rounded-xl object-cover"
+                className="h-10 w-10 rounded-md object-cover md:h-20 md:w-20"
               />
             </div>
-            <p className="text-base font-semibold">Profile</p>
+            <p className="text-xs font-semibold sm:text-sm md:mt-2 md:text-base md:text-[#7C2D12]">Profile</p>
           </div>
         </Link>
       </header>
 
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-12 px-4 md:px-6">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-4 pb-10 md:gap-12 md:px-6">
 
         <motion.header
           initial={{ opacity: 0, y: 24 }}
