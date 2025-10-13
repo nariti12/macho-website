@@ -112,8 +112,9 @@ async function fetchRelatedBlogs(currentId: string): Promise<RelatedBlogItem[]> 
   }));
 }
 
-export default async function BlogDetailPage({ params }: { params: { id: string } }) {
-  const blog = await fetchBlogDetail(params.id);
+export default async function BlogDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const blog = await fetchBlogDetail(id);
   if (!blog) {
     notFound();
   }
