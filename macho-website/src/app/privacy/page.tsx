@@ -83,10 +83,12 @@ export default function PrivacyPolicyPage() {
           <section className="space-y-3 text-sm leading-6 text-gray-700">
             <h2 className="text-xl font-semibold text-[#7C2D12]">9. お問い合わせ</h2>
             <p>
-              本プライバシーポリシーに関するお問い合わせは、以下の連絡先までお願いいたします。
-            </p>
-            <p>
-              メールアドレス: <a href="mailto:nariti12@gmail.com" className="text-[#FF8A23] underline">nariti12@gmail.com</a>
+              本プライバシーポリシーに関するご質問や、個人情報の取り扱いに関するお問い合わせは、当サイト内の
+              {" "}
+              <Link href="/contact" className="text-[#FF8A23] underline">
+                「お問い合わせフォーム」
+              </Link>
+              よりご連絡をお願いいたします。
             </p>
           </section>
 

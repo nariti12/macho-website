@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 interface SiteHeaderProps {
@@ -23,11 +24,13 @@ export function SiteHeader({ profileImageSrc }: SiteHeaderProps) {
           className="flex flex-col items-center gap-2 text-white transition hover:text-[#FFE7C2]"
         >
           <div className="flex h-28 w-28 items-center justify-center rounded-2xl bg-white shadow-lg transition-transform duration-300 hover:scale-110">
-            <img
+            <Image
               src={profileImageSrc}
               alt="Profile"
+              width={80}
+              height={80}
+              priority
               className="h-20 w-20 rounded-xl object-cover"
-              loading="eager"
             />
           </div>
           <p className="text-base font-semibold">Profile</p>
@@ -37,6 +40,12 @@ export function SiteHeader({ profileImageSrc }: SiteHeaderProps) {
           className="text-base font-semibold uppercase tracking-wide text-white transition hover:text-[#FFE7C2]"
         >
           Blog
+        </Link>
+        <Link
+          href="/contact"
+          className="text-base font-semibold text-white transition hover:text-[#FFE7C2]"
+        >
+          Contact
         </Link>
       </div>
     </header>

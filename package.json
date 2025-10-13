@@ -6,7 +6,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "mcp:test": "node mcp-test.js"
+    "mcp:test": "node mcp-test.js",
+    "mcp:bridge": "node mcpr-bridge.js"
   },
   "keywords": [],
   "author": "",

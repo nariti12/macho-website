@@ -4,6 +4,8 @@ import "./globals.css";
 import { ScrollProgress } from "@/components/scroll-progress";
 import Link from "next/link";
 
+import { siteUrl } from "@/lib/seo";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -20,7 +22,13 @@ export const metadata: Metadata = {
     template: "%s｜マチョ田の部屋",
   },
   description: "筋トレの悩みを解決する統合プラットフォーム。用途別最強筋トレメニューやおすすめ情報をお届けします。",
-  metadataBase: new URL('https://macho.example'),
+  metadataBase: new URL(siteUrl),
+  alternates: {
+    languages: {
+      ja: "/",
+      "x-default": "/",
+    },
+  },
   openGraph: {
     title: "マチョ田の部屋",
     description: "筋トレの悩みを解決する統合プラットフォーム。用途別最強筋トレメニューやおすすめ情報をお届けします。",
@@ -58,6 +66,13 @@ export default function RootLayout({
               className="underline-offset-4 text-white transition hover:text-[#FFE7C2] hover:underline"
             >
               プライバシーポリシー
+            </Link>
+            <span className="hidden h-4 w-px bg-white/40 sm:block" aria-hidden="true" />
+            <Link
+              href="/contact"
+              className="underline-offset-4 text-white transition hover:text-[#FFE7C2] hover:underline"
+            >
+              お問合せ
             </Link>
           </div>
         </footer>

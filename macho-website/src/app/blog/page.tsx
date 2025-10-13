@@ -55,7 +55,7 @@ async function fetchBlogs(page: number) {
       "X-MICROCMS-API-KEY": MICROCMS_API_KEY,
       "X-API-KEY": MICROCMS_API_KEY,
     },
-    next: { revalidate: 600 },
+    next: { revalidate: 600, tags: ["blog-list"] },
   });
 
   if (!response.ok) {

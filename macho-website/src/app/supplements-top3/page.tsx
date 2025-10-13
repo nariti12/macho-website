@@ -12,7 +12,7 @@ export default function SupplementsTop3Page() {
         <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 rounded-[32px] bg-white/95 p-10 text-center shadow-2xl">
           <h1 className="text-3xl font-bold text-[#7C2D12]">プロテイン/サプリ 最強TOP3</h1>
           <p className="text-sm leading-6 text-gray-700">
-            ただいま工事中です。役立つ情報を順次公開予定ですので、続報をお待ちください。
+            ただいま工事中です。近いうちに公開予定ですので、今しばらくお待ちください。
           </p>
           <div className="mt-4 flex justify-center">
             <Link

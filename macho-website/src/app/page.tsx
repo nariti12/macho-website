@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { SiteHeader } from "@/components/site-header";
+import { buildUrl, toJsonLd } from "@/lib/seo";
 
 type BlogCardData = {
   id: string;
@@ -136,20 +137,54 @@ export default function Home() {
   const profileImageSrc = "/picture/ore.png";
   const characterImageSrc = "/picture/man.png";
 
+  const structuredData = toJsonLd([
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "マチョ田の部屋",
+      url: buildUrl(""),
+      description:
+        "筋トレの悩みを解決する統合プラットフォーム。用途別最強筋トレメニューやおすすめ情報をお届けします。",
+      potentialAction: {
+        "@type": "SearchAction",
+        target: `${buildUrl("/blog")}?q={search_term_string}`,
+        "query-input": "required name=search_term_string",
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "マチョ田の部屋",
+      url: buildUrl(""),
+      logo: buildUrl("/picture/ore.png"),
+      sameAs: ["https://x.com/narita1_", "https://www.youtube.com/@ganmochan"],
+      contactPoint: [
+        {
+          "@type": "ContactPoint",
+          contactType: "customer support",
+          url: buildUrl("/contact"),
+        },
+      ],
+    },
+  ]);
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#FCC081" }}>
       <SiteHeader profileImageSrc={profileImageSrc} />
 
       {/* Main Content */}
       <main className="px-6 md:px-12">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: structuredData }} />
         <section className="py-28">
           <div className="w-full max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
             <div className="flex justify-center lg:justify-end w-full lg:w-auto">
-              <img
+              <Image
                 src={characterImageSrc}
                 alt="マチョ田キャラクター"
+                width={260}
+                height={260}
+                priority
                 className="w-[200px] sm:w-[220px] lg:w-[240px] xl:w-[260px] h-auto hover:scale-105 transition-transform duration-300 drop-shadow-2xl"
-                loading="eager"
               />
             </div>
 
@@ -185,11 +220,12 @@ export default function Home() {
           className="relative mx-auto mt-40 mb-20 w-[98%] max-w-[1600px] rounded-[44px] border border-white/35 bg-[rgba(188,143,80,0.9)] px-6 py-16 shadow-[0_50px_180px_-70px_rgba(113,63,18,0.85)] md:px-16"
         >
           <div className="flex items-center gap-4 mb-12">
-            <img
+            <Image
               src="/picture/image.png"
               alt="Blog icon"
+              width={48}
+              height={48}
               className="w-12 h-12 rounded-xl shadow-lg object-cover"
-              loading="lazy"
             />
             <h2 className="text-white text-3xl font-bold">Blog</h2>
           </div>
