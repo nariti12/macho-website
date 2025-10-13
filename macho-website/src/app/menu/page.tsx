@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import { buildUrl } from "@/lib/seo";
 
@@ -29,5 +30,9 @@ export const metadata: Metadata = {
 };
 
 export default function MenuPage() {
-  return <MenuWizard />;
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center text-white">読み込み中...</div>}>
+      <MenuWizard />
+    </Suspense>
+  );
 }
