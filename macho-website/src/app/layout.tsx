@@ -35,11 +35,25 @@ export const metadata: Metadata = {
     siteName: "マチョ田の部屋",
     locale: "ja_JP",
     type: "website",
+    images: [
+      {
+        url: new URL("/picture/man.png", siteUrl).toString(),
+        width: 800,
+        height: 800,
+        alt: "マチョ田のキャラクター",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "マチョ田の部屋",
     description: "筋トレの悩みを解決する統合プラットフォーム。用途別最強筋トレメニューやおすすめ情報をお届けします。",
+    images: [new URL("/picture/man.png", siteUrl).toString()],
+  },
+  icons: {
+    icon: new URL("/picture/ore.png", siteUrl).toString(),
+    shortcut: new URL("/picture/ore.png", siteUrl).toString(),
+    apple: new URL("/picture/ore.png", siteUrl).toString(),
   },
 };
 
