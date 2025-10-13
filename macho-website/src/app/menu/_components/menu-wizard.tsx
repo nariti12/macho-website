@@ -306,19 +306,19 @@ export function MenuWizard() {
 
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-4 pb-16 md:gap-12 md:px-6 md:pb-10">
 
-        <motion.header
+        <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className="text-center md:text-left"
+          className="space-y-6 rounded-[32px] border border-white/70 bg-white/90 p-6 text-center shadow-xl shadow-[rgba(255,138,35,0.15)] backdrop-blur-sm md:text-left"
         >
-          <h1 className="mt-2 text-3xl font-bold text-gray-900 md:text-4xl">
+          <h1 className="text-2xl font-bold text-[#7C2D12] sm:text-3xl md:text-4xl">
             用途別 最強筋トレメニュー
           </h1>
-          <p className="mt-3 text-base text-gray-700">
+          <p className="text-sm leading-relaxed text-gray-700 sm:text-base">
             性別・トレーニングタイプ・頻度を選ぶだけ。あなたに最適なメニューをご提案します。
           </p>
-        </motion.header>
+        </motion.section>
 
         <section className="space-y-6 rounded-[32px] border border-white/60 bg-[rgba(255,255,255,0.82)] p-6 shadow-xl shadow-[rgba(255,138,35,0.15)] backdrop-blur-sm">
           <header className="space-y-4">
