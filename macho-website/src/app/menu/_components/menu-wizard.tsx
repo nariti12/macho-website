@@ -286,28 +286,46 @@ export function MenuWizard() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#FCC081" }}>
       <header className="px-4 pt-4 pb-3 sm:px-6 md:sticky md:top-4 md:px-12 md:pt-6 md:pb-4">
-        <Link
-          href="/"
-          className="flex flex-col items-center justify-between gap-3 rounded-3xl text-white transition-transform hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/60 md:flex-row md:items-start md:gap-6"
-        >
-          <div className="text-center md:text-left">
-            <h1 className="text-2xl font-bold leading-tight tracking-tight sm:text-3xl md:text-6xl">マチョ田の部屋</h1>
-            <p className="mt-1 text-xs font-medium sm:text-sm md:text-xl">〜筋トレについてもう悩まなくていい〜</p>
-          </div>
-          <div className="flex items-center gap-2 rounded-xl bg-white/95 px-3 py-2 text-left text-[#7C2D12] shadow-lg transition hover:scale-[1.02] hover:bg-white md:flex-col md:bg-white md:px-5 md:py-4 md:text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white md:h-24 md:w-24 md:rounded-2xl">
-              <Image
-                src={profileImageSrc}
-                alt="Profile"
-                width={80}
-                height={80}
-                priority
-                className="h-10 w-10 rounded-md object-cover md:h-20 md:w-20"
-              />
+        <div className="flex flex-col items-center justify-between gap-3 rounded-3xl text-white md:flex-row md:items-start md:gap-6">
+          <Link
+            href="/"
+            className="transition-transform hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/60"
+          >
+            <div className="text-center md:text-left">
+              <h1 className="text-2xl font-bold leading-tight tracking-tight sm:text-3xl md:text-6xl">マチョ田の部屋</h1>
+              <p className="mt-1 text-xs font-medium sm:text-sm md:text-xl">〜筋トレについてもう悩まなくていい〜</p>
             </div>
-            <p className="text-xs font-semibold sm:text-sm md:mt-2 md:text-base md:text-[#7C2D12]">Profile</p>
+          </Link>
+          <div className="flex w-full items-center justify-center gap-2 sm:gap-3 md:w-auto md:flex-col md:items-center md:gap-3">
+            <Link
+              href="/profile"
+              className="flex items-center gap-2 rounded-xl bg-white/95 px-3 py-2 text-left text-[#7C2D12] shadow-lg transition hover:scale-[1.02] hover:bg-white md:flex-col md:bg-white md:px-5 md:py-4 md:text-center"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white md:h-24 md:w-24 md:rounded-2xl">
+                <Image
+                  src={profileImageSrc}
+                  alt="Profile"
+                  width={80}
+                  height={80}
+                  priority
+                  className="h-10 w-10 rounded-md object-cover md:h-20 md:w-20"
+                />
+              </div>
+              <p className="text-xs font-semibold sm:text-sm md:mt-2 md:text-base md:text-[#7C2D12]">Profile</p>
+            </Link>
+            <nav className="flex flex-nowrap items-center gap-2 text-xs font-semibold uppercase tracking-wide text-white sm:gap-3 sm:text-sm md:flex-col md:items-center md:gap-2 md:text-base">
+              <Link href="/" className="transition hover:text-[#FFE7C2]">
+                Home
+              </Link>
+              <Link href="/blog" className="transition hover:text-[#FFE7C2]">
+                Blog
+              </Link>
+              <Link href="/contact" className="transition hover:text-[#FFE7C2]">
+                Contact
+              </Link>
+            </nav>
           </div>
-        </Link>
+        </div>
       </header>
 
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-4 pb-16 md:gap-12 md:px-6 md:pb-10">
