@@ -235,7 +235,7 @@ export default function Home() {
             {blogItems.slice(0, 6).map((item, index) => (
               <Link key={item.id} href={`/blog/${item.id}`} className="block">
                 <div
-                  className="blog-item group transform rounded-2xl bg-white opacity-0 shadow-lg transition-all duration-700 hover:-translate-y-2 hover:shadow-xl"
+                  className="blog-item group transform rounded-2xl bg-white opacity-0 shadow-lg transition-all duration-700 hover:-translate-y-2 hover:shadow-xl overflow-hidden translate-y-8"
                   style={{ transitionDelay: `${index * 150}ms` }}
                 >
                   <div className="aspect-video relative">
