@@ -46,12 +46,12 @@ const normalize = (data: MicroCMSBlogDetail) => {
   };
 };
 
-export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_request: NextRequest, context: { params: Promise<{ id: string }> }) {
   if (!MICROCMS_API_KEY) {
     return NextResponse.json({ error: "MICROCMS_API_KEY is not set." }, { status: 500 });
   }
 
-  const { id } = params;
+  const { id } = await context.params;
   if (!id) {
     return NextResponse.json({ error: "Missing blog id." }, { status: 400 });
   }

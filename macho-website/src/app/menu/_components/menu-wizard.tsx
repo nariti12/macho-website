@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -300,11 +301,13 @@ export function MenuWizard() {
           </div>
           <div className="text-center">
             <div className="w-28 h-28 bg-white rounded-2xl mb-3 flex items-center justify-center shadow-lg">
-              <img
+              <Image
                 src={profileImageSrc}
                 alt="Profile"
+                width={80}
+                height={80}
+                priority
                 className="w-20 h-20 rounded-xl object-cover"
-                loading="eager"
               />
             </div>
             <p className="text-base font-semibold">Profile</p>
