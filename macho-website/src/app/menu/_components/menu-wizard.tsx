@@ -315,7 +315,7 @@ export function MenuWizard() {
         </Link>
       </header>
 
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-4 pb-10 md:gap-12 md:px-6">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-4 pb-16 md:gap-12 md:px-6 md:pb-10">
 
         <motion.header
           initial={{ opacity: 0, y: 24 }}
@@ -824,7 +824,7 @@ function BottomNavBar({
   const isFinalSelectionStep = activeStep === totalSteps - 1;
   const nextLabel = isFinalSelectionStep && isReadyForResult ? "結果を見る" : "次へ";
   return (
-    <div className="sticky bottom-4 z-40 mx-auto w-full max-w-5xl rounded-[28px] border border-white/70 bg-white/90 p-4 shadow-xl backdrop-blur md:static md:border-none md:bg-transparent md:p-0 md:shadow-none">
+    <div className="mx-auto mt-6 w-full max-w-5xl rounded-[24px] border border-white/60 bg-white/90 p-4 shadow-lg backdrop-blur md:sticky md:bottom-4 md:rounded-[28px] md:border-white/70 md:shadow-xl">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex gap-3">
           <button
