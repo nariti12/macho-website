@@ -4,7 +4,7 @@ import "./globals.css";
 import { ScrollProgress } from "@/components/scroll-progress";
 import Link from "next/link";
 
-import { buildUrl, siteUrl } from "@/lib/seo";
+import { siteUrl } from "@/lib/seo";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,25 +35,11 @@ export const metadata: Metadata = {
     siteName: "マチョ田の部屋",
     locale: "ja_JP",
     type: "website",
-    images: [
-      {
-        url: buildUrl("/api/og"),
-        width: 1200,
-        height: 630,
-        alt: "マチョ田のキャラクター",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "マチョ田の部屋",
     description: "筋トレの悩みを解決する統合プラットフォーム。用途別最強筋トレメニューやおすすめ情報をお届けします。",
-    images: [buildUrl("/api/og")],
-  },
-  icons: {
-    icon: buildUrl("/picture/ore.png"),
-    shortcut: buildUrl("/picture/ore.png"),
-    apple: buildUrl("/picture/ore.png"),
   },
 };
 
