@@ -16,10 +16,10 @@ export function SiteHeader({ profileImageSrc }: SiteHeaderProps) {
           〜筋トレについてもう悩まなくていい〜
         </p>
       </Link>
-      <div className="flex w-full flex-col items-center gap-3 sm:flex-row sm:justify-center sm:gap-4 md:w-auto md:flex-col md:items-center md:gap-3">
+      <div className="flex w-full flex-wrap items-center justify-center gap-3 md:w-auto md:flex-col md:items-center md:gap-3">
         <Link
           href="/profile"
-          className="flex items-center gap-2 rounded-xl bg-white/95 px-3 py-2 text-left text-[#7C2D12] shadow-lg transition hover:scale-[1.02] hover:bg-white sm:gap-3 md:flex-col md:bg-white md:px-5 md:py-4 md:text-center"
+          className="flex items-center gap-2 rounded-xl bg-white/95 px-3 py-2 text-left text-[#7C2D12] shadow-lg transition hover:scale-[1.02] hover:bg-white md:flex-col md:bg-white md:px-5 md:py-4 md:text-center"
         >
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white md:h-24 md:w-24 md:rounded-2xl">
             <Image
@@ -33,7 +33,7 @@ export function SiteHeader({ profileImageSrc }: SiteHeaderProps) {
           </div>
           <p className="text-xs font-semibold sm:text-sm md:mt-2 md:text-base md:text-[#7C2D12]">Profile</p>
         </Link>
-        <nav className="flex w-full items-center justify-center gap-3 text-xs font-semibold uppercase tracking-wide text-white sm:w-auto sm:gap-4 sm:text-sm md:flex-col md:items-center md:gap-2 md:text-base">
+        <nav className="flex w-full items-center justify-center gap-3 text-xs font-semibold uppercase tracking-wide text-white sm:text-sm md:flex-col md:items-center md:gap-2 md:text-base">
           <Link href="/" className="transition hover:text-[#FFE7C2]">
             Home
           </Link>
