@@ -81,10 +81,11 @@ const buildPageHref = (page: number) => (page === 1 ? "/blog" : `/blog?page=${pa
 export default async function BlogIndexPage({
   searchParams,
 }: {
-  searchParams: { page?: string };
+  searchParams: Promise<{ page?: string }>;
 }) {
   const profileImageSrc = "/picture/ore.png";
-  const page = Math.max(Number(searchParams?.page ?? "1"), 1);
+  const resolvedSearchParams = await searchParams;
+  const page = Math.max(Number(resolvedSearchParams?.page ?? "1"), 1);
   const { items: blogs, totalCount } = await fetchBlogs(page);
   const totalPages = Math.max(Math.ceil(totalCount / LIMIT), 1);
 
