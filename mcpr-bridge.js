@@ -10,6 +10,10 @@ import { CallToolRequestSchema, ListResourcesRequestSchema, ListResourceTemplate
 
 const HOST = process.env.MCP_HOST || process.env.MCPR_HOST || "";
 const PORT = process.env.MCP_PORT || process.env.MCPR_PORT || "3282";
+// Optional: direct base URL to avoid probing (e.g. http://127.0.0.1:6333/mcp)
+const BASE_URL = process.env.MCP_BASE_URL || process.env.SERENA_MCP_URL || "";
+// Silence noisy probe errors when no server is available
+const SILENT = ["1", "true", "yes"].includes(String(process.env.MCP_SILENT || "").toLowerCase());
 // Ensure local connections ignore any corporate proxy settings
 process.env.NO_PROXY = process.env.NO_PROXY || "localhost,127.0.0.1,::1";
 const TOKEN = process.env.MCPR_TOKEN || process.env.MCP_TOKEN || "";
@@ -37,6 +41,29 @@ async function probeTransport() {
   const errors = [];
   const hosts = HOST ? [HOST] : ["127.0.0.1", "::1", "localhost"];
   const schemes = ["http", "https"];
+  
+  // If a direct base URL is provided, try only that
+  if (BASE_URL) {
+    for (const hdrs of HEADER_VARIANTS(TOKEN)) {
+      const headers = Object.fromEntries(
+        Object.entries({ ...hdrs }).filter(([_, v]) => !!v)
+      );
+      try {
+        const url = new URL(BASE_URL);
+        if (url.protocol === "https:") {
+          process.env.NODE_TLS_REJECT_UNAUTHORIZED = process.env.NODE_TLS_REJECT_UNAUTHORIZED || "0";
+        }
+        const transport = new StreamableHTTPClientTransport(url, { requestInit: { headers } });
+        const client = new Client({ name: "mcpr-bridge", version: "0.1.0" });
+        await client.connect(transport, { timeoutMs: 8000 });
+        return { client, transport, url, headers };
+      } catch (err) {
+        errors.push(`${BASE_URL} ${JSON.stringify(headers)} -> ${err?.message || err}`);
+      }
+    }
+    if (SILENT) return null;
+    throw new Error(`Failed to connect to MCP at ${BASE_URL}`);
+  }
   for (const host of hosts) {
     for (const scheme of schemes) {
       for (const path of CANDIDATE_PATHS) {
@@ -62,7 +89,8 @@ async function probeTransport() {
       }
     }
   }
-  throw new Error(`All HTTP MCP probes failed:\n${errors.join("\n")}`);
+  if (SILENT) return null;
+  throw new Error("No MCP server reachable on common endpoints");
 }
 
 async function main() {
@@ -71,6 +99,7 @@ async function main() {
   });
 
   let httpClient = null;
+  let connectedInfo = null;
 
   server.onerror = (e) => {
     console.error("[bridge] server error:", e?.message || e);
@@ -79,9 +108,15 @@ async function main() {
   // Lazily connect to HTTP server on initialize, to attach Codex client info
   server.setRequestHandler(InitializeRequestSchema, async (request) => {
     if (!httpClient) {
-      const { client, url, headers } = await probeTransport();
-      httpClient = client;
-      console.error(`[bridge] connected: ${url.href} headers=${JSON.stringify(headers)}`);
+      const result = await probeTransport();
+      if (result) {
+        const { client, url, headers } = result;
+        httpClient = client;
+        connectedInfo = { url: url.href, headers };
+        console.error(`[bridge] connected: ${url.href}`);
+      } else if (!SILENT) {
+        console.error("[bridge] MCP not reachable; running with empty capabilities (MCP_SILENT=1 to hide this)");
+      }
     }
     return {
       protocolVersion: request.params.protocolVersion,
@@ -91,16 +126,21 @@ async function main() {
   });
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
+    if (!httpClient) return { tools: [] };
     try { const r = await httpClient.listTools(); return { tools: r.tools ?? [] }; }
     catch (e) { throw new McpError(ErrorCode.InternalError, `listTools failed: ${e?.message || e}`); }
   });
 
   server.setRequestHandler(CallToolRequestSchema, async (req) => {
+    if (!httpClient) {
+      throw new McpError(ErrorCode.NotFound, `tool '${req.params.name}' not available (not connected to MCP)`);
+    }
     try { return await httpClient.callTool({ name: req.params.name, arguments: req.params.arguments ?? {} }); }
     catch (e) { throw new McpError(ErrorCode.InternalError, `callTool ${req.params.name} failed: ${e?.message || e}`); }
   });
 
   server.setRequestHandler(ListResourcesRequestSchema, async () => {
+    if (!httpClient) return { resources: [] };
     try { const r = await httpClient.listResources(); return { resources: r.resources ?? [] }; }
     catch (e) { throw new McpError(ErrorCode.InternalError, `listResources failed: ${e?.message || e}`); }
   });
@@ -108,16 +148,19 @@ async function main() {
   server.setRequestHandler(ListResourceTemplatesRequestSchema, async () => ({ resourceTemplates: [] }));
 
   server.setRequestHandler(ReadResourceRequestSchema, async (req) => {
+    if (!httpClient) throw new McpError(ErrorCode.NotFound, `resource '${req.params.uri}' not available (not connected to MCP)`);
     try { return await httpClient.readResource({ uri: req.params.uri }); }
     catch (e) { throw new McpError(ErrorCode.InternalError, `readResource failed: ${e?.message || e}`); }
   });
 
   server.setRequestHandler(ListPromptsRequestSchema, async () => {
+    if (!httpClient) return { prompts: [] };
     try { const r = await httpClient.listPrompts(); return { prompts: r.prompts ?? [] }; }
     catch (e) { throw new McpError(ErrorCode.InternalError, `listPrompts failed: ${e?.message || e}`); }
   });
 
   server.setRequestHandler(GetPromptRequestSchema, async (req) => {
+    if (!httpClient) throw new McpError(ErrorCode.NotFound, `prompt '${req.params.name}' not available (not connected to MCP)`);
     try { return await httpClient.getPrompt({ name: req.params.name, arguments: req.params.arguments ?? {} }); }
     catch (e) { throw new McpError(ErrorCode.InternalError, `getPrompt failed: ${e?.message || e}`); }
   });
