@@ -199,19 +199,14 @@ export function MenuWizard() {
 
   const handleTypeSelect = useCallback(
     (value: TrainType) => {
-      const willSkip = value === "home";
       const allowed = filterFrequencyOptions(selectedGender, value);
-      const nextFreq = willSkip
-        ? null
-        : selectedFreq && allowed.some((option) => option.value === selectedFreq)
+      const nextFreq =
+        selectedFreq && allowed.some((option) => option.value === selectedFreq)
           ? selectedFreq
           : null;
       setSelectedType(value);
       setSelectedFreq(nextFreq);
       syncParams(selectedGender, value, nextFreq);
-      if (willSkip) {
-        setActiveStep(wizardSteps.length - 1);
-      }
     },
     [selectedGender, selectedFreq, syncParams],
   );
@@ -241,11 +236,7 @@ export function MenuWizard() {
     [selectedFreq, selectedGender, selectedType],
   );
 
-  const shouldSkipFrequency = selectedType === "home";
-  const steps = useMemo(
-    () => (shouldSkipFrequency ? wizardSteps.filter((step) => step.id !== 2) : wizardSteps),
-    [shouldSkipFrequency],
-  );
+  const steps = wizardSteps;
   const totalSteps = steps.length;
 
   const selectedGenderLabel = useMemo(
@@ -266,9 +257,7 @@ export function MenuWizard() {
     [selectedGender, selectedType],
   );
 
-  const isReadyForResult = Boolean(
-    selectedGender && selectedType && (shouldSkipFrequency || selectedFreq),
-  );
+  const isReadyForResult = Boolean(selectedGender && selectedType && selectedFreq);
   const isFinalStep = activeStep >= totalSteps;
 
   const currentStepIndex = totalSteps > 0 ? Math.min(activeStep, totalSteps - 1) : 0;
@@ -419,7 +408,7 @@ export function MenuWizard() {
                       gender={selectedGender}
                     />
                   )}
-                  {currentStep?.id === 2 && !shouldSkipFrequency && (
+                  {currentStep?.id === 2 && (
                     <StepFrequency
                       value={selectedFreq}
                       onSelect={handleFreqSelect}
@@ -440,7 +429,7 @@ export function MenuWizard() {
                     type={selectedType}
                     freq={selectedFreq}
                     value={programValue}
-                    shouldSkipFrequency={shouldSkipFrequency}
+                    shouldSkipFrequency={false}
                   />
                 </motion.div>
               )}
