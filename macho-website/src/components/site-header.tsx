@@ -7,7 +7,7 @@ interface SiteHeaderProps {
 
 export function SiteHeader({ profileImageSrc }: SiteHeaderProps) {
   return (
-    <header className="sticky top-0 z-40 flex flex-col items-center justify-center gap-3 bg-transparent px-4 pb-2 pt-3 text-center shadow-none transition-all sm:px-6 md:top-4 md:flex-row md:items-start md:gap-6 md:px-12 md:pb-4 md:text-left">
+    <header className="z-40 flex flex-col items-center justify-center gap-3 bg-transparent px-4 pb-2 pt-3 text-center transition-all sm:px-6 md:sticky md:top-4 md:flex-row md:items-start md:justify-between md:gap-6 md:px-12 md:pb-4 md:text-left">
       <Link href="/" className="block transition hover:text-[#FFE7C2]">
         <h1 className="text-2xl font-bold leading-tight tracking-tight text-white sm:text-3xl md:text-6xl">
           マチョ田の部屋
@@ -33,7 +33,7 @@ export function SiteHeader({ profileImageSrc }: SiteHeaderProps) {
           </div>
           <p className="text-xs font-semibold sm:text-sm md:mt-2 md:text-base md:text-[#7C2D12]">Profile</p>
         </Link>
-        <nav className="flex w-full items-center justify-center gap-3 text-xs font-semibold uppercase tracking-wide text-white sm:w-auto sm:gap-4 sm:text-sm md:flex-col md:gap-2 md:text-base">
+        <nav className="flex w-full items-center justify-center gap-3 text-xs font-semibold uppercase tracking-wide text-white sm:w-auto sm:gap-4 sm:text-sm md:flex-col md:items-center md:gap-2 md:text-base">
           <Link href="/" className="transition hover:text-[#FFE7C2]">
             Home
           </Link>

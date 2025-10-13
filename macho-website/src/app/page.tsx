@@ -173,39 +173,40 @@ export default function Home() {
       <SiteHeader profileImageSrc={profileImageSrc} />
 
       {/* Main Content */}
-      <main className="px-6 md:px-12">
+      <main className="px-4 sm:px-6 md:px-12">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: structuredData }} />
-        <section className="py-28">
-          <div className="w-full max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-            <div className="flex justify-center lg:justify-end w-full lg:w-auto">
+        <section className="py-16 sm:py-20 md:py-28">
+          <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-10 lg:flex-row lg:items-center lg:gap-16">
+            <div className="flex w-full justify-center lg:w-auto lg:justify-end">
               <Image
                 src={characterImageSrc}
                 alt="マチョ田キャラクター"
                 width={260}
                 height={260}
                 priority
-                className="w-[200px] sm:w-[220px] lg:w-[240px] xl:w-[260px] h-auto hover:scale-105 transition-transform duration-300 drop-shadow-2xl"
+                className="h-auto w-[180px] max-w-[200px] hover:scale-105 transition-transform duration-300 drop-shadow-2xl sm:w-[200px] lg:w-[240px] xl:w-[260px]"
               />
             </div>
 
-            <div className="w-full max-w-4xl grid grid-cols-1 sm:grid-cols-2 gap-10 text-center">
+            <div className="grid w-full max-w-4xl grid-cols-1 gap-6 text-center sm:grid-cols-2 sm:gap-8">
               {menuItems.map((item, index) => {
                 const lines = item.label.split('\n');
-                const className = "w-full text-white font-bold py-9 px-12 rounded-3xl shadow-lg transition-all duration-300 text-2xl leading-tight hover:scale-105 hover:shadow-[0_25px_50px_-12px_rgba(255,138,35,0.5)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/60";
+                const className =
+                  "w-full rounded-3xl bg-[#FF8A23] py-6 px-6 text-lg font-bold leading-tight text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_25px_50px_-12px_rgba(255,138,35,0.5)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/60 sm:text-xl md:py-8 md:px-10 md:text-2xl";
                 const content = lines.map((line, lineIndex) => (
                   <div key={lineIndex}>{line}</div>
                 ));
 
                 if (item.href) {
                   return (
-                    <Link key={index} href={item.href} className={className} style={{ backgroundColor: "#FF8A23" }}>
+                    <Link key={index} href={item.href} className={className}>
                       {content}
                     </Link>
                   );
                 }
 
                 return (
-                  <button key={index} type="button" className={className} style={{ backgroundColor: "#FF8A23" }}>
+                  <button key={index} type="button" className={className}>
                     {content}
                   </button>
                 );
@@ -217,24 +218,24 @@ export default function Home() {
         {/* Blog Section */}
         <div
           ref={blogSectionRef}
-          className="relative mx-auto mt-40 mb-20 w-[98%] max-w-[1600px] rounded-[44px] border border-white/35 bg-[rgba(188,143,80,0.9)] px-6 py-16 shadow-[0_50px_180px_-70px_rgba(113,63,18,0.85)] md:px-16"
+          className="relative mx-auto mt-20 mb-16 w-[98%] max-w-[1600px] rounded-[32px] border border-white/35 bg-[rgba(188,143,80,0.9)] px-4 py-12 shadow-[0_30px_140px_-70px_rgba(113,63,18,0.7)] sm:px-6 md:mt-32 md:rounded-[44px] md:px-16 md:py-16"
         >
-          <div className="flex items-center gap-4 mb-12">
+          <div className="mb-10 flex items-center gap-3 sm:gap-4">
             <Image
               src="/picture/image.png"
               alt="Blog icon"
               width={48}
               height={48}
-              className="w-12 h-12 rounded-xl shadow-lg object-cover"
+              className="h-10 w-10 rounded-xl object-cover shadow-lg sm:h-12 sm:w-12"
             />
-            <h2 className="text-white text-3xl font-bold">Blog</h2>
+            <h2 className="text-2xl font-bold text-white sm:text-3xl">Blog</h2>
           </div>
 
-          <div className="grid grid-cols-1 gap-10 mb-12 md:grid-cols-2 xl:grid-cols-3">
+          <div className="mb-10 grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-3">
             {blogItems.slice(0, 6).map((item, index) => (
               <Link key={item.id} href={`/blog/${item.id}`} className="block">
                 <div
-                  className="bg-white rounded-2xl overflow-hidden shadow-lg transition-all duration-700 hover:-translate-y-2 hover:shadow-xl opacity-0 transform translate-y-8 blog-item group"
+                  className="blog-item group transform rounded-2xl bg-white opacity-0 shadow-lg transition-all duration-700 hover:-translate-y-2 hover:shadow-xl"
                   style={{ transitionDelay: `${index * 150}ms` }}
                 >
                   <div className="aspect-video relative">
@@ -246,15 +247,15 @@ export default function Home() {
                       sizes="(min-width: 1024px) 33vw, 100vw"
                     />
                   </div>
-                  <div className="p-8">
-                    <span className="inline-block text-white text-sm px-4 py-2 rounded-xl mb-6 font-semibold" style={{ backgroundColor: "#FF8A23" }}>
+                  <div className="p-5 sm:p-6 md:p-8">
+                    <span className="mb-4 inline-block rounded-xl bg-[#FF8A23] px-4 py-1 text-xs font-semibold text-white sm:mb-5 sm:text-sm">
                       {item.category}
                     </span>
-                    <h3 className="text-lg font-semibold text-gray-900 leading-tight line-clamp-2">
+                    <h3 className="text-base font-semibold leading-tight text-gray-900 sm:text-lg">
                       {item.title}
                     </h3>
                     {formatDate(item.updatedAt) && (
-                      <p className="mt-4 text-xs font-medium uppercase tracking-wide text-gray-500">
+                      <p className="mt-3 text-xs font-medium uppercase tracking-wide text-gray-500">
                         更新日: {formatDate(item.updatedAt)}
                       </p>
                     )}
@@ -264,13 +265,13 @@ export default function Home() {
             ))}
 
             {!isLoadingBlogs && blogItems.length === 0 && (
-              <div className="col-span-full rounded-3xl bg-white/90 p-10 text-center text-sm font-semibold text-gray-600 shadow-lg">
+              <div className="col-span-full rounded-3xl bg-white/90 p-8 text-center text-sm font-semibold text-gray-600 shadow-lg">
                 {blogError ?? "現在表示できる記事がありません。"}
               </div>
             )}
 
             {showLoading && blogItems.length === 0 && (
-              <div className="col-span-full rounded-3xl bg-white/80 p-10 text-center text-sm font-semibold text-gray-500 shadow">
+              <div className="col-span-full rounded-3xl bg-white/80 p-8 text-center text-sm font-semibold text-gray-500 shadow">
                 記事を読み込んでいます...
               </div>
             )}
@@ -280,8 +281,7 @@ export default function Home() {
             {blogItems.length > 0 && (
               <Link
                 href="/blog"
-                className="inline-flex items-center text-white font-bold transition-all duration-300 text-xl px-6 py-3 rounded-2xl hover:scale-105"
-                style={{ backgroundColor: "#FF8A23" }}
+                className="inline-flex items-center rounded-2xl bg-[#FF8A23] px-5 py-3 text-sm font-bold text-white transition-all duration-300 hover:scale-105 sm:text-base md:px-6 md:text-xl"
               >
                 MORE →
               </Link>

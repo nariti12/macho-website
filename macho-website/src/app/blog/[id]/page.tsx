@@ -183,17 +183,17 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ id:
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#FCC081" }}>
       <SiteHeader profileImageSrc={profileImageSrc} />
-      <main className="px-6 pb-16 pt-24 text-gray-900">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 rounded-[32px] bg-white/95 p-12 shadow-2xl xl:max-w-7xl">
+      <main className="px-4 pb-16 pt-20 text-gray-900 sm:px-6 md:pt-24">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 rounded-[28px] bg-white/95 p-6 shadow-2xl sm:rounded-[32px] sm:p-8 md:p-12 xl:max-w-7xl">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 self-start text-base font-semibold text-[#FF8A23] transition-colors hover:text-[#f57200]"
+            className="inline-flex items-center gap-2 self-start text-sm font-semibold text-[#FF8A23] transition-colors hover:text-[#f57200] sm:text-base"
           >
             ← TOPに戻る
           </Link>
 
-          <nav aria-label="Breadcrumb" className="text-sm text-gray-500">
-            <ol className="flex flex-wrap items-center gap-2">
+          <nav aria-label="Breadcrumb" className="text-xs text-gray-500 sm:text-sm">
+            <ol className="flex flex-wrap items-center gap-1 sm:gap-2">
               <li>
                 <Link href="/" className="transition hover:text-[#FF8A23]">
                   ホーム
@@ -211,15 +211,17 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ id:
           </nav>
 
           <div className="space-y-4">
-            <span className="inline-flex items-center rounded-full bg-[#FF8A23] px-3 py-1 text-sm font-semibold uppercase tracking-wide text-white">
+            <span className="inline-flex items-center rounded-full bg-[#FF8A23] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white sm:text-sm">
               {blog.category}
             </span>
-            <h1 className="text-4xl font-bold leading-tight text-gray-900 md:text-5xl">{blog.title}</h1>
+            <h1 className="text-3xl font-bold leading-tight text-gray-900 sm:text-4xl md:text-5xl">
+              {blog.title}
+            </h1>
             {(blog.publishedAt || blog.updatedAt) && (
-              <p className="text-sm text-gray-500 md:text-base">
+              <p className="text-xs text-gray-500 sm:text-sm md:text-base">
                 {formatDate(blog.publishedAt) && <span>公開日: {formatDate(blog.publishedAt)}</span>}
                 {formatDate(blog.updatedAt) && (
-                  <span className="ml-3">最終更新日: {formatDate(blog.updatedAt)}</span>
+                  <span className="ml-2 sm:ml-3">最終更新日: {formatDate(blog.updatedAt)}</span>
                 )}
               </p>
             )}
@@ -238,7 +240,7 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ id:
           )}
 
           {blog.summary && (
-            <p className="rounded-3xl bg-[#fff4eb] px-8 py-5 text-base font-medium leading-relaxed text-gray-600 shadow-inner md:text-lg">
+            <p className="rounded-3xl bg-[#fff4eb] px-6 py-4 text-sm font-medium leading-relaxed text-gray-600 shadow-inner sm:text-base md:px-8 md:py-5 md:text-lg">
               {blog.summary}
             </p>
           )}
