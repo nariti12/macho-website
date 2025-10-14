@@ -7,6 +7,7 @@ import { Suspense } from "react";
 
 import { siteUrl } from "@/lib/seo";
 import { GoogleAnalytics } from "@/components/google-analytics";
+import { GoogleTagManager } from "@/components/google-tag-manager";
 import { ScrollProgress } from "@/components/scroll-progress";
 
 const geistSans = Geist({
@@ -70,6 +71,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <GoogleTagManager />
         <ScrollProgress />
         <Suspense fallback={null}>
           <GoogleAnalytics />
