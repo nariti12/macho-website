@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
 
+import { Suspense } from "react";
+
 import { siteUrl } from "@/lib/seo";
 import { GoogleAnalytics } from "@/components/google-analytics";
 import { ScrollProgress } from "@/components/scroll-progress";
@@ -69,7 +71,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ScrollProgress />
-        <GoogleAnalytics />
+        <Suspense fallback={null}>
+          <GoogleAnalytics />
+        </Suspense>
         <main className="min-h-screen" style={{ backgroundColor: "#FCC081" }}>
           {children}
         </main>
