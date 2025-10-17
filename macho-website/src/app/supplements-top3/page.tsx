@@ -1,8 +1,33 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 
 import { SiteHeader } from "@/components/site-header";
+import { buildUrl } from "@/lib/seo";
 
 const profileImageSrc = "/picture/ore.png";
+const pageUrl = buildUrl("/supplements-top3");
+
+export const metadata: Metadata = {
+  title: "プロテイン/サプリ 最強TOP3｜マチョ田の部屋",
+  description:
+    "プロテインやサプリメントのおすすめランキングを準備中です。筋トレの成果を加速させる最新情報をお届け予定です。",
+  alternates: {
+    canonical: pageUrl,
+  },
+  openGraph: {
+    title: "プロテイン/サプリ 最強TOP3｜マチョ田の部屋",
+    description:
+      "マチョ田が厳選するプロテイン・サプリのTOP3を近日公開予定です。",
+    url: pageUrl,
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "プロテイン/サプリ 最強TOP3｜マチョ田の部屋",
+    description:
+      "プロテイン・サプリメントのおすすめランキングを準備しています。公開までお待ちください。",
+  },
+};
 
 export default function SupplementsTop3Page() {
   return (

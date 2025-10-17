@@ -12,12 +12,21 @@ export const metadata: Metadata = {
   title: "お問合せ｜マチョ田の部屋",
   description:
     "マチョ田へのご相談・ご依頼はお問い合わせフォームからお気軽にメッセージをお送りください。",
+  alternates: {
+    canonical: pageUrl,
+  },
   openGraph: {
     title: "お問合せ｜マチョ田の部屋",
     description:
       "マチョ田へのご相談・ご依頼はお問い合わせフォームからお気軽にメッセージをお送りください。",
     url: pageUrl,
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "お問合せ｜マチョ田の部屋",
+    description:
+      "マチョ田へのご相談・ご依頼はお問い合わせフォームからお気軽にメッセージをお送りください。",
   },
 };
 

@@ -14,6 +14,9 @@ export const metadata: Metadata = {
   title: "プロフィール｜マチョ田の部屋",
   description:
     "マチョ田（machoda）のプロフィール。AIエンジニアとしての経歴、保有資格、趣味やサイトへの想いを紹介します。",
+  alternates: {
+    canonical: profilePageUrl,
+  },
   openGraph: {
     title: "プロフィール｜マチョ田の部屋",
     description:
@@ -28,6 +31,12 @@ export const metadata: Metadata = {
         alt: "マチョ田のプロフィール写真",
       },
     ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "プロフィール｜マチョ田の部屋",
+    description:
+      "マチョ田（machoda）のプロフィール。AIエンジニアとしての経歴、保有資格、趣味やサイトへの想いを紹介します。",
   },
 };
 

@@ -1,8 +1,33 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 
 import { SiteHeader } from "@/components/site-header";
+import { buildUrl } from "@/lib/seo";
 
 const profileImageSrc = "/picture/ore.png";
+const pageUrl = buildUrl("/training-gear");
+
+export const metadata: Metadata = {
+  title: "トレーニングギア｜マチョ田の部屋",
+  description:
+    "トレーニングベルトやグローブなどマチョ田厳選のトレーニングギアを準備中です。公開までしばらくお待ちください。",
+  alternates: {
+    canonical: pageUrl,
+  },
+  openGraph: {
+    title: "トレーニングギア｜マチョ田の部屋",
+    description:
+      "おすすめのトレーニングギア情報を準備しています。公開まで今しばらくお待ちください。",
+    url: pageUrl,
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "トレーニングギア｜マチョ田の部屋",
+    description:
+      "トレーニングギアのおすすめ情報を準備中です。更新をお待ちください。",
+  },
+};
 
 export default function TrainingGearPage() {
   return (

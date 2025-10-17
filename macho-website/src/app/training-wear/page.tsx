@@ -1,8 +1,33 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 
 import { SiteHeader } from "@/components/site-header";
+import { buildUrl } from "@/lib/seo";
 
 const profileImageSrc = "/picture/ore.png";
+const pageUrl = buildUrl("/training-wear");
+
+export const metadata: Metadata = {
+  title: "トレーニングウェア｜マチョ田の部屋",
+  description:
+    "トレーニングウェアのおすすめブランドやコーディネートを準備中です。公開まで今しばらくお待ちください。",
+  alternates: {
+    canonical: pageUrl,
+  },
+  openGraph: {
+    title: "トレーニングウェア｜マチョ田の部屋",
+    description:
+      "マチョ田が厳選するトレーニングウェア情報を準備しています。公開までしばらくお待ちください。",
+    url: pageUrl,
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "トレーニングウェア｜マチョ田の部屋",
+    description:
+      "トレーニングウェアの特集ページを準備中です。最新情報をお届けするまでお待ちください。",
+  },
+};
 
 export default function TrainingWearPage() {
   return (

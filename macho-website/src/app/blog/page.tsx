@@ -1,7 +1,33 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { Metadata } from "next";
 
 import { SiteHeader } from "@/components/site-header";
+import { buildUrl } from "@/lib/seo";
+
+const pageUrl = buildUrl("/blog");
+
+export const metadata: Metadata = {
+  title: "ブログ一覧｜マチョ田の部屋",
+  description:
+    "筋トレのコツや最新トレーニング情報をマチョ田が発信するブログ一覧ページ。カテゴリー別に記事をチェックできます。",
+  alternates: {
+    canonical: pageUrl,
+  },
+  openGraph: {
+    title: "ブログ一覧｜マチョ田の部屋",
+    description:
+      "筋トレの悩みを解決する記事をまとめたブログ一覧ページです。カテゴリー別に最新コンテンツをチェックできます。",
+    url: pageUrl,
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ブログ一覧｜マチョ田の部屋",
+    description:
+      "筋トレに役立つ情報を発信するマチョ田のブログ一覧ページです。",
+  },
+};
 
 const DEFAULT_BASE_URL = "https://macho.microcms.io/api/v1";
 const baseUrl = process.env.MICROCMS_BASE_URL ?? DEFAULT_BASE_URL;

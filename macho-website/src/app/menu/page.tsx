@@ -12,6 +12,9 @@ export const metadata: Metadata = {
   title: "用途別 最強筋トレメニュー｜マチョ田の部屋",
   description:
     "性別・トレーニングタイプ・頻度から最適な筋トレメニューを診断。ジム週３回の最強メニューを今すぐチェック。",
+  alternates: {
+    canonical: pageUrl,
+  },
   openGraph: {
     title: "用途別 最強筋トレメニュー｜マチョ田の部屋",
     description:
@@ -26,6 +29,12 @@ export const metadata: Metadata = {
         alt: "マチョ田の部屋 キャラクター",
       },
     ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "用途別 最強筋トレメニュー｜マチョ田の部屋",
+    description:
+      "性別・トレーニングタイプ・頻度から最適な筋トレメニューを診断。ジム週３回の最強メニューを今すぐチェック。",
   },
 };
 

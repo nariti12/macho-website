@@ -1,9 +1,35 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 
 import { SiteHeader } from "@/components/site-header";
+import { buildUrl } from "@/lib/seo";
+
+const profileImageSrc = "/picture/ore.png";
+const pageUrl = buildUrl("/privacy");
+
+export const metadata: Metadata = {
+  title: "プライバシーポリシー｜マチョ田の部屋",
+  description:
+    "マチョ田の部屋における個人情報の取り扱い、アクセス解析、広告ポリシー、免責事項などをまとめたプライバシーポリシーです。",
+  alternates: {
+    canonical: pageUrl,
+  },
+  openGraph: {
+    title: "プライバシーポリシー｜マチョ田の部屋",
+    description:
+      "マチョ田の部屋の個人情報保護方針やアクセス解析、広告配信に関する取り扱いを掲載しています。",
+    url: pageUrl,
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "プライバシーポリシー｜マチョ田の部屋",
+    description:
+      "マチョ田の部屋での個人情報の取り扱い、Cookie 利用、免責事項などをまとめたプライバシーポリシーです。",
+  },
+};
 
 export default function PrivacyPolicyPage() {
-  const profileImageSrc = "/picture/ore.png";
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#FCC081" }}>
