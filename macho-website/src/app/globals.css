@@ -107,21 +107,22 @@ main {
 
 .blog-content h3 {
   font-size: clamp(1.5rem, 1.35rem + 0.4vw, 1.85rem);
-  border-left: 4px solid color-mix(in srgb, var(--primary) 80%, white 20%);
-  padding-left: 0.75rem;
   color: #b45309;
   position: relative;
+  display: inline-block;
+  padding: 0 0 0.5rem;
 }
 
 .blog-content h3::after {
   content: "";
   position: absolute;
   left: 0;
-  bottom: -0.35rem;
-  width: 3rem;
-  height: 2px;
-  background: color-mix(in srgb, var(--primary) 70%, white 30%);
-  opacity: 0.6;
+  bottom: 0.1rem;
+  width: 100%;
+  height: 4px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 85%, white 15%) 0%, rgba(255, 255, 255, 0) 95%);
+  opacity: 0.75;
 }
 
 .blog-content h4 {
