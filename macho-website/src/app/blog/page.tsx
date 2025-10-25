@@ -76,12 +76,17 @@ async function fetchBlogs(page: number) {
   }
   const endpoint = `${baseUrl.replace(/\/$/, "")}/blogs`;
   const offset = Math.max(page - 1, 0) * LIMIT;
-  const response = await fetch(`${endpoint}?limit=${LIMIT}&offset=${offset}`, {
+  const searchParams = new URLSearchParams({
+    limit: String(LIMIT),
+    offset: String(offset),
+    status: "PUBLIC",
+  });
+  const response = await fetch(`${endpoint}?${searchParams.toString()}`, {
     headers: {
       "X-MICROCMS-API-KEY": MICROCMS_API_KEY,
       "X-API-KEY": MICROCMS_API_KEY,
     },
-    next: { revalidate: 600, tags: ["blog-list"] },
+    cache: "no-store",
   });
 
   if (!response.ok) {

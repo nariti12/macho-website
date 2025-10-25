@@ -64,12 +64,12 @@ async function fetchBlogDetail(id: string) {
     throw new Error("MICROCMS_API_KEY is not configured.");
   }
   const endpoint = `${baseUrl.replace(/\/$/, "")}/blogs/${encodeURIComponent(id)}`;
-  const response = await fetch(endpoint, {
+  const response = await fetch(`${endpoint}?status=PUBLIC`, {
     headers: {
       "X-MICROCMS-API-KEY": MICROCMS_API_KEY,
       "X-API-KEY": MICROCMS_API_KEY,
     },
-    next: { revalidate: 600, tags: [`blog-${id}`] },
+    cache: "no-store",
   });
 
   if (response.status === 404) {
@@ -91,12 +91,18 @@ async function fetchRelatedBlogs(currentId: string): Promise<RelatedBlogItem[]> 
   }
 
   const endpoint = `${baseUrl.replace(/\/$/, "")}/blogs`;
-  const response = await fetch(`${endpoint}?limit=3&filters=id[not_equals]${currentId}&orders=-publishedAt`, {
+  const searchParams = new URLSearchParams({
+    limit: "3",
+    orders: "-publishedAt",
+    status: "PUBLIC",
+    filters: `id[not_equals]${currentId}`,
+  });
+  const response = await fetch(`${endpoint}?${searchParams.toString()}`, {
     headers: {
       "X-MICROCMS-API-KEY": MICROCMS_API_KEY,
       "X-API-KEY": MICROCMS_API_KEY,
     },
-    next: { revalidate: 600, tags: ["blog-list"] },
+    cache: "no-store",
   });
 
   if (!response.ok) {
@@ -105,11 +111,13 @@ async function fetchRelatedBlogs(currentId: string): Promise<RelatedBlogItem[]> 
   }
 
   const data = (await response.json()) as { contents?: MicroCMSBlogDetail[] };
-  return (data.contents ?? []).map((item) => ({
-    id: item.id,
-    title: item.title ?? "無題の記事",
-    updatedAt: item.updatedAt ?? item.publishedAt ?? null,
-  }));
+  return (data.contents ?? [])
+    .filter((item) => item.id && item.id !== currentId)
+    .map((item) => ({
+      id: item.id!,
+      title: item.title ?? "無題の記事",
+      updatedAt: item.updatedAt ?? item.publishedAt ?? null,
+    }));
 }
 
 export default async function BlogDetailPage({ params }: { params: Promise<{ id: string }> }) {

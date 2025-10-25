@@ -99,13 +99,29 @@ main {
 .blog-content h2 {
   font-size: clamp(1.7rem, 1.55rem + 0.45vw, 2.1rem);
   border-left: 6px solid var(--primary);
-  padding-left: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0 9999px 9999px 0;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 18%, white) 0%, rgba(255, 255, 255, 0) 85%);
+  box-shadow: inset 0 -2px 0 rgba(255, 109, 0, 0.15);
 }
 
 .blog-content h3 {
   font-size: clamp(1.5rem, 1.35rem + 0.4vw, 1.85rem);
   border-left: 4px solid color-mix(in srgb, var(--primary) 80%, white 20%);
-  padding-left: 0.65rem;
+  padding-left: 0.75rem;
+  color: #b45309;
+  position: relative;
+}
+
+.blog-content h3::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -0.35rem;
+  width: 3rem;
+  height: 2px;
+  background: color-mix(in srgb, var(--primary) 70%, white 30%);
+  opacity: 0.6;
 }
 
 .blog-content h4 {
