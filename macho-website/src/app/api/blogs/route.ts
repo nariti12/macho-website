@@ -47,13 +47,18 @@ export async function GET() {
   }
 
   try {
-    const response = await fetch(`${MICROCMS_ENDPOINT}?limit=6`, {
+    const params = new URLSearchParams({
+      limit: "6",
+      status: "PUBLIC",
+      orders: "-publishedAt",
+    });
+
+    const response = await fetch(`${MICROCMS_ENDPOINT}?${params.toString()}`, {
       headers: {
         "X-MICROCMS-API-KEY": MICROCMS_API_KEY,
         "X-API-KEY": MICROCMS_API_KEY,
       },
-      // Cache responses for 10 minutes to reduce API calls while keeping content fresh.
-      next: { revalidate: 600 },
+      cache: "no-store",
     });
 
     if (!response.ok) {
