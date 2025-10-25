@@ -7,6 +7,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { CallToolRequestSchema, ListResourcesRequestSchema, ListResourceTemplatesRequestSchema, ListToolsRequestSchema, ReadResourceRequestSchema, GetPromptRequestSchema, ListPromptsRequestSchema, InitializeRequestSchema, McpError, ErrorCode } from "@modelcontextprotocol/sdk/types.js";
+import { ensureRouterRunning } from "./router-launcher.js";
 
 const HOST = process.env.MCP_HOST || process.env.MCPR_HOST || "";
 const PORT = process.env.MCP_PORT || process.env.MCPR_PORT || "3282";
@@ -64,26 +65,36 @@ async function probeTransport() {
     if (SILENT) return null;
     throw new Error(`Failed to connect to MCP at ${BASE_URL}`);
   }
+  const routerInfo = await ensureRouterRunning();
+  const portCandidates = [];
+  if (routerInfo?.port) {
+    portCandidates.push(String(routerInfo.port));
+  }
+  if (!portCandidates.includes(PORT)) {
+    portCandidates.push(PORT);
+  }
   for (const host of hosts) {
     for (const scheme of schemes) {
-      for (const path of CANDIDATE_PATHS) {
-        for (const hdrs of HEADER_VARIANTS(TOKEN)) {
-          const headers = Object.fromEntries(
-            Object.entries({ ...hdrs }).filter(([_, v]) => !!v)
-          );
-          const url = buildUrl(scheme, host, PORT, path);
-          if (scheme === "https") {
-            process.env.NODE_TLS_REJECT_UNAUTHORIZED = process.env.NODE_TLS_REJECT_UNAUTHORIZED || "0";
-          }
-          const transport = new StreamableHTTPClientTransport(url, {
-            requestInit: { headers },
-          });
-          const client = new Client({ name: "mcpr-bridge", version: "0.1.0" });
-          try {
-            await client.connect(transport, { timeoutMs: 8000 });
-            return { client, transport, url, headers };
-          } catch (err) {
-            errors.push(`${url.href} ${JSON.stringify(headers)} -> ${err?.message || err}`);
+      for (const port of portCandidates) {
+        for (const path of CANDIDATE_PATHS) {
+          for (const hdrs of HEADER_VARIANTS(TOKEN)) {
+            const headers = Object.fromEntries(
+              Object.entries({ ...hdrs }).filter(([_, v]) => !!v)
+            );
+            const url = buildUrl(scheme, host, port, path);
+            if (scheme === "https") {
+              process.env.NODE_TLS_REJECT_UNAUTHORIZED = process.env.NODE_TLS_REJECT_UNAUTHORIZED || "0";
+            }
+            const transport = new StreamableHTTPClientTransport(url, {
+              requestInit: { headers },
+            });
+            const client = new Client({ name: "mcpr-bridge", version: "0.1.0" });
+            try {
+              await client.connect(transport, { timeoutMs: 8000 });
+              return { client, transport, url, headers };
+            } catch (err) {
+              errors.push(`${url.href} ${JSON.stringify(headers)} -> ${err?.message || err}`);
+            }
           }
         }
       }
@@ -100,6 +111,8 @@ async function main() {
 
   let httpClient = null;
   let connectedInfo = null;
+  let upstreamCapabilities = { resources: {}, tools: {}, prompts: {} };
+  let upstreamServerInfo = null;
 
   server.onerror = (e) => {
     console.error("[bridge] server error:", e?.message || e);
@@ -114,14 +127,20 @@ async function main() {
         httpClient = client;
         connectedInfo = { url: url.href, headers };
         console.error(`[bridge] connected: ${url.href}`);
+        upstreamCapabilities = httpClient.getServerCapabilities?.() ?? upstreamCapabilities;
+        upstreamServerInfo = httpClient.getServerVersion?.() ?? upstreamServerInfo;
       } else if (!SILENT) {
         console.error("[bridge] MCP not reachable; running with empty capabilities (MCP_SILENT=1 to hide this)");
       }
     }
     return {
       protocolVersion: request.params.protocolVersion,
-      capabilities: { resources: {}, tools: {}, prompts: {} },
-      serverInfo: { name: "mcpr-bridge", version: "0.1.0" },
+      capabilities: upstreamCapabilities,
+      serverInfo:
+        upstreamServerInfo ?? {
+          name: "mcpr-bridge",
+          version: "0.1.0",
+        },
     };
   });
 

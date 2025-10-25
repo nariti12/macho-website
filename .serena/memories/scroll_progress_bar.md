@@ -1,0 +1,1 @@
+Homepage now has a fixed scroll progress bar: state hook uses scroll listener, renders at top with background rgba(255,138,35,0.15) and progress bar color #C24C00. Present in src/app/page.tsx.

@@ -1,37 +1,25 @@
 import { Client } from "@modelcontextprotocol/sdk/client";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { spawn } from "node:child_process";
 import path from "node:path";
+import { ensureRouterRunning } from "./router-launcher.js";
 
 async function main() {
+  const routerInfo = await ensureRouterRunning();
+  const host = process.env.MCP_HOST || "127.0.0.1";
+  const port =
+    (routerInfo?.port && String(routerInfo.port)) ||
+    process.env.MCP_PORT ||
+    process.env.MCPR_PORT ||
+    "3282";
   const configPath = path.resolve(process.cwd(), "router.config.json");
   const isWin = process.platform === "win32";
   const routerCmdEnv = process.env.ROUTER_CMD?.trim();
-  let cmd = isWin ? "cmd.exe" : "npx";
+  const binDir = path.resolve(process.cwd(), "node_modules", ".bin");
+  let cmd = isWin
+    ? path.join(binDir, "mcpr-cli.cmd")
+    : path.join(binDir, "mcpr-cli");
   // default to mcpr-cli bridge to the desktop router
-  let args = isWin
-    ? [
-        "/d",
-        "/s",
-        "/c",
-        "npx",
-        "-y",
-        "mcpr-cli@latest",
-        "connect",
-        "--host",
-        process.env.MCP_HOST || "127.0.0.1",
-        "--port",
-        process.env.MCP_PORT || "3282",
-      ]
-    : [
-        "-y",
-        "mcpr-cli@latest",
-        "connect",
-        "--host",
-        process.env.MCP_HOST || "127.0.0.1",
-        "--port",
-        process.env.MCP_PORT || "3282",
-      ];
+  let args = ["connect", "--host", host, "--port", port];
 
   if (routerCmdEnv) {
     const parts = routerCmdEnv.split(" ").filter(Boolean);
@@ -68,6 +56,12 @@ async function main() {
   } catch (err) {
     console.error("Failed to connect to router:", err?.message || err);
     process.exitCode = 1;
+  } finally {
+    try {
+      await client.close();
+    } catch (closeErr) {
+      console.error("Failed to close MCP client cleanly:", closeErr?.message || closeErr);
+    }
   }
 }
 

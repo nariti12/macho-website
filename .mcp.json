@@ -1,0 +1,47 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "bash",
+      "args": [
+        "-lc",
+        "npx -y @modelcontextprotocol/server-filesystem /home/narita/win_d_dev/macho"
+      ],
+      "env": {
+        "PATH": "/root/.local/bin:/home/narita/.local/bin:/usr/bin:/usr/local/bin"
+      }
+    },
+    "serena": {
+      "command": "serena-mcp-server",
+      "args": [
+        "--context",
+        "codex",
+        "--project",
+        "/home/narita/win_d_dev/macho"
+      ],
+      "env": {
+        "PATH": "/root/.local/bin:/home/narita/.local/bin:/usr/bin:/usr/local/bin"
+      }
+    },
+    "context7": {
+      "command": "bash",
+      "args": [
+        "-lc",
+        "npx -y @upstash/context7-mcp@latest"
+      ],
+      "env": {
+        "PATH": "/root/.local/bin:/home/narita/.local/bin:/usr/bin:/usr/local/bin",
+        "CONTEXT7_API_KEY": "${env:CONTEXT7_API_KEY}"
+      }
+    },
+    "memory_bank": {
+      "command": "node",
+      "args": [
+        "/home/narita/win_d_dev/macho/memory-bank-server.js"
+      ],
+      "env": {
+        "PATH": "${env:PATH}",
+        "MEMORY_BANK_PATH": "/home/narita/win_d_dev/macho/memory-bank-data/memories.json"
+      }
+    }
+  }
+}

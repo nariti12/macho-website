@@ -1,4 +1,11 @@
 {
-  "transport": "stdio",
-  "servers": []
+  "port": 3282,
+  "servers": [
+    {
+      "id": "memory-bank",
+      "name": "Memory Bank",
+      "command": "node",
+      "args": ["memory-bank-server.js"]
+    }
+  ]
 }

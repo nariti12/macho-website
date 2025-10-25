@@ -1,0 +1,1 @@
+Hero: 2×3 large buttons, muscle character besides them with `lg:-translate-x-10 lg:-translate-y-28`. Blog section: `max-w-7xl`, `mt-0`, `mb-12`, `transform lg:-translate-y-12`, icon `/picture/image.png`, appears immediately after the fold.

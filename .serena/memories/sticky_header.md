@@ -1,0 +1,1 @@
+Header now sticks via `sticky top-4 z-40 flex justify-between items-start px-12 pt-6 pb-4` with no background color; only title and profile remain visible while scrolling.

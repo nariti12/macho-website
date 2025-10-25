@@ -1,0 +1,1 @@
+Scroll progress bar now uses #FF8A23 for the indicator with translucent background rgba(255,173,51,0.2).
