@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { SiteHeader } from "@/components/site-header";
@@ -118,6 +119,55 @@ async function fetchRelatedBlogs(currentId: string): Promise<RelatedBlogItem[]> 
       title: item.title ?? "無題の記事",
       updatedAt: item.updatedAt ?? item.publishedAt ?? null,
     }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const blog = await fetchBlogDetail(id);
+
+  if (!blog) {
+    return {
+      title: "記事が見つかりません",
+      description: "指定された記事が存在しません。",
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
+  }
+
+  const pageUrl = buildUrl(`/blog/${blog.id}`);
+
+  return {
+    title: `${blog.title}｜マチョ田の部屋`,
+    description: blog.summary || undefined,
+    alternates: {
+      canonical: pageUrl,
+    },
+    openGraph: {
+      title: `${blog.title}｜マチョ田の部屋`,
+      description: blog.summary || undefined,
+      url: pageUrl,
+      type: "article",
+      images: blog.imageUrl
+        ? [
+            {
+              url: blog.imageUrl,
+            },
+          ]
+        : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${blog.title}｜マチョ田の部屋`,
+      description: blog.summary || undefined,
+      images: blog.imageUrl ? [blog.imageUrl] : undefined,
+    },
+  };
 }
 
 export default async function BlogDetailPage({ params }: { params: Promise<{ id: string }> }) {
