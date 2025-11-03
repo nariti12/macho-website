@@ -25,6 +25,7 @@ interface MicroCMSBlog {
   category?: MicroCMSCategory | null;
   summary?: string;
   description?: string;
+  metaDescription?: string;
   body?: string;
   content?: string;
   richEditor?: string;
@@ -39,7 +40,10 @@ interface MicroCMSResponse {
   contents?: MicroCMSBlog[];
 }
 
+const hasText = (value?: string | null): value is string => typeof value === "string" && value.trim().length > 0;
 const stripHtml = (value: string) => value.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+const truncate = (value: string, length = 160) =>
+  value.length > length ? `${value.slice(0, length).trimEnd()}…` : value;
 
 export async function GET() {
   if (!MICROCMS_API_KEY) {
@@ -72,8 +76,23 @@ export async function GET() {
     const data = (await response.json()) as MicroCMSResponse;
 
     const items = (data.contents ?? []).map((item) => {
-      const rawSummary = item.summary ?? item.description ?? item.richEditor ?? item.content ?? item.body ?? "";
-      const summaryText = rawSummary ? stripHtml(rawSummary) : DEFAULT_SUMMARY;
+      const rawSummary = hasText(item.summary)
+        ? item.summary
+        : !hasText(item.metaDescription) && hasText(item.description)
+          ? item.description
+          : item.richEditor ?? item.content ?? item.body ?? "";
+
+      const summaryText = rawSummary ? truncate(stripHtml(rawSummary)) : DEFAULT_SUMMARY;
+
+      const metaDescription = truncate(
+        stripHtml(
+          hasText(item.metaDescription)
+            ? item.metaDescription
+            : hasText(item.description)
+              ? item.description!
+              : summaryText,
+        ),
+      );
 
       const imageUrl =
         item.thumbnail?.url ?? item.eyecatch?.url ?? item.mainvisual?.url ?? FALLBACK_IMAGE;
@@ -85,6 +104,7 @@ export async function GET() {
         title: item.title ?? "無題の記事",
         category: item.category?.name ?? DEFAULT_CATEGORY,
         summary: summaryText || DEFAULT_SUMMARY,
+        metaDescription,
         imageUrl,
         updatedAt,
       };

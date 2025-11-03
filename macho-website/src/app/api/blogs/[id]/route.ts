@@ -20,6 +20,7 @@ interface MicroCMSBlogDetail {
   category?: MicroCMSCategory | null;
   summary?: string;
   description?: string;
+  metaDescription?: string;
   body?: string;
   content?: string;
   richEditor?: string;
@@ -30,9 +31,31 @@ interface MicroCMSBlogDetail {
   mainvisual?: MicroCMSImage | null;
 }
 
+const hasText = (value?: string | null): value is string => typeof value === "string" && value.trim().length > 0;
+const stripHtml = (value: string) => value.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+const truncate = (value: string, length = 160) =>
+  value.length > length ? `${value.slice(0, length).trimEnd()}…` : value;
+
 const normalize = (data: MicroCMSBlogDetail) => {
   const rawBody = data.richEditor ?? data.content ?? data.body ?? "";
-  const fallbackSummary = data.summary ?? data.description ?? "";
+  const sanitizedBody = stripHtml(rawBody);
+
+  const summarySource = hasText(data.summary)
+    ? data.summary
+    : !hasText(data.metaDescription) && hasText(data.description)
+      ? data.description
+      : sanitizedBody;
+
+  const summary = truncate(stripHtml(summarySource));
+  const metaDescription = truncate(
+    stripHtml(
+      hasText(data.metaDescription)
+        ? data.metaDescription
+        : hasText(data.description)
+          ? data.description!
+          : summary,
+    ),
+  );
 
   return {
     id: data.id,
@@ -41,7 +64,8 @@ const normalize = (data: MicroCMSBlogDetail) => {
     publishedAt: data.publishedAt ?? null,
     updatedAt: data.updatedAt ?? null,
     body: rawBody,
-    summary: fallbackSummary,
+    summary,
+    metaDescription,
     imageUrl: data.thumbnail?.url ?? data.eyecatch?.url ?? data.mainvisual?.url ?? null,
   };
 };

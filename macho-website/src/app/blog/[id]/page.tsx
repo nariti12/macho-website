@@ -27,6 +27,7 @@ interface MicroCMSBlogDetail {
   category?: MicroCMSCategory | null;
   summary?: string;
   description?: string;
+  metaDescription?: string;
   body?: string;
   content?: string;
   richEditor?: string;
@@ -43,10 +44,31 @@ interface RelatedBlogItem {
   updatedAt: string | null;
 }
 
+const hasText = (value?: string | null): value is string => typeof value === "string" && value.trim().length > 0;
+const stripHtml = (value: string) => value.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+const truncate = (value: string, length = 160) =>
+  value.length > length ? `${value.slice(0, length).trimEnd()}…` : value;
+
 const normalizeBlogDetail = (data: MicroCMSBlogDetail) => {
   const rawBody = data.richEditor ?? data.content ?? data.body ?? "";
-  const stripHtml = (value: string) => value.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
-  const summary = stripHtml(data.summary ?? data.description ?? "");
+  const sanitizedBody = stripHtml(rawBody);
+
+  const summarySource = hasText(data.summary)
+    ? data.summary
+    : !hasText(data.metaDescription) && hasText(data.description)
+      ? data.description
+      : sanitizedBody;
+
+  const summary = truncate(stripHtml(summarySource));
+  const metaDescription = truncate(
+    stripHtml(
+      hasText(data.metaDescription)
+        ? data.metaDescription
+        : hasText(data.description)
+          ? data.description!
+          : summary,
+    ),
+  );
 
   return {
     id: data.id,
@@ -56,6 +78,7 @@ const normalizeBlogDetail = (data: MicroCMSBlogDetail) => {
     updatedAt: data.updatedAt ?? null,
     body: rawBody,
     summary,
+    metaDescription,
     imageUrl: data.thumbnail?.url ?? data.eyecatch?.url ?? data.mainvisual?.url ?? FALLBACK_IMAGE,
   };
 };
@@ -144,13 +167,13 @@ export async function generateMetadata({
 
   return {
     title: `${blog.title}｜マチョ田の部屋`,
-    description: blog.summary || undefined,
+    description: blog.metaDescription || blog.summary || undefined,
     alternates: {
       canonical: pageUrl,
     },
     openGraph: {
       title: `${blog.title}｜マチョ田の部屋`,
-      description: blog.summary || undefined,
+      description: blog.metaDescription || blog.summary || undefined,
       url: pageUrl,
       type: "article",
       images: blog.imageUrl
@@ -164,7 +187,7 @@ export async function generateMetadata({
     twitter: {
       card: "summary_large_image",
       title: `${blog.title}｜マチョ田の部屋`,
-      description: blog.summary || undefined,
+      description: blog.metaDescription || blog.summary || undefined,
       images: blog.imageUrl ? [blog.imageUrl] : undefined,
     },
   };
@@ -193,7 +216,7 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ id:
     "@context": "https://schema.org",
     "@type": "Article",
     headline: blog.title,
-    description: blog.summary,
+    description: blog.metaDescription ?? blog.summary,
     datePublished: blog.publishedAt ?? blog.updatedAt ?? undefined,
     dateModified: blog.updatedAt ?? blog.publishedAt ?? undefined,
     author: {
