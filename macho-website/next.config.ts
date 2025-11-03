@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 import path from "path";
 
 const nextConfig: NextConfig = {
-  outputFileTracingRoot: path.join(__dirname, "../"),
+  outputFileTracingRoot: process.env.VERCEL ? __dirname : path.join(__dirname, "../"),
   images: {
     remotePatterns: [
       {
