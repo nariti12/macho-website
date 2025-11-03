@@ -320,12 +320,6 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ id:
             </div>
           )}
 
-          {blog.summary && (
-            <p className="rounded-3xl bg-[#fff4eb] px-6 py-4 text-sm font-medium leading-relaxed text-gray-600 shadow-inner sm:text-base md:px-8 md:py-5 md:text-lg">
-              {blog.summary}
-            </p>
-          )}
-
           <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: articleStructuredData }} />
           <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbStructuredData }} />
           <article className="blog-content">
