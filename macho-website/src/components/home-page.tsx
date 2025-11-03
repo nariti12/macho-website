@@ -146,11 +146,6 @@ export function HomePage() {
       url: buildUrl(""),
       description:
         "筋トレの悩みを解決する統合プラットフォーム。用途別最強筋トレメニューやおすすめ情報をお届けします。",
-      potentialAction: {
-        "@type": "SearchAction",
-        target: `${buildUrl("/blog")}?q={search_term_string}`,
-        "query-input": "required name=search_term_string",
-      },
     },
     {
       "@context": "https://schema.org",
