@@ -216,7 +216,7 @@ export function HomePage() {
           ref={blogSectionRef}
           className="relative mx-auto mt-20 mb-16 w-[98%] max-w-[1600px] rounded-[32px] border border-white/35 bg-[rgba(188,143,80,0.9)] px-4 py-12 shadow-[0_30px_140px_-70px_rgba(113,63,18,0.7)] sm:px-6 md:mt-32 md:rounded-[44px] md:px-16 md:py-16"
         >
-          <div className="mb-10 flex items-center gap-3 sm:gap-4">
+          <div className="mb-10 flex flex-wrap items-center gap-2 sm:gap-3">
             <Image
               src="/picture/image.png"
               alt="Blog icon"
@@ -224,7 +224,10 @@ export function HomePage() {
               height={48}
               className="h-10 w-10 rounded-xl object-cover shadow-lg sm:h-12 sm:w-12"
             />
-            <h2 className="text-2xl font-bold text-white sm:text-3xl">Blog</h2>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
+              <h2 className="text-2xl font-bold text-white sm:text-3xl">Blog</h2>
+              <span className="text-sm font-medium text-white/80 sm:text-base">-筋トレとライフハック-</span>
+            </div>
           </div>
 
           <div className="mb-10 grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-3">
