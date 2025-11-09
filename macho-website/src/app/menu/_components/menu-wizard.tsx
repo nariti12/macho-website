@@ -14,6 +14,7 @@ import {
   Dumbbell,
   RotateCcw,
   UserRound,
+  Youtube,
 } from "lucide-react";
 import {
   Freq,
@@ -69,6 +70,12 @@ const frequencyOptions: Array<{ value: Freq; label: string }> = [
   { value: "6", label: "週6回" },
   { value: "7", label: "週7回" },
 ];
+
+const benchPressVideoLink = {
+  name: "ベンチプレス",
+  reps: "9回 × 5 set",
+  url: "https://www.youtube.com/watch?v=5_zWHkSjMxI",
+};
 
 const filterFrequencyOptions = (
   gender: Gender | null,
@@ -794,7 +801,20 @@ function ProgramDayCard({ day }: ProgramDayCardProps) {
           >
             {day.items.map((item) => (
               <li key={item.name} className="flex flex-col gap-1 rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm">
-                <span className="font-semibold text-gray-900">{item.name}</span>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-semibold text-gray-900">{item.name}</span>
+                  {item.name === benchPressVideoLink.name && item.reps === benchPressVideoLink.reps && (
+                    <Link
+                      href={benchPressVideoLink.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 rounded-full border border-red-500/40 bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-600 transition hover:border-red-500/70 hover:bg-red-500/20"
+                    >
+                      <Youtube className="h-4 w-4" aria-hidden="true" />
+                      <span>動画</span>
+                    </Link>
+                  )}
+                </div>
                 <span className="text-xs uppercase tracking-wide text-[var(--primary)]">{item.reps}</span>
                 {item.note && <span className="text-xs text-gray-500">{item.note}</span>}
               </li>
