@@ -17,6 +17,19 @@ import type {
   RankingKey,
 } from "@/lib/protein-rankings/types";
 
+const normalizeBrandKey = (candidate: EnrichedProduct) =>
+  `${candidate.product.shopName ?? ""} ${candidate.product.title}`
+    .toLowerCase()
+    .replace(/【[^】]*】/g, " ")
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/[【】\[\]（）()]/g, " ")
+    .replace(/\b(wpi|wpc|ホエイ|ソイ|プロテイン|protein|送料無料|公式|無添加|人工甘味料不使用|ダイエット|女性)\b/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .slice(0, 3)
+    .join("-");
+
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 
 const percentile = (values: number[], ratio: number) => {
@@ -118,16 +131,34 @@ const buildComment = (rankingKey: RankingKey, candidate: EnrichedProduct) => {
 };
 
 const sortAndTrim = (items: RankedProductInput[]) =>
-  items
-    .sort((left, right) => right.score - left.score)
-    .slice(0, TOP_RANKING_LIMIT)
-    .map((item, index) => ({
-      ...item,
-      score: Number(item.score.toFixed(5)),
-      scoreBreakdown: item.scoreBreakdown,
-      comment: item.comment,
-      rankPosition: index + 1,
-    }));
+  {
+    const seenBrands = new Set<string>();
+
+    return items
+      .sort((left, right) => right.score - left.score)
+      .filter((item) => {
+        const brandKey = normalizeBrandKey(item);
+
+        if (!brandKey) {
+          return true;
+        }
+
+        if (seenBrands.has(brandKey)) {
+          return false;
+        }
+
+        seenBrands.add(brandKey);
+        return true;
+      })
+      .slice(0, TOP_RANKING_LIMIT)
+      .map((item, index) => ({
+        ...item,
+        score: Number(item.score.toFixed(5)),
+        scoreBreakdown: item.scoreBreakdown,
+        comment: item.comment,
+        rankPosition: index + 1,
+      }));
+  };
 
 export const buildRankings = (
   candidates: EnrichedProduct[],

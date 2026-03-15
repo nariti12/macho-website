@@ -71,9 +71,7 @@ const findProteinPerServing = (text: string) => {
   if (match) {
     return Number(match[1]);
   }
-
-  const fallback = text.match(/(?:たんぱく質|タンパク質|蛋白質)\s*[:：]?\s*(\d+(?:\.\d+)?)\s*g/i);
-  return fallback ? Number(fallback[1]) : null;
+  return null;
 };
 
 const findProteinPer100g = (text: string) => {

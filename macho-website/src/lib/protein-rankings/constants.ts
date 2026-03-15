@@ -39,6 +39,14 @@ export const BANNED_PRODUCT_KEYWORDS = [
   "青汁",
 ] as const;
 
+export const SUSPICIOUS_MARKETING_KEYWORDS = [
+  "最安値挑戦中",
+  "箱プロ",
+  "コスパ最強",
+  "激安",
+  "業務用",
+] as const;
+
 export const LIKELY_PROTEIN_KEYWORDS = [
   "プロテイン",
   "protein",
