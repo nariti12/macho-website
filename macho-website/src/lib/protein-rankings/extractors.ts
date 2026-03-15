@@ -25,13 +25,14 @@ const extractWeightCandidates = (text: string) =>
 const findContentWeight = (title: string, description: string) => {
   const titleWeights = extractWeightCandidates(title);
   const uniqueTitleWeights = Array.from(new Set(titleWeights.map((value) => Math.round(value))));
+  const hasAmbiguousSizeOptions = uniqueTitleWeights.length > 1;
 
   if (uniqueTitleWeights.length === 1) {
-    return uniqueTitleWeights[0];
+    return { contentWeightG: uniqueTitleWeights[0], hasAmbiguousSizeOptions };
   }
 
   if (uniqueTitleWeights.length > 1) {
-    return null;
+    return { contentWeightG: null, hasAmbiguousSizeOptions };
   }
 
   const descriptionWeights = extractWeightCandidates(description);
@@ -40,10 +41,16 @@ const findContentWeight = (title: string, description: string) => {
   );
 
   if (uniqueDescriptionWeights.length === 1) {
-    return uniqueDescriptionWeights[0];
+    return {
+      contentWeightG: uniqueDescriptionWeights[0],
+      hasAmbiguousSizeOptions: uniqueDescriptionWeights.length > 1,
+    };
   }
 
-  return null;
+  return {
+    contentWeightG: null,
+    hasAmbiguousSizeOptions: uniqueDescriptionWeights.length > 1,
+  };
 };
 
 const findServingSize = (text: string) => {
@@ -121,7 +128,10 @@ export const extractMetricsFromProduct = (product: NormalizedRakutenProduct): Pr
   const normalizedTitle = stripHtml(product.title);
   const normalizedDescription = stripHtml(product.description);
   const normalizedText = `${normalizedTitle} ${normalizedDescription}`.trim();
-  const contentWeightG = findContentWeight(normalizedTitle, normalizedDescription);
+  const { contentWeightG, hasAmbiguousSizeOptions } = findContentWeight(
+    normalizedTitle,
+    normalizedDescription
+  );
   const servingSizeG = findServingSize(normalizedText);
   const proteinPerServingG = findProteinPerServing(normalizedText);
   const proteinPer100gG = findProteinPer100g(normalizedText);
@@ -146,12 +156,14 @@ export const extractMetricsFromProduct = (product: NormalizedRakutenProduct): Pr
     beautyKeywordMatches,
     dietKeywordMatches,
     pricePerProteinGram,
+    hasAmbiguousSizeOptions,
     excluded: !isLikelyProteinProduct(normalizedText),
     exclusionReason: !isLikelyProteinProduct(normalizedText) ? "プロテイン商品として判定できませんでした" : null,
     rawExtraction: {
       normalizedTitle,
       normalizedDescription,
       normalizedText,
+      hasAmbiguousSizeOptions,
       titleWeightCandidates: extractWeightCandidates(normalizedTitle),
       descriptionWeightCandidates: extractWeightCandidates(normalizedDescription),
     },

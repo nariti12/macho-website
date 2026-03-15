@@ -57,7 +57,7 @@ const renderHighlight = (rankingKey: RankingKey, item: RankingCardItem) => {
             value={
               item.metrics?.price_per_protein_gram
                 ? `約${item.metrics.price_per_protein_gram.toFixed(1)}円`
-                : "コスパ良好"
+                : "算出不可"
             }
           />
           <MetricChip

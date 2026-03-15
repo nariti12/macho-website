@@ -16,6 +16,10 @@ export const TOP_RANKING_LIMIT = 5;
 
 export const MIN_REVIEW_COUNT = 5;
 export const MIN_REVIEW_AVERAGE = 3.8;
+export const STRICT_MIN_REVIEW_COUNT = 30;
+export const COST_RANKING_MIN_CONTENT_WEIGHT_G = 1000;
+export const MIN_PROTEIN_RATIO_FOR_COST = 0.65;
+export const MIN_PROTEIN_RATIO_FOR_COMPOSITION = 0.7;
 
 export const BANNED_PRODUCT_KEYWORDS = [
   "シェイカー",

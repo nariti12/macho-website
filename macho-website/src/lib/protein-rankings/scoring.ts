@@ -1,7 +1,11 @@
 import {
   COMPOSITION_WEIGHTS,
+  COST_RANKING_MIN_CONTENT_WEIGHT_G,
   COST_PERFORMANCE_WEIGHTS,
   MAX_EXPERT_BONUS,
+  MIN_PROTEIN_RATIO_FOR_COMPOSITION,
+  MIN_PROTEIN_RATIO_FOR_COST,
+  STRICT_MIN_REVIEW_COUNT,
   TOP_RANKING_LIMIT,
   WOMEN_WEIGHTS,
 } from "@/lib/protein-rankings/constants";
@@ -100,7 +104,7 @@ const buildComment = (rankingKey: RankingKey, candidate: EnrichedProduct) => {
       if (candidate.metrics.pricePerProteinGram) {
         return `たんぱく質 1g あたり約 ${candidate.metrics.pricePerProteinGram.toFixed(1)} 円で、レビュー評価とのバランスが良好です。`;
       }
-      return "価格とレビューのバランスがよく、初めてでも選びやすい定番候補です。";
+      return "固定容量と栄養情報が揃った商品の中で、価格とレビューのバランスがよい候補です。";
     case "composition":
       return candidate.metrics.proteinRatio
         ? `たんぱく質含有率は約 ${(candidate.metrics.proteinRatio * 100).toFixed(1)}% で、成分重視で選びやすい一品です。`
@@ -147,20 +151,52 @@ export const buildRankings = (
     ])
   );
 
-  const costCandidates = eligible.filter(
-    (candidate) => candidate.metrics.pricePerProteinGram || candidate.metrics.contentWeightG
-  );
+  const costCandidates = eligible.filter((candidate) => {
+    const isStandardWhey =
+      candidate.metrics.proteinType === "whey" ||
+      candidate.metrics.proteinType === "wpc" ||
+      candidate.metrics.proteinType === "wpi";
+    const hasReliableCostData =
+      candidate.metrics.pricePerProteinGram !== null &&
+      candidate.metrics.contentWeightG !== null &&
+      candidate.metrics.contentWeightG >= COST_RANKING_MIN_CONTENT_WEIGHT_G &&
+      (candidate.metrics.proteinRatio ?? 0) >= MIN_PROTEIN_RATIO_FOR_COST &&
+      !candidate.metrics.hasAmbiguousSizeOptions;
+    const notWomenPositioned =
+      candidate.metrics.womenKeywordMatches.length < 2 &&
+      candidate.metrics.beautyKeywordMatches.length === 0;
+
+    return (
+      isStandardWhey &&
+      hasReliableCostData &&
+      notWomenPositioned &&
+      candidate.product.reviewCount >= STRICT_MIN_REVIEW_COUNT
+    );
+  });
   const costValues = costCandidates.map((candidate) =>
-    candidate.metrics.pricePerProteinGram ?? candidate.product.priceYen / Math.max(candidate.metrics.contentWeightG ?? 1000, 100)
+    candidate.metrics.pricePerProteinGram ??
+    candidate.product.priceYen / Math.max(candidate.metrics.contentWeightG ?? 1000, 100)
   );
   const costNormalizer = createRobustNormalizer(costValues, false);
 
-  const compositionCandidates = eligible.filter((candidate) => candidate.metrics.proteinRatio !== null);
+  const compositionCandidates = eligible.filter(
+    (candidate) =>
+      candidate.metrics.proteinRatio !== null &&
+      candidate.metrics.proteinPer100gG !== null &&
+      (candidate.metrics.proteinRatio ?? 0) >= MIN_PROTEIN_RATIO_FOR_COMPOSITION &&
+      !candidate.metrics.hasAmbiguousSizeOptions
+  );
   const purityNormalizer = createRobustNormalizer(
     compositionCandidates.map((candidate) => candidate.metrics.proteinRatio ?? 0)
   );
 
-  const womenCandidates = eligible;
+  const womenCandidates = eligible.filter(
+    (candidate) =>
+      candidate.metrics.proteinType === "soy" ||
+      candidate.metrics.womenKeywordMatches.length > 0 ||
+      candidate.metrics.beautyKeywordMatches.length > 0 ||
+      candidate.metrics.dietKeywordMatches.length > 0
+  );
   const womenCostNormalizer = createRobustNormalizer(
     womenCandidates
       .filter((candidate) => candidate.metrics.pricePerProteinGram)

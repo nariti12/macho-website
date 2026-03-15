@@ -31,6 +31,7 @@ export type ProductMetricInput = {
   beautyKeywordMatches: string[];
   dietKeywordMatches: string[];
   pricePerProteinGram: number | null;
+  hasAmbiguousSizeOptions?: boolean;
   excluded: boolean;
   exclusionReason: string | null;
   rawExtraction: Record<string, unknown>;
