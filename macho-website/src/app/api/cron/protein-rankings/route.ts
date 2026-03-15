@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { refreshProteinRankings } from "@/lib/protein-rankings/service";
@@ -42,6 +43,7 @@ const handleCronRequest = async (request: Request) => {
     }
 
     const result = await refreshProteinRankings();
+    revalidatePath("/supplements-top3");
     console.info("Protein rankings refreshed", result);
 
     return NextResponse.json({
