@@ -13,18 +13,37 @@ const stripHtml = (value: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
-const findLargestWeight = (text: string) => {
-  const matches = Array.from(text.matchAll(/(\d+(?:\.\d+)?)\s?(kg|g)/gi));
-  const grams = matches
+const extractWeightCandidates = (text: string) =>
+  Array.from(text.matchAll(/(\d+(?:\.\d+)?)\s?(kg|g)/gi))
     .map((match) => {
       const amount = Number(match[1]);
       const unit = match[2].toLowerCase();
       return unit === "kg" ? amount * 1000 : amount;
     })
-    .filter((value) => value >= 100 && value <= 6000)
-    .sort((left, right) => right - left);
+    .filter((value) => value >= 100 && value <= 6000);
 
-  return grams[0] ?? null;
+const findContentWeight = (title: string, description: string) => {
+  const titleWeights = extractWeightCandidates(title);
+  const uniqueTitleWeights = Array.from(new Set(titleWeights.map((value) => Math.round(value))));
+
+  if (uniqueTitleWeights.length === 1) {
+    return uniqueTitleWeights[0];
+  }
+
+  if (uniqueTitleWeights.length > 1) {
+    return null;
+  }
+
+  const descriptionWeights = extractWeightCandidates(description);
+  const uniqueDescriptionWeights = Array.from(
+    new Set(descriptionWeights.map((value) => Math.round(value)))
+  );
+
+  if (uniqueDescriptionWeights.length === 1) {
+    return uniqueDescriptionWeights[0];
+  }
+
+  return null;
 };
 
 const findServingSize = (text: string) => {
@@ -99,8 +118,10 @@ const isLikelyProteinProduct = (text: string) =>
   LIKELY_PROTEIN_KEYWORDS.some((keyword) => text.toLowerCase().includes(keyword.toLowerCase()));
 
 export const extractMetricsFromProduct = (product: NormalizedRakutenProduct): ProductMetricInput => {
-  const normalizedText = stripHtml(`${product.title} ${product.description}`);
-  const contentWeightG = findLargestWeight(normalizedText);
+  const normalizedTitle = stripHtml(product.title);
+  const normalizedDescription = stripHtml(product.description);
+  const normalizedText = `${normalizedTitle} ${normalizedDescription}`.trim();
+  const contentWeightG = findContentWeight(normalizedTitle, normalizedDescription);
   const servingSizeG = findServingSize(normalizedText);
   const proteinPerServingG = findProteinPerServing(normalizedText);
   const proteinPer100gG = findProteinPer100g(normalizedText);
@@ -128,7 +149,11 @@ export const extractMetricsFromProduct = (product: NormalizedRakutenProduct): Pr
     excluded: !isLikelyProteinProduct(normalizedText),
     exclusionReason: !isLikelyProteinProduct(normalizedText) ? "プロテイン商品として判定できませんでした" : null,
     rawExtraction: {
+      normalizedTitle,
+      normalizedDescription,
       normalizedText,
+      titleWeightCandidates: extractWeightCandidates(normalizedTitle),
+      descriptionWeightCandidates: extractWeightCandidates(normalizedDescription),
     },
   };
 };
