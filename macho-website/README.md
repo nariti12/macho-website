@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Overview
+
+`macho-website` は Next.js App Router ベースのサイトです。今回、`/supplements-top3` に「プロテイン/サプリ 最強TOP5」ページを実装し、楽天 API から候補商品を収集して Supabase に保存したランキングを表示する構成を追加しています。
 
 ## Getting Started
 
-First, run the development server:
+依存関係を入れて、開発サーバーを起動します。
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`http://localhost:3000` を開くとサイトを確認できます。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`.env.example` をもとに以下を設定してください。
 
-## Learn More
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `RAKUTEN_APPLICATION_ID`
+- `RAKUTEN_ACCESS_KEY`
+- `RAKUTEN_AFFILIATE_ID`
+- `CRON_SECRET`
 
-To learn more about Next.js, take a look at the following resources:
+## Supabase Migration
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+ランキング保存用のテーブルは `supabase/migrations/20260314120000_add_protein_rankings.sql` で追加しています。
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+supabase db push
+```
 
-## Deploy on Vercel
+対象テーブル:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `products`
+- `product_metrics`
+- `rankings`
+- `expert_signals`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`expert_signals` は将来の専門家加点用の拡張ポイントで、初期版では未使用です。
+
+## Ranking Update Flow
+
+表示ページは保存済みランキングだけを読み込みます。楽天 API への直接アクセスは cron 側に限定しています。
+
+1. `/api/cron/protein-rankings` が楽天 API から候補商品を取得
+2. 商品名や説明から内容量、たんぱく質量、女性向け/美容系キーワードを正規表現ベースで抽出
+3. 除外ルールとスコア計算を適用
+4. Supabase の `products` / `product_metrics` / `rankings` に保存
+5. `/supplements-top3` は保存済みデータを表示
+
+## Vercel Cron
+
+`vercel.json` に日次 cron を追加しています。
+
+```json
+{
+  "crons": [
+    {
+      "path": "/api/cron/protein-rankings",
+      "schedule": "0 2 * * *"
+    }
+  ]
+}
+```
+
+Vercel では `CRON_SECRET` を設定すると、Cron Job 実行時に `Authorization: Bearer <CRON_SECRET>` が自動付与されます。ローカルで手動実行する場合は次のように叩けます。
+
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/protein-rankings
+```
+
+## Verification
+
+最低限の静的チェック:
+
+```bash
+npm run lint
+```
+
+運用前には migration 適用後に cron を一度手動実行し、ランキング表示を確認してください。

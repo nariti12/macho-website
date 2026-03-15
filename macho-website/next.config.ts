@@ -15,6 +15,21 @@ const nextConfig: NextConfig = {
         hostname: "macho.microcms.io",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "thumbnail.image.rakuten.co.jp",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "hbb.afl.rakuten.co.jp",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "image.rakuten.co.jp",
+        pathname: "/**",
+      },
     ],
   },
   async redirects() {

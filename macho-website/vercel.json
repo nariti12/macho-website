@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/protein-rankings",
+      "schedule": "0 2 * * *"
+    }
+  ]
+}
