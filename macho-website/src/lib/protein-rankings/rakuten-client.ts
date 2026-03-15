@@ -56,6 +56,9 @@ const getRakutenAccessKey = () => {
   return accessKey;
 };
 
+const getRakutenSiteOrigin = () =>
+  process.env.RAKUTEN_SITE_ORIGIN?.replace(/\/$/, "") ?? "https://www.machoda.com";
+
 const normalizeRakutenItem = (
   item: RakutenItem,
   keyword: string,
@@ -80,6 +83,7 @@ const normalizeRakutenItem = (
 export const fetchRakutenProteinCandidates = async () => {
   const applicationId = getRakutenApplicationId();
   const accessKey = getRakutenAccessKey();
+  const siteOrigin = getRakutenSiteOrigin();
   const aggregate = new Map<string, NormalizedRakutenProduct>();
 
   for (const keyword of PROTEIN_SEARCH_QUERIES) {
@@ -101,12 +105,17 @@ export const fetchRakutenProteinCandidates = async () => {
       const response = await fetch(`${RAKUTEN_ENDPOINT}?${params.toString()}`, {
         headers: {
           Authorization: `Bearer ${accessKey}`,
+          Referer: `${siteOrigin}/`,
+          Origin: siteOrigin,
+          Accept: "application/json",
+          "User-Agent": "machoda-protein-rankings/1.0",
         },
         next: { revalidate: 0 },
       });
 
       if (!response.ok) {
-        throw new Error(`Rakuten API request failed: ${response.status}`);
+        const errorBody = await response.text();
+        throw new Error(`Rakuten API request failed: ${response.status} ${errorBody}`.trim());
       }
 
       const data = (await response.json()) as RakutenResponse;
