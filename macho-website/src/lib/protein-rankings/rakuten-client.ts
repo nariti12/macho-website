@@ -1,4 +1,6 @@
 import {
+  RAKUTEN_MAX_RETRIES,
+  RAKUTEN_REQUEST_DELAY_MS,
   PROTEIN_SEARCH_QUERIES,
   RAKUTEN_SEARCH_HITS,
   RAKUTEN_SEARCH_PAGES,
@@ -59,6 +61,45 @@ const getRakutenAccessKey = () => {
 const getRakutenSiteOrigin = () =>
   process.env.RAKUTEN_SITE_ORIGIN?.replace(/\/$/, "") ?? "https://www.machoda.com";
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const fetchRakutenPage = async (url: string, accessKey: string, siteOrigin: string) => {
+  let attempt = 0;
+
+  while (attempt < RAKUTEN_MAX_RETRIES) {
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${accessKey}`,
+        Referer: `${siteOrigin}/`,
+        Origin: siteOrigin,
+        Accept: "application/json",
+        "User-Agent": "machoda-protein-rankings/1.0",
+      },
+      next: { revalidate: 0 },
+    });
+
+    if (response.ok) {
+      return response;
+    }
+
+    if (response.status !== 429) {
+      const errorBody = await response.text();
+      throw new Error(`Rakuten API request failed: ${response.status} ${errorBody}`.trim());
+    }
+
+    attempt += 1;
+
+    if (attempt >= RAKUTEN_MAX_RETRIES) {
+      const errorBody = await response.text();
+      throw new Error(`Rakuten API request failed: ${response.status} ${errorBody}`.trim());
+    }
+
+    await sleep(RAKUTEN_REQUEST_DELAY_MS * 5 * attempt);
+  }
+
+  throw new Error("Rakuten API request failed: retries exhausted");
+};
+
 const normalizeRakutenItem = (
   item: RakutenItem,
   keyword: string,
@@ -102,21 +143,11 @@ export const fetchRakutenProteinCandidates = async () => {
         params.set("affiliateId", process.env.RAKUTEN_AFFILIATE_ID);
       }
 
-      const response = await fetch(`${RAKUTEN_ENDPOINT}?${params.toString()}`, {
-        headers: {
-          Authorization: `Bearer ${accessKey}`,
-          Referer: `${siteOrigin}/`,
-          Origin: siteOrigin,
-          Accept: "application/json",
-          "User-Agent": "machoda-protein-rankings/1.0",
-        },
-        next: { revalidate: 0 },
-      });
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        throw new Error(`Rakuten API request failed: ${response.status} ${errorBody}`.trim());
-      }
+      const response = await fetchRakutenPage(
+        `${RAKUTEN_ENDPOINT}?${params.toString()}`,
+        accessKey,
+        siteOrigin
+      );
 
       const data = (await response.json()) as RakutenResponse;
 
@@ -145,6 +176,8 @@ export const fetchRakutenProteinCandidates = async () => {
           rawPayload: normalized.rawPayload,
         });
       });
+
+      await sleep(RAKUTEN_REQUEST_DELAY_MS);
     }
   }
 

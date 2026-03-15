@@ -10,6 +10,8 @@ export const PROTEIN_SEARCH_QUERIES = [
 
 export const RAKUTEN_SEARCH_PAGES = 2;
 export const RAKUTEN_SEARCH_HITS = 30;
+export const RAKUTEN_REQUEST_DELAY_MS = 400;
+export const RAKUTEN_MAX_RETRIES = 3;
 export const TOP_RANKING_LIMIT = 5;
 
 export const MIN_REVIEW_COUNT = 5;
