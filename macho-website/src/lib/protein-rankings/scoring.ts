@@ -1,5 +1,6 @@
 import {
   COMPOSITION_WEIGHTS,
+  COST_RANKING_MAX_CONTENT_WEIGHT_G,
   COST_RANKING_MIN_CONTENT_WEIGHT_G,
   COST_PERFORMANCE_WEIGHTS,
   MAX_EXPERT_BONUS,
@@ -18,17 +19,21 @@ import type {
 } from "@/lib/protein-rankings/types";
 
 const normalizeBrandKey = (candidate: EnrichedProduct) =>
-  `${candidate.product.shopName ?? ""} ${candidate.product.title}`
+  (candidate.product.shopName
+    ? candidate.product.shopName
+    : candidate.product.title
+        .toLowerCase()
+        .replace(/【[^】]*】/g, " ")
+        .replace(/\([^)]*\)/g, " ")
+        .replace(/[【】\[\]（）()]/g, " ")
+        .replace(/\b(wpi|wpc|ホエイ|ソイ|プロテイン|protein|送料無料|公式|無添加|人工甘味料不使用|ダイエット|女性)\b/gi, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .split(" ")
+        .slice(0, 3)
+        .join("-"))
     .toLowerCase()
-    .replace(/【[^】]*】/g, " ")
-    .replace(/\([^)]*\)/g, " ")
-    .replace(/[【】\[\]（）()]/g, " ")
-    .replace(/\b(wpi|wpc|ホエイ|ソイ|プロテイン|protein|送料無料|公式|無添加|人工甘味料不使用|ダイエット|女性)\b/gi, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .split(" ")
-    .slice(0, 3)
-    .join("-");
+    .trim();
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 
@@ -117,7 +122,7 @@ const buildComment = (rankingKey: RankingKey, candidate: EnrichedProduct) => {
       if (candidate.metrics.pricePerProteinGram) {
         return `たんぱく質 1g あたり約 ${candidate.metrics.pricePerProteinGram.toFixed(1)} 円で、レビュー評価とのバランスが良好です。`;
       }
-      return "固定容量と栄養情報が揃った商品の中で、価格とレビューのバランスがよい候補です。";
+      return "表示価格に対して比較しやすい容量と栄養情報が揃っている候補です。";
     case "composition":
       return candidate.metrics.proteinRatio
         ? `たんぱく質含有率は約 ${(candidate.metrics.proteinRatio * 100).toFixed(1)}% で、成分重視で選びやすい一品です。`
@@ -191,8 +196,9 @@ export const buildRankings = (
       candidate.metrics.pricePerProteinGram !== null &&
       candidate.metrics.contentWeightG !== null &&
       candidate.metrics.contentWeightG >= COST_RANKING_MIN_CONTENT_WEIGHT_G &&
+      candidate.metrics.contentWeightG <= COST_RANKING_MAX_CONTENT_WEIGHT_G &&
       (candidate.metrics.proteinRatio ?? 0) >= MIN_PROTEIN_RATIO_FOR_COST &&
-      !candidate.metrics.hasAmbiguousSizeOptions;
+      !candidate.product.title.includes("箱プロ");
     const notWomenPositioned =
       candidate.metrics.womenKeywordMatches.length < 2 &&
       candidate.metrics.beautyKeywordMatches.length === 0;
@@ -246,13 +252,15 @@ export const buildRankings = (
       const costScore = costNormalizer(costBasis);
       const reviewScore = reviewScores.get(candidate.product.sourceExternalId) ?? 0;
       const popularityScore = popularityScores.get(candidate.product.sourceExternalId) ?? 0;
+      const ambiguityPenalty = candidate.metrics.hasAmbiguousSizeOptions ? 0.88 : 1;
       const expertBonus = getExpertBonus(
         expertSignalsByProductId.get(candidate.product.sourceExternalId) ?? []
       );
       const score =
-        costScore * COST_PERFORMANCE_WEIGHTS.cost +
-        reviewScore * COST_PERFORMANCE_WEIGHTS.review +
-        popularityScore * COST_PERFORMANCE_WEIGHTS.popularity +
+        (costScore * COST_PERFORMANCE_WEIGHTS.cost +
+          reviewScore * COST_PERFORMANCE_WEIGHTS.review +
+          popularityScore * COST_PERFORMANCE_WEIGHTS.popularity) *
+          ambiguityPenalty +
         expertBonus;
 
       return {
@@ -263,6 +271,7 @@ export const buildRankings = (
           costScore,
           reviewScore,
           popularityScore,
+          ambiguityPenalty,
           expertBonus,
         },
       };

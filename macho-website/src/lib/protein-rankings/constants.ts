@@ -6,6 +6,10 @@ export const PROTEIN_SEARCH_QUERIES = [
   "ソイプロテイン",
   "女性 プロテイン",
   "ダイエット プロテイン",
+  "X-PLOSION プロテイン",
+  "エクスプロージョン プロテイン",
+  "ビーレジェンド プロテイン",
+  "ULTORA プロテイン",
 ] as const;
 
 export const RAKUTEN_SEARCH_PAGES = 2;
@@ -18,6 +22,7 @@ export const MIN_REVIEW_COUNT = 5;
 export const MIN_REVIEW_AVERAGE = 3.8;
 export const STRICT_MIN_REVIEW_COUNT = 30;
 export const COST_RANKING_MIN_CONTENT_WEIGHT_G = 1000;
+export const COST_RANKING_MAX_CONTENT_WEIGHT_G = 4000;
 export const MIN_PROTEIN_RATIO_FOR_COST = 0.65;
 export const MIN_PROTEIN_RATIO_FOR_COMPOSITION = 0.7;
 
@@ -39,13 +44,6 @@ export const BANNED_PRODUCT_KEYWORDS = [
   "青汁",
 ] as const;
 
-export const SUSPICIOUS_MARKETING_KEYWORDS = [
-  "最安値挑戦中",
-  "箱プロ",
-  "コスパ最強",
-  "激安",
-  "業務用",
-] as const;
 
 export const LIKELY_PROTEIN_KEYWORDS = [
   "プロテイン",

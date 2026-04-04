@@ -32,7 +32,10 @@ const findContentWeight = (title: string, description: string) => {
   }
 
   if (uniqueTitleWeights.length > 1) {
-    return { contentWeightG: null, hasAmbiguousSizeOptions };
+    return {
+      contentWeightG: [...uniqueTitleWeights].sort((left, right) => left - right)[0],
+      hasAmbiguousSizeOptions,
+    };
   }
 
   const descriptionWeights = extractWeightCandidates(description);
@@ -43,13 +46,13 @@ const findContentWeight = (title: string, description: string) => {
   if (uniqueDescriptionWeights.length === 1) {
     return {
       contentWeightG: uniqueDescriptionWeights[0],
-      hasAmbiguousSizeOptions: uniqueDescriptionWeights.length > 1,
+      hasAmbiguousSizeOptions: false,
     };
   }
 
   return {
     contentWeightG: null,
-    hasAmbiguousSizeOptions: uniqueDescriptionWeights.length > 1,
+    hasAmbiguousSizeOptions: false,
   };
 };
 
