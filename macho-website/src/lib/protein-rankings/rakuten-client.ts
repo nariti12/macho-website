@@ -59,7 +59,6 @@ const fetchPage = async (page: number) => {
   url.searchParams.set("accessKey", accessKey);
   url.searchParams.set("genreId", RAKUTEN_PROTEIN_GENRE_ID);
   url.searchParams.set("page", String(page));
-  url.searchParams.set("period", "daily");
   url.searchParams.set("format", "json");
 
   let attempt = 0;
