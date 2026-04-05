@@ -1,70 +1,80 @@
 import {
-  COMPOSITION_WEIGHTS,
-  COST_RANKING_MAX_CONTENT_WEIGHT_G,
-  COST_RANKING_MIN_CONTENT_WEIGHT_G,
-  COST_PERFORMANCE_WEIGHTS,
+  FEMALE_WEIGHTS,
+  MALE_WEIGHTS,
   MAX_EXPERT_BONUS,
-  MIN_PROTEIN_RATIO_FOR_COMPOSITION,
-  MIN_PROTEIN_RATIO_FOR_COST,
+  RAKUTEN_RANKING_PAGE_SIZE,
+  RAKUTEN_RANKING_PAGES,
   STRICT_MIN_REVIEW_COUNT,
   TOP_RANKING_LIMIT,
-  WOMEN_WEIGHTS,
+  TRUSTED_MALE_BRANDS,
 } from "@/lib/protein-rankings/constants";
-import type {
-  EnrichedProduct,
-  ExpertSignalRecord,
-  ProteinType,
-  RankedProductInput,
-  RankingKey,
-} from "@/lib/protein-rankings/types";
+import type { EnrichedProduct, ExpertSignalRecord, ProteinType, RankedProductInput } from "@/lib/protein-rankings/types";
 
-const normalizeBrandKey = (candidate: EnrichedProduct) =>
-  (candidate.product.shopName
-    ? candidate.product.shopName
-    : candidate.product.title
-        .toLowerCase()
-        .replace(/【[^】]*】/g, " ")
-        .replace(/\([^)]*\)/g, " ")
-        .replace(/[【】\[\]（）()]/g, " ")
-        .replace(/\b(wpi|wpc|ホエイ|ソイ|プロテイン|protein|送料無料|公式|無添加|人工甘味料不使用|ダイエット|女性)\b/gi, " ")
-        .replace(/\s+/g, " ")
-        .trim()
-        .split(" ")
-        .slice(0, 3)
-        .join("-"))
-    .toLowerCase()
-    .trim();
+const TOTAL_RAKUTEN_CANDIDATES = RAKUTEN_RANKING_PAGE_SIZE * RAKUTEN_RANKING_PAGES;
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 
-const percentile = (values: number[], ratio: number) => {
-  if (values.length === 0) {
-    return 0;
-  }
-
-  const position = (values.length - 1) * ratio;
-  const lower = Math.floor(position);
-  const upper = Math.ceil(position);
-
-  if (lower === upper) {
-    return values[lower];
-  }
-
-  return values[lower] + (values[upper] - values[lower]) * (position - lower);
+const salesRankToScore = (rank: number | null) => {
+  if (!rank || rank <= 0) return 0;
+  return clamp01((TOTAL_RAKUTEN_CANDIDATES - rank + 1) / TOTAL_RAKUTEN_CANDIDATES);
 };
+
+const reviewAverageToScore = (reviewAverage: number | null) => {
+  if (!reviewAverage) return 0.55;
+  return clamp01((reviewAverage - 3.5) / 1.5);
+};
+
+const reviewConfidence = (reviewAverage: number | null, reviewCount: number) =>
+  clamp01(reviewAverageToScore(reviewAverage) * 0.6 + (Math.log10(reviewCount + 1) / Math.log10(5000 + 1)) * 0.4);
+
+const proteinTypeScore = (proteinType: ProteinType) => {
+  switch (proteinType) {
+    case "wpi":
+      return 1;
+    case "wpc":
+      return 0.92;
+    case "whey":
+      return 0.84;
+    case "soy":
+      return 0.62;
+    case "casein":
+      return 0.6;
+    default:
+      return 0.45;
+  }
+};
+
+const femaleBaseSuitability = (proteinType: ProteinType) => {
+  switch (proteinType) {
+    case "soy":
+      return 1;
+    case "wpi":
+      return 0.45;
+    case "wpc":
+      return 0.42;
+    case "whey":
+      return 0.36;
+    default:
+      return 0.3;
+  }
+};
+
+const getExpertBonus = (signals: ExpertSignalRecord[]) =>
+  clamp01(signals.filter((signal) => signal.isActive).reduce((sum, signal) => sum + Math.max(signal.bonus, 0), 0)) *
+  MAX_EXPERT_BONUS;
 
 const createRobustNormalizer = (values: number[], higherBetter = true) => {
   const filtered = values.filter((value) => Number.isFinite(value)).sort((left, right) => left - right);
 
   if (filtered.length === 0) {
-    return () => 0;
+    return () => 0.45;
   }
 
-  const low = percentile(filtered, 0.1);
-  const high = percentile(filtered, 0.9);
+  const low = filtered[Math.max(0, Math.floor((filtered.length - 1) * 0.1))];
+  const high = filtered[Math.min(filtered.length - 1, Math.ceil((filtered.length - 1) * 0.9))];
 
   if (Math.abs(high - low) < 1e-6) {
-    return () => 0.5;
+    return () => 0.55;
   }
 
   return (value: number) => {
@@ -74,102 +84,55 @@ const createRobustNormalizer = (values: number[], higherBetter = true) => {
   };
 };
 
-const reviewAverageToScore = (reviewAverage: number) => clamp01((reviewAverage - 3.5) / 1.5);
+const normalizeBrandKey = (candidate: EnrichedProduct) =>
+  (candidate.metrics.canonicalBrand ??
+    candidate.product.brandName ??
+    candidate.product.shopName ??
+    candidate.product.title)
+    .toLowerCase()
+    .trim();
 
-const reviewConfidence = (reviewAverage: number, reviewCount: number) =>
-  clamp01(reviewAverageToScore(reviewAverage) * 0.55 + Math.log10(reviewCount + 1) / Math.log10(1000 + 1) * 0.45);
-
-const proteinTypeBonus = (proteinType: ProteinType) => {
-  switch (proteinType) {
-    case "wpi":
-      return 1;
-    case "wpc":
-      return 0.75;
-    case "whey":
-      return 0.6;
-    case "soy":
-      return 0.55;
-    case "casein":
-      return 0.45;
-    default:
-      return 0.25;
-  }
+const hasTrustedMaleBrand = (candidate: EnrichedProduct) => {
+  const haystack = `${candidate.product.title} ${candidate.product.brandName ?? ""} ${candidate.metrics.canonicalBrand ?? ""}`.toLowerCase();
+  return TRUSTED_MALE_BRANDS.some((brand) => haystack.includes(brand.toLowerCase()));
 };
 
-const womenSuitabilityBase = (proteinType: ProteinType) => {
-  switch (proteinType) {
-    case "soy":
-      return 1;
-    case "whey":
-      return 0.45;
-    case "wpi":
-      return 0.5;
-    case "wpc":
-      return 0.45;
-    default:
-      return 0.35;
-  }
+const sortAndTrim = (items: RankedProductInput[]) => {
+  const seenBrands = new Set<string>();
+
+  return items
+    .sort((left, right) => right.score - left.score)
+    .filter((item) => {
+      const brandKey = normalizeBrandKey(item);
+      if (!brandKey) return true;
+      if (seenBrands.has(brandKey)) return false;
+      seenBrands.add(brandKey);
+      return true;
+    })
+    .slice(0, TOP_RANKING_LIMIT)
+    .map((item, index) => ({
+      ...item,
+      score: Number(item.score.toFixed(5)),
+      rankPosition: index + 1,
+    }));
 };
 
-const getExpertBonus = (signals: ExpertSignalRecord[]) =>
-  clamp01(
-    signals.filter((signal) => signal.isActive).reduce((sum, signal) => sum + Math.max(signal.bonus, 0), 0)
-  ) * MAX_EXPERT_BONUS;
+const buildComment = (candidate: EnrichedProduct) => {
+  const base = candidate.metrics.rakutenRank ? `楽天 ${candidate.metrics.rakutenRank}位 の売上上位。` : "楽天売上上位。";
 
-const buildComment = (rankingKey: RankingKey, candidate: EnrichedProduct) => {
-  switch (rankingKey) {
-    case "cost-performance":
-      if (candidate.metrics.pricePerProteinGram) {
-        return `たんぱく質 1g あたり約 ${candidate.metrics.pricePerProteinGram.toFixed(1)} 円で、レビュー評価とのバランスが良好です。`;
-      }
-      return "表示価格に対して比較しやすい容量と栄養情報が揃っている候補です。";
-    case "composition":
-      return candidate.metrics.proteinRatio
-        ? `たんぱく質含有率は約 ${(candidate.metrics.proteinRatio * 100).toFixed(1)}% で、成分重視で選びやすい一品です。`
-        : "成分情報の取得精度が高く、レビュー面も含めて安定した評価です。";
-    case "women":
-      if (candidate.metrics.womenKeywordMatches.length > 0 || candidate.metrics.beautyKeywordMatches.length > 0) {
-        return `${[...candidate.metrics.womenKeywordMatches, ...candidate.metrics.beautyKeywordMatches].slice(0, 3).join("・")} に関連する訴求があり、女性向けの選びやすさがあります。`;
-      }
-      return "レビューの安定感と女性向け適合度のバランスがよい候補です。";
+  if (candidate.metrics.proteinRatio) {
+    return `${base} たんぱく質含有率は約 ${(candidate.metrics.proteinRatio * 100).toFixed(1)}% です。`;
   }
+
+  return base;
 };
-
-const sortAndTrim = (items: RankedProductInput[]) =>
-  {
-    const seenBrands = new Set<string>();
-
-    return items
-      .sort((left, right) => right.score - left.score)
-      .filter((item) => {
-        const brandKey = normalizeBrandKey(item);
-
-        if (!brandKey) {
-          return true;
-        }
-
-        if (seenBrands.has(brandKey)) {
-          return false;
-        }
-
-        seenBrands.add(brandKey);
-        return true;
-      })
-      .slice(0, TOP_RANKING_LIMIT)
-      .map((item, index) => ({
-        ...item,
-        score: Number(item.score.toFixed(5)),
-        scoreBreakdown: item.scoreBreakdown,
-        comment: item.comment,
-        rankPosition: index + 1,
-      }));
-  };
 
 export const buildRankings = (
   candidates: EnrichedProduct[],
   expertSignalsByProductId: Map<string, ExpertSignalRecord[]>
 ) => {
   const eligible = candidates.filter((candidate) => !candidate.metrics.excluded);
+
   const reviewScores = new Map(
     eligible.map((candidate) => [
       candidate.product.sourceExternalId,
@@ -177,167 +140,118 @@ export const buildRankings = (
     ])
   );
 
-  const popularityScores = new Map(
-    eligible.map((candidate) => [
-      candidate.product.sourceExternalId,
-      clamp01(
-        candidate.product.discoveryScore * 0.6 +
-          Math.log10(candidate.product.reviewCount + 1) / Math.log10(1000 + 1) * 0.4
-      ),
-    ])
+  const costNormalizer = createRobustNormalizer(
+    eligible
+      .map((candidate) => candidate.metrics.pricePerProteinGram)
+      .filter((value): value is number => typeof value === "number"),
+    false
   );
 
-  const costCandidates = eligible.filter((candidate) => {
-    const isStandardWhey =
-      candidate.metrics.proteinType === "whey" ||
-      candidate.metrics.proteinType === "wpc" ||
-      candidate.metrics.proteinType === "wpi";
-    const hasReliableCostData =
-      candidate.metrics.pricePerProteinGram !== null &&
-      candidate.metrics.contentWeightG !== null &&
-      candidate.metrics.contentWeightG >= COST_RANKING_MIN_CONTENT_WEIGHT_G &&
-      candidate.metrics.contentWeightG <= COST_RANKING_MAX_CONTENT_WEIGHT_G &&
-      (candidate.metrics.proteinRatio ?? 0) >= MIN_PROTEIN_RATIO_FOR_COST &&
-      !candidate.product.title.includes("箱プロ");
-    const notWomenPositioned =
-      candidate.metrics.womenKeywordMatches.length < 2 &&
-      candidate.metrics.beautyKeywordMatches.length === 0;
+  const proteinNormalizer = createRobustNormalizer(
+    eligible
+      .map((candidate) => candidate.metrics.proteinRatio)
+      .filter((value): value is number => typeof value === "number")
+  );
+
+  const maleBase = eligible.filter((candidate) => {
+    const explicitWomenTitle =
+      candidate.product.title.includes("女性") ||
+      candidate.product.title.includes("レディース") ||
+      candidate.metrics.womenKeywordMatches.length >= 2;
 
     return (
-      isStandardWhey &&
-      hasReliableCostData &&
-      notWomenPositioned &&
-      candidate.product.reviewCount >= STRICT_MIN_REVIEW_COUNT
+      candidate.metrics.rakutenRank !== null &&
+      !explicitWomenTitle &&
+      candidate.metrics.proteinType !== "soy" &&
+      (candidate.metrics.proteinType === "whey" ||
+        candidate.metrics.proteinType === "wpc" ||
+        candidate.metrics.proteinType === "wpi" ||
+        candidate.metrics.proteinRatio !== null)
     );
   });
-  const costValues = costCandidates.map((candidate) =>
-    candidate.metrics.pricePerProteinGram ??
-    candidate.product.priceYen / Math.max(candidate.metrics.contentWeightG ?? 1000, 100)
-  );
-  const costNormalizer = createRobustNormalizer(costValues, false);
 
-  const compositionCandidates = eligible.filter(
-    (candidate) =>
-      candidate.metrics.proteinRatio !== null &&
-      candidate.metrics.proteinPer100gG !== null &&
-      (candidate.metrics.proteinRatio ?? 0) >= MIN_PROTEIN_RATIO_FOR_COMPOSITION &&
-      !candidate.metrics.hasAmbiguousSizeOptions
-  );
-  const purityNormalizer = createRobustNormalizer(
-    compositionCandidates.map((candidate) => candidate.metrics.proteinRatio ?? 0)
-  );
+  const maleCandidates = maleBase.length >= TOP_RANKING_LIMIT ? maleBase : eligible.filter((candidate) => candidate.metrics.rakutenRank !== null);
 
-  const womenCandidates = eligible.filter(
+  const femaleBase = eligible.filter(
     (candidate) =>
       candidate.metrics.proteinType === "soy" ||
       candidate.metrics.womenKeywordMatches.length > 0 ||
       candidate.metrics.beautyKeywordMatches.length > 0 ||
-      candidate.metrics.dietKeywordMatches.length > 0
-  );
-  const womenCostNormalizer = createRobustNormalizer(
-    womenCandidates
-      .filter((candidate) => candidate.metrics.pricePerProteinGram)
-      .map((candidate) => candidate.metrics.pricePerProteinGram ?? 0),
-    false
-  );
-  const beautyNormalizer = createRobustNormalizer(
-    womenCandidates.map((candidate) => candidate.metrics.beautyKeywordMatches.length)
+      candidate.metrics.dietKeywordMatches.length > 0 ||
+      candidate.product.title.includes("女性")
   );
 
-  const costPerformance = sortAndTrim(
-    costCandidates.map((candidate) => {
-      const costBasis =
-        candidate.metrics.pricePerProteinGram ??
-        candidate.product.priceYen / Math.max(candidate.metrics.contentWeightG ?? 1000, 100);
-      const costScore = costNormalizer(costBasis);
-      const reviewScore = reviewScores.get(candidate.product.sourceExternalId) ?? 0;
-      const popularityScore = popularityScores.get(candidate.product.sourceExternalId) ?? 0;
-      const ambiguityPenalty = candidate.metrics.hasAmbiguousSizeOptions ? 0.88 : 1;
-      const expertBonus = getExpertBonus(
-        expertSignalsByProductId.get(candidate.product.sourceExternalId) ?? []
-      );
+  const femaleCandidates =
+    femaleBase.length >= TOP_RANKING_LIMIT ? femaleBase : eligible.filter((candidate) => candidate.metrics.rakutenRank !== null);
+
+  const male = sortAndTrim(
+    maleCandidates.map((candidate) => {
+      const salesScore = salesRankToScore(candidate.metrics.rakutenRank);
+      const reviewScore = reviewScores.get(candidate.product.sourceExternalId) ?? 0.45;
+      const proteinScore =
+        candidate.metrics.proteinRatio !== null
+          ? proteinNormalizer(candidate.metrics.proteinRatio)
+          : proteinTypeScore(candidate.metrics.proteinType);
+      const costScore =
+        candidate.metrics.pricePerProteinGram !== null ? costNormalizer(candidate.metrics.pricePerProteinGram) : 0.45;
+      const expertBonus = getExpertBonus(expertSignalsByProductId.get(candidate.product.sourceExternalId) ?? []);
+      const trustedBrandBonus = hasTrustedMaleBrand(candidate) ? 0.04 : 0;
+      const reviewPenalty = candidate.product.reviewCount > 0 && candidate.product.reviewCount < STRICT_MIN_REVIEW_COUNT ? 0.92 : 1;
       const score =
-        (costScore * COST_PERFORMANCE_WEIGHTS.cost +
-          reviewScore * COST_PERFORMANCE_WEIGHTS.review +
-          popularityScore * COST_PERFORMANCE_WEIGHTS.popularity) *
-          ambiguityPenalty +
-        expertBonus;
+        (salesScore * MALE_WEIGHTS.sales +
+          reviewScore * MALE_WEIGHTS.review +
+          proteinScore * MALE_WEIGHTS.protein +
+          costScore * MALE_WEIGHTS.cost +
+          expertBonus +
+          trustedBrandBonus) *
+        reviewPenalty;
 
       return {
         ...candidate,
         score,
-        comment: buildComment("cost-performance", candidate),
+        comment: buildComment(candidate),
         scoreBreakdown: {
+          salesScore,
+          reviewScore,
+          proteinScore,
           costScore,
-          reviewScore,
-          popularityScore,
-          ambiguityPenalty,
           expertBonus,
+          trustedBrandBonus,
+          reviewPenalty,
         },
       };
     })
   );
 
-  const composition = sortAndTrim(
-    compositionCandidates.map((candidate) => {
-      const purityScore = purityNormalizer(candidate.metrics.proteinRatio ?? 0);
-      const reviewScore = reviewScores.get(candidate.product.sourceExternalId) ?? 0;
-      const typeBonus = proteinTypeBonus(candidate.metrics.proteinType);
-      const expertBonus = getExpertBonus(
-        expertSignalsByProductId.get(candidate.product.sourceExternalId) ?? []
-      );
-      const score =
-        purityScore * COMPOSITION_WEIGHTS.purity +
-        reviewScore * COMPOSITION_WEIGHTS.review +
-        typeBonus * COMPOSITION_WEIGHTS.typeBonus +
-        expertBonus;
-
-      return {
-        ...candidate,
-        score,
-        comment: buildComment("composition", candidate),
-        scoreBreakdown: {
-          purityScore,
-          reviewScore,
-          typeBonus,
-          expertBonus,
-        },
-      };
-    })
-  );
-
-  const women = sortAndTrim(
-    womenCandidates.map((candidate) => {
+  const female = sortAndTrim(
+    femaleCandidates.map((candidate) => {
+      const salesScore = salesRankToScore(candidate.metrics.rakutenRank);
+      const reviewScore = reviewScores.get(candidate.product.sourceExternalId) ?? 0.45;
       const keywordScore = clamp01(
-        candidate.metrics.womenKeywordMatches.length / 3 + candidate.metrics.dietKeywordMatches.length / 4
+        candidate.metrics.womenKeywordMatches.length / 3 +
+          candidate.metrics.beautyKeywordMatches.length / 4 +
+          candidate.metrics.dietKeywordMatches.length / 4
       );
-      const suitabilityScore = clamp01(
-        womenSuitabilityBase(candidate.metrics.proteinType) * 0.45 + keywordScore * 0.55
-      );
-      const reviewScore = reviewScores.get(candidate.product.sourceExternalId) ?? 0;
-      const costScore = candidate.metrics.pricePerProteinGram
-        ? womenCostNormalizer(candidate.metrics.pricePerProteinGram)
-        : 0.35;
-      const beautyScore = beautyNormalizer(candidate.metrics.beautyKeywordMatches.length);
-      const expertBonus = getExpertBonus(
-        expertSignalsByProductId.get(candidate.product.sourceExternalId) ?? []
-      );
+      const suitabilityScore = clamp01(femaleBaseSuitability(candidate.metrics.proteinType) * 0.55 + keywordScore * 0.45);
+      const costScore =
+        candidate.metrics.pricePerProteinGram !== null ? costNormalizer(candidate.metrics.pricePerProteinGram) : 0.45;
+      const expertBonus = getExpertBonus(expertSignalsByProductId.get(candidate.product.sourceExternalId) ?? []);
       const score =
-        suitabilityScore * WOMEN_WEIGHTS.suitability +
-        reviewScore * WOMEN_WEIGHTS.review +
-        costScore * WOMEN_WEIGHTS.cost +
-        beautyScore * WOMEN_WEIGHTS.beauty +
+        salesScore * FEMALE_WEIGHTS.sales +
+        reviewScore * FEMALE_WEIGHTS.review +
+        suitabilityScore * FEMALE_WEIGHTS.suitability +
+        costScore * FEMALE_WEIGHTS.cost +
         expertBonus;
 
       return {
         ...candidate,
         score,
-        comment: buildComment("women", candidate),
+        comment: buildComment(candidate),
         scoreBreakdown: {
-          suitabilityScore,
+          salesScore,
           reviewScore,
+          suitabilityScore,
           costScore,
-          beautyScore,
           expertBonus,
         },
       };
@@ -345,8 +259,7 @@ export const buildRankings = (
   );
 
   return {
-    "cost-performance": costPerformance,
-    composition,
-    women,
+    male,
+    female,
   };
 };

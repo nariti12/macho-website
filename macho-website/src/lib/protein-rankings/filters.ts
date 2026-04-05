@@ -1,4 +1,4 @@
-import { BANNED_PRODUCT_KEYWORDS, MIN_REVIEW_AVERAGE, MIN_REVIEW_COUNT } from "@/lib/protein-rankings/constants";
+import { BANNED_BRANDS, BANNED_PRODUCT_KEYWORDS, MIN_REVIEW_COUNT } from "@/lib/protein-rankings/constants";
 import type { ProductMetricInput } from "@/lib/protein-rankings/types";
 
 export const applyRankingFilters = (metrics: ProductMetricInput): ProductMetricInput => {
@@ -6,7 +6,8 @@ export const applyRankingFilters = (metrics: ProductMetricInput): ProductMetricI
     return metrics;
   }
 
-  const combinedText = `${metrics.product.title} ${metrics.product.description}`.toLowerCase();
+  const combinedText =
+    `${metrics.product.title} ${metrics.product.description} ${metrics.product.brandName ?? ""}`.toLowerCase();
   const bannedKeyword = BANNED_PRODUCT_KEYWORDS.find((keyword) => combinedText.includes(keyword.toLowerCase()));
 
   if (bannedKeyword) {
@@ -17,19 +18,20 @@ export const applyRankingFilters = (metrics: ProductMetricInput): ProductMetricI
     };
   }
 
-  if (metrics.product.reviewCount < MIN_REVIEW_COUNT) {
+  const bannedBrand = BANNED_BRANDS.find((brand) => combinedText.includes(brand.toLowerCase()));
+  if (bannedBrand) {
+    return {
+      ...metrics,
+      excluded: true,
+      exclusionReason: `${bannedBrand} はランキング対象外`,
+    };
+  }
+
+  if (metrics.product.reviewCount > 0 && metrics.product.reviewCount < MIN_REVIEW_COUNT) {
     return {
       ...metrics,
       excluded: true,
       exclusionReason: `レビュー件数が ${MIN_REVIEW_COUNT} 件未満のため除外`,
-    };
-  }
-
-  if (metrics.product.reviewAverage < MIN_REVIEW_AVERAGE) {
-    return {
-      ...metrics,
-      excluded: true,
-      exclusionReason: `レビュー平均が ${MIN_REVIEW_AVERAGE} 未満のため除外`,
     };
   }
 

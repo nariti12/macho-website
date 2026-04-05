@@ -1,6 +1,6 @@
 ## Overview
 
-`macho-website` は Next.js App Router ベースのサイトです。今回、`/supplements-top3` に「プロテイン/サプリ 最強TOP5」ページを実装し、楽天 API から候補商品を収集して Supabase に保存したランキングを表示する構成を追加しています。
+`macho-website` は Next.js App Router ベースのサイトです。`/supplements-top3` では、楽天売上ランキングを母集団に再選抜した「男性向け最強プロテイン TOP5 / 女性向け最強プロテイン TOP5」を表示します。ページ表示時は Supabase に保存済みのランキングのみを読み込みます。
 
 ## Getting Started
 
@@ -23,12 +23,14 @@ npm run dev
 - `RAKUTEN_APPLICATION_ID`
 - `RAKUTEN_ACCESS_KEY`
 - `RAKUTEN_AFFILIATE_ID`
-- `RAKUTEN_SITE_ORIGIN`
 - `CRON_SECRET`
 
 ## Supabase Migration
 
-ランキング保存用のテーブルは `supabase/migrations/20260314120000_add_protein_rankings.sql` で追加しています。
+ランキング保存用のテーブルは以下の migration で追加・更新しています。
+
+- `supabase/migrations/20260314120000_add_protein_rankings.sql`
+- `supabase/migrations/20260405133000_refactor_protein_rankings_for_sales.sql`
 
 ```bash
 supabase db push
@@ -45,13 +47,16 @@ supabase db push
 
 ## Ranking Update Flow
 
-表示ページは保存済みランキングだけを読み込みます。楽天 API への直接アクセスは cron 側に限定しています。
+表示ページは保存済みランキングだけを読み込みます。外部モールへのアクセスは cron 側に限定しています。
 
-1. `/api/cron/protein-rankings` が楽天 API から候補商品を取得
-2. 商品名や説明から内容量、たんぱく質量、女性向け/美容系キーワードを正規表現ベースで抽出
-3. 除外ルールとスコア計算を適用
-4. Supabase の `products` / `product_metrics` / `rankings` に保存
-5. `/supplements-top3` は保存済みデータを表示
+1. `/api/cron/protein-rankings` が楽天ランキング API からプロテイン genre の上位商品を取得
+2. 商品名から内容量、たんぱく質量、女性向け/美容系キーワードを正規表現ベースで抽出
+3. `SAVAS / ザバス`、シェイカー、バーなどの除外ルールを適用
+4. 男性向け / 女性向けのスコアを計算
+5. Supabase の `products` / `product_metrics` / `rankings` に保存
+6. `/supplements-top3` は保存済みデータを表示
+
+男性向けは楽天順位を主軸に、レビュー、たんぱく質情報、価格妥当性を補助にして再選抜します。女性向けは楽天順位を主軸に、レビュー、ソイ適性、女性向けキーワードを補助にして再選抜します。
 
 ## Vercel Cron
 
@@ -80,6 +85,7 @@ curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/prot
 
 ```bash
 npm run lint
+npx tsc --noEmit
 ```
 
 運用前には migration 適用後に cron を一度手動実行し、ランキング表示を確認してください。

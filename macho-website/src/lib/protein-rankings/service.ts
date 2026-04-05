@@ -1,7 +1,7 @@
 import { applyRankingFilters } from "@/lib/protein-rankings/filters";
 import { extractMetricsFromProduct } from "@/lib/protein-rankings/extractors";
-import { fetchRakutenProteinCandidates } from "@/lib/protein-rankings/rakuten-client";
 import { saveProteinRankingSnapshot } from "@/lib/protein-rankings/repository";
+import { fetchRakutenProteinRankingEntries } from "@/lib/protein-rankings/rakuten-client";
 import { buildRankings } from "@/lib/protein-rankings/scoring";
 import type { EnrichedProduct, ExpertSignalRecord } from "@/lib/protein-rankings/types";
 
@@ -12,21 +12,26 @@ const getExpertSignals = async (): Promise<Map<string, ExpertSignalRecord[]>> =>
 };
 
 export const refreshProteinRankings = async () => {
-  const candidates = await fetchRakutenProteinCandidates();
-  const enrichedProducts: EnrichedProduct[] = candidates.map((product) => {
+  const rakutenEntries = await fetchRakutenProteinRankingEntries();
+  const enrichedProducts: EnrichedProduct[] = rakutenEntries.map((product) => {
     const extracted = extractMetricsFromProduct(product);
+
     return {
       product,
       metrics: applyRankingFilters(extracted),
     };
   });
+
   const expertSignals = await getExpertSignals();
   const rankings = buildRankings(enrichedProducts, expertSignals);
-  const saved = await saveProteinRankingSnapshot(enrichedProducts, rankings);
+  const saved = await saveProteinRankingSnapshot({
+    products: enrichedProducts,
+    rankings,
+  });
 
   return {
     ...saved,
-    candidateCount: candidates.length,
+    candidateCount: rakutenEntries.length,
     eligibleCount: enrichedProducts.filter((item) => !item.metrics.excluded).length,
   };
 };

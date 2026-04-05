@@ -3,17 +3,15 @@ import Link from "next/link";
 
 import { SiteHeader } from "@/components/site-header";
 import { buildProductOutboundLink } from "@/lib/protein-rankings/links";
-import type { ProteinRankingPageData, ProteinType, RankingCardItem, RankingKey } from "@/lib/protein-rankings/types";
+import type { CommerceProvider, ProductMetricRow, ProteinRankingPageData, ProteinType, RankingCardItem, RankingKey } from "@/lib/protein-rankings/types";
 
 const profileImageSrc = "/picture/ore.png";
 
-const formatYen = (value: number) => `¥${value.toLocaleString("ja-JP")}`;
+const formatYen = (value: number | null | undefined) =>
+  typeof value === "number" ? `¥${value.toLocaleString("ja-JP")}` : "不明";
 
 const formatWeight = (value: number | null | undefined) => {
-  if (!value) {
-    return "不明";
-  }
-
+  if (!value) return "不明";
   return value >= 1000 ? `${(value / 1000).toFixed(value % 1000 === 0 ? 0 : 1)}kg` : `${value.toFixed(0)}g`;
 };
 
@@ -45,65 +43,29 @@ const formatUpdatedAt = (value: string | null) =>
       })
     : null;
 
-const renderHighlight = (rankingKey: RankingKey, item: RankingCardItem) => {
-  switch (rankingKey) {
-    case "cost-performance":
-      return (
-        <>
-          <MetricChip label="価格" value={formatYen(item.product.price_yen)} />
-          <MetricChip label="内容量" value={formatWeight(item.metrics?.content_weight_g)} />
-          <MetricChip
-            label="たんぱく質1g単価"
-            value={
-              item.metrics?.price_per_protein_gram
-                ? `約${item.metrics.price_per_protein_gram.toFixed(1)}円`
-                : "算出不可"
-            }
-          />
-          <MetricChip
-            label="レビュー"
-            value={`${(item.product.review_average ?? 0).toFixed(2)} / 5 (${item.product.review_count}件)`}
-          />
-        </>
-      );
-    case "composition":
-      return (
-        <>
-          <MetricChip
-            label="たんぱく質含有率"
-            value={item.metrics?.protein_ratio ? `${(item.metrics.protein_ratio * 100).toFixed(1)}%` : "不明"}
-          />
-          <MetricChip label="種別" value={formatProteinType(item.metrics?.protein_type)} />
-          <MetricChip
-            label="1食あたり"
-            value={item.metrics?.protein_per_serving_g ? `${item.metrics.protein_per_serving_g.toFixed(1)}g` : "不明"}
-          />
-          <MetricChip
-            label="レビュー"
-            value={`${(item.product.review_average ?? 0).toFixed(2)} / 5 (${item.product.review_count}件)`}
-          />
-        </>
-      );
-    case "women":
-      return (
-        <>
-          <MetricChip label="タイプ" value={formatProteinType(item.metrics?.protein_type)} />
-          <MetricChip
-            label="女性向けポイント"
-            value={
-              item.metrics
-                ? [...item.metrics.women_keyword_matches, ...item.metrics.beauty_keyword_matches]
-                    .slice(0, 3)
-                    .join("・") || "レビュー評価が安定"
-                : "レビュー評価が安定"
-            }
-          />
-          <MetricChip
-            label="レビュー"
-            value={`${(item.product.review_average ?? 0).toFixed(2)} / 5 (${item.product.review_count}件)`}
-          />
-        </>
-      );
+const formatReview = (item: RankingCardItem) => {
+  if (item.product.review_average) {
+    return `${item.product.review_average.toFixed(2)} / 5 (${item.product.review_count}件)`;
+  }
+
+  if (item.product.review_count > 0) {
+    return `${item.product.review_count}件`;
+  }
+
+  return "不明";
+};
+
+const formatSalesRanks = (metrics: ProductMetricRow | null) => {
+  if (!metrics) return "不明";
+
+  return metrics.rakuten_rank ? `楽天 ${metrics.rakuten_rank}位` : "不明";
+};
+
+const getOutboundLabel = (provider: CommerceProvider) => {
+  switch (provider) {
+    case "rakuten":
+    default:
+      return "楽天で見る";
   }
 };
 
@@ -114,6 +76,42 @@ const MetricChip = ({ label, value }: { label: string; value: string }) => (
   </div>
 );
 
+const renderMaleHighlights = (item: RankingCardItem) => (
+  <>
+    <MetricChip label="売上順位" value={formatSalesRanks(item.metrics)} />
+    <MetricChip label="価格" value={formatYen(item.product.price_yen)} />
+    <MetricChip label="タイプ" value={formatProteinType(item.metrics?.protein_type)} />
+    <MetricChip
+      label="たんぱく質含有率"
+      value={item.metrics?.protein_ratio ? `${(item.metrics.protein_ratio * 100).toFixed(1)}%` : "不明"}
+    />
+    <MetricChip label="内容量" value={formatWeight(item.metrics?.content_weight_g)} />
+    <MetricChip label="レビュー" value={formatReview(item)} />
+  </>
+);
+
+const renderFemaleHighlights = (item: RankingCardItem) => {
+  const womenPoints = item.metrics
+    ? [...item.metrics.women_keyword_matches, ...item.metrics.beauty_keyword_matches, ...item.metrics.diet_keyword_matches]
+        .slice(0, 3)
+        .join("・")
+    : "";
+
+  return (
+    <>
+      <MetricChip label="売上順位" value={formatSalesRanks(item.metrics)} />
+      <MetricChip label="価格" value={formatYen(item.product.price_yen)} />
+      <MetricChip label="タイプ" value={formatProteinType(item.metrics?.protein_type)} />
+      <MetricChip label="女性向けポイント" value={womenPoints || "女性向け訴求は控えめ"} />
+      <MetricChip
+        label="たんぱく質含有率"
+        value={item.metrics?.protein_ratio ? `${(item.metrics.protein_ratio * 100).toFixed(1)}%` : "不明"}
+      />
+      <MetricChip label="レビュー" value={formatReview(item)} />
+    </>
+  );
+};
+
 const RankingCard = ({ rankingKey, item }: { rankingKey: RankingKey; item: RankingCardItem }) => (
   <article className="grid gap-5 rounded-3xl border border-[#FCD27B] bg-white/95 p-5 shadow-xl sm:grid-cols-[108px_1fr] sm:p-6">
     <div className="flex items-start gap-4 sm:block">
@@ -122,13 +120,7 @@ const RankingCard = ({ rankingKey, item }: { rankingKey: RankingKey; item: Ranki
       </div>
       <div className="relative mt-0 aspect-square w-24 overflow-hidden rounded-2xl bg-[#FFF4E7] sm:mt-4 sm:w-[108px]">
         {item.product.image_url ? (
-          <Image
-            src={item.product.image_url}
-            alt={item.product.title}
-            fill
-            sizes="108px"
-            className="object-cover"
-          />
+          <Image src={item.product.image_url} alt={item.product.title} fill sizes="108px" className="object-cover" />
         ) : (
           <div className="flex h-full items-center justify-center text-xs text-slate-500">画像なし</div>
         )}
@@ -141,22 +133,25 @@ const RankingCard = ({ rankingKey, item }: { rankingKey: RankingKey; item: Ranki
           <span className="rounded-full bg-[#FFE7C2] px-3 py-1 text-xs font-semibold text-[#9A3412]">
             SCORE {item.score.toFixed(3)}
           </span>
+          {item.metrics?.canonical_brand ? (
+            <span className="rounded-full bg-[#FFF4E7] px-3 py-1 text-xs text-slate-600">{item.metrics.canonical_brand}</span>
+          ) : null}
           {item.product.shop_name ? (
-            <span className="rounded-full bg-[#FFF4E7] px-3 py-1 text-xs text-slate-600">
-              {item.product.shop_name}
-            </span>
+            <span className="rounded-full bg-[#FFF4E7] px-3 py-1 text-xs text-slate-600">{item.product.shop_name}</span>
           ) : null}
         </div>
         <h3 className="text-xl font-bold leading-tight text-[#7C2D12]">{item.product.title}</h3>
         <p className="text-sm leading-6 text-slate-600">{item.comment}</p>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">{renderHighlight(rankingKey, item)}</div>
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {rankingKey === "male" ? renderMaleHighlights(item) : renderFemaleHighlights(item)}
+      </div>
 
       <div className="flex flex-wrap items-center gap-3">
         <Link
           href={buildProductOutboundLink({
-            provider: "rakuten",
+            provider: item.product.ec_provider,
             affiliateUrl: item.product.affiliate_url,
             itemUrl: item.product.item_url ?? "#",
           })}
@@ -164,10 +159,10 @@ const RankingCard = ({ rankingKey, item }: { rankingKey: RankingKey; item: Ranki
           rel="noopener noreferrer"
           className="rounded-full bg-[#FF8A23] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#f57200]"
         >
-          楽天で見る
+          {getOutboundLabel(item.product.ec_provider)}
         </Link>
         {item.product.matched_queries.length > 0 ? (
-          <p className="text-xs text-slate-500">取得クエリ: {item.product.matched_queries.join(" / ")}</p>
+          <p className="text-xs text-slate-500">売上順位: {item.product.matched_queries.join(" / ")}</p>
         ) : null}
       </div>
     </div>
@@ -185,18 +180,16 @@ export function SupplementsTopPage({ data }: { data: ProteinRankingPageData }) {
           <section className="rounded-[32px] bg-white/95 p-8 shadow-2xl sm:p-10">
             <div className="flex flex-col gap-4">
               <span className="inline-flex w-fit rounded-full bg-[#FFE7C2] px-4 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#9A3412]">
-                Protein / Supplements
+                Protein Ranking
               </span>
-              <h1 className="text-3xl font-bold text-[#7C2D12] sm:text-4xl">プロテイン/サプリ 最強TOP5</h1>
+              <h1 className="text-3xl font-bold text-[#7C2D12] sm:text-4xl">最強プロテインランキング TOP5</h1>
               <p className="max-w-3xl text-base leading-7 text-slate-700">
-                目的別に選びやすいよう、コスパ・成分・女性向けで厳選しています。ページ表示時は保存済みランキングだけを読み込み、定期更新で最新候補へ差し替える構成です。
+                楽天売上ランキングを母集団に、レビューや成分情報、用途との相性を見直して男性向けと女性向けに再整理しています。ページ表示時は保存済みランキングのみを読み込み、日次更新で差し替える構成です。
               </p>
               {updatedAtLabel ? (
                 <p className="text-sm text-slate-500">最終更新: {updatedAtLabel}</p>
               ) : (
-                <p className="text-sm text-slate-500">
-                  まだランキングデータがありません。初回 cron 実行後に TOP5 が表示されます。
-                </p>
+                <p className="text-sm text-slate-500">まだランキングデータがありません。初回 cron 実行後に TOP5 が表示されます。</p>
               )}
             </div>
           </section>
@@ -210,7 +203,7 @@ export function SupplementsTopPage({ data }: { data: ProteinRankingPageData }) {
 
               {section.items.length === 0 ? (
                 <div className="rounded-3xl border border-dashed border-[#FCD27B] bg-[#FFF8EE] p-8 text-sm text-slate-600">
-                  まだ表示できるデータがありません。Supabase migration と cron 更新を実行するとここに TOP5 が並びます。
+                  まだ表示できるデータがありません。cron 更新を実行するとここに TOP5 が並びます。
                 </div>
               ) : (
                 <div className="grid gap-5">

@@ -2,16 +2,29 @@ import {
   BEAUTY_KEYWORDS,
   DIET_KEYWORDS,
   LIKELY_PROTEIN_KEYWORDS,
+  TITLE_NOISE_PATTERNS,
+  TRUSTED_MALE_BRANDS,
   WOMEN_KEYWORDS,
 } from "@/lib/protein-rankings/constants";
-import type { NormalizedRakutenProduct, ProductMetricInput, ProteinType } from "@/lib/protein-rankings/types";
+import type { NormalizedRakutenRankingProduct, ProductMetricInput, ProteinType } from "@/lib/protein-rankings/types";
 
 const stripHtml = (value: string) =>
   value
     .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;|&#160;/g, " ")
+    .replace(/&amp;/g, "&")
     .replace(/\s+/g, " ")
     .trim();
+
+const normalizeTitle = (value: string) => {
+  let normalized = stripHtml(value);
+
+  for (const pattern of TITLE_NOISE_PATTERNS) {
+    normalized = normalized.replace(pattern, " ");
+  }
+
+  return normalized.replace(/\s+/g, " ").trim();
+};
 
 const extractWeightCandidates = (text: string) =>
   Array.from(text.matchAll(/(\d+(?:\.\d+)?)\s?(kg|g)/gi))
@@ -39,9 +52,7 @@ const findContentWeight = (title: string, description: string) => {
   }
 
   const descriptionWeights = extractWeightCandidates(description);
-  const uniqueDescriptionWeights = Array.from(
-    new Set(descriptionWeights.map((value) => Math.round(value)))
-  );
+  const uniqueDescriptionWeights = Array.from(new Set(descriptionWeights.map((value) => Math.round(value))));
 
   if (uniqueDescriptionWeights.length === 1) {
     return {
@@ -58,23 +69,14 @@ const findContentWeight = (title: string, description: string) => {
 
 const findServingSize = (text: string) => {
   const servingMatch = text.match(/1食(?:分)?(?:あたり|当たり)?\s*[\(（]?\s*(\d+(?:\.\d+)?)\s*g/i);
-
-  if (!servingMatch) {
-    return null;
-  }
-
-  return Number(servingMatch[1]);
+  return servingMatch ? Number(servingMatch[1]) : null;
 };
 
 const findProteinPerServing = (text: string) => {
   const match = text.match(
     /1食(?:分)?(?:あたり|当たり)?.{0,30}?(?:たんぱく質|タンパク質|蛋白質)\s*[:：]?\s*(\d+(?:\.\d+)?)\s*g/i
   );
-
-  if (match) {
-    return Number(match[1]);
-  }
-  return null;
+  return match ? Number(match[1]) : null;
 };
 
 const findProteinPer100g = (text: string) => {
@@ -96,26 +98,11 @@ const findProteinPer100g = (text: string) => {
 const detectProteinType = (text: string): ProteinType => {
   const normalized = text.toLowerCase();
 
-  if (normalized.includes("wpi")) {
-    return "wpi";
-  }
-
-  if (normalized.includes("wpc")) {
-    return "wpc";
-  }
-
-  if (normalized.includes("ソイ") || normalized.includes("soy")) {
-    return "soy";
-  }
-
-  if (normalized.includes("カゼイン") || normalized.includes("casein")) {
-    return "casein";
-  }
-
-  if (normalized.includes("ホエイ") || normalized.includes("whey")) {
-    return "whey";
-  }
-
+  if (normalized.includes("wpi")) return "wpi";
+  if (normalized.includes("wpc")) return "wpc";
+  if (normalized.includes("ソイ") || normalized.includes("soy")) return "soy";
+  if (normalized.includes("カゼイン") || normalized.includes("casein")) return "casein";
+  if (normalized.includes("ホエイ") || normalized.includes("whey")) return "whey";
   return "other";
 };
 
@@ -125,14 +112,35 @@ const collectMatchedKeywords = (text: string, keywords: readonly string[]) =>
 const isLikelyProteinProduct = (text: string) =>
   LIKELY_PROTEIN_KEYWORDS.some((keyword) => text.toLowerCase().includes(keyword.toLowerCase()));
 
-export const extractMetricsFromProduct = (product: NormalizedRakutenProduct): ProductMetricInput => {
-  const normalizedTitle = stripHtml(product.title);
+const normalizeBrand = (product: NormalizedRakutenRankingProduct, normalizedText: string) => {
+  const trustedBrand = TRUSTED_MALE_BRANDS.find((brand) => normalizedText.toLowerCase().includes(brand.toLowerCase()));
+  if (trustedBrand) {
+    return trustedBrand;
+  }
+
+  const candidates = [product.brandName, product.shopName, product.title].filter(
+    (value): value is string => typeof value === "string" && value.trim().length > 0
+  );
+
+  for (const value of candidates) {
+    const cleaned = value
+      .replace(/(公式|楽天市場店|公式ストア|本店|ショップ|ストア|店)$/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (cleaned.length > 1) {
+      return cleaned;
+    }
+  }
+
+  return null;
+};
+
+export const extractMetricsFromProduct = (product: NormalizedRakutenRankingProduct): ProductMetricInput => {
+  const normalizedTitle = normalizeTitle(product.title);
   const normalizedDescription = stripHtml(product.description);
   const normalizedText = `${normalizedTitle} ${normalizedDescription}`.trim();
-  const { contentWeightG, hasAmbiguousSizeOptions } = findContentWeight(
-    normalizedTitle,
-    normalizedDescription
-  );
+  const { contentWeightG, hasAmbiguousSizeOptions } = findContentWeight(normalizedTitle, normalizedDescription);
   const servingSizeG = findServingSize(normalizedText);
   const proteinPerServingG = findProteinPerServing(normalizedText);
   const proteinPer100gG = findProteinPer100g(normalizedText);
@@ -143,10 +151,13 @@ export const extractMetricsFromProduct = (product: NormalizedRakutenProduct): Pr
   const beautyKeywordMatches = collectMatchedKeywords(normalizedText, BEAUTY_KEYWORDS);
   const dietKeywordMatches = collectMatchedKeywords(normalizedText, DIET_KEYWORDS);
   const pricePerProteinGram =
-    proteinRatio && contentWeightG ? product.priceYen / (contentWeightG * proteinRatio) : null;
+    proteinRatio && contentWeightG && product.priceYen ? product.priceYen / (contentWeightG * proteinRatio) : null;
+  const likelyProtein = isLikelyProteinProduct(normalizedText);
 
   return {
     product,
+    canonicalBrand: normalizeBrand(product, normalizedText),
+    rakutenRank: product.rakutenRank,
     contentWeightG,
     servingSizeG,
     proteinPerServingG,
@@ -158,8 +169,8 @@ export const extractMetricsFromProduct = (product: NormalizedRakutenProduct): Pr
     dietKeywordMatches,
     pricePerProteinGram,
     hasAmbiguousSizeOptions,
-    excluded: !isLikelyProteinProduct(normalizedText),
-    exclusionReason: !isLikelyProteinProduct(normalizedText) ? "プロテイン商品として判定できませんでした" : null,
+    excluded: !likelyProtein,
+    exclusionReason: !likelyProtein ? "プロテイン商品として判定できませんでした" : null,
     rawExtraction: {
       normalizedTitle,
       normalizedDescription,

@@ -1,7 +1,7 @@
+import { RANKING_DESCRIPTIONS, RANKING_LABELS } from "@/lib/protein-rankings/constants";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { hasPublicSupabaseEnv, hasServiceSupabaseEnv } from "@/lib/supabase/config";
-import { RANKING_DESCRIPTIONS, RANKING_LABELS } from "@/lib/protein-rankings/constants";
 import type {
   EnrichedProduct,
   ProductMetricRow,
@@ -13,19 +13,23 @@ import type {
   RankingRow,
 } from "@/lib/protein-rankings/types";
 
-const RANKING_KEYS: RankingKey[] = ["cost-performance", "composition", "women"];
+const RANKING_KEYS: RankingKey[] = ["male", "female"];
 
 type RankingPayload = Record<RankingKey, Array<RankedProductInput & { rankPosition: number }>>;
 
-export const saveProteinRankingSnapshot = async (
-  products: EnrichedProduct[],
-  rankings: RankingPayload
-) => {
+type SaveInput = {
+  products: EnrichedProduct[];
+  rankings: RankingPayload;
+};
+
+export const saveProteinRankingSnapshot = async ({ products, rankings }: SaveInput) => {
   const supabase = createSupabaseAdminClient();
+  const timestamp = new Date().toISOString();
+
   const productRows = products.map(({ product }) => ({
     source: product.source,
     source_external_id: product.sourceExternalId,
-    ec_provider: product.source,
+    ec_provider: product.ecProvider,
     title: product.title,
     description: product.description,
     image_url: product.imageUrl,
@@ -38,14 +42,12 @@ export const saveProteinRankingSnapshot = async (
     matched_queries: product.matchedQueries,
     discovery_score: product.discoveryScore,
     raw_payload: product.rawPayload,
-    updated_at: new Date().toISOString(),
+    updated_at: timestamp,
   }));
 
   const { data: upsertedProducts, error: productError } = await supabase
     .from("products")
-    .upsert(productRows, {
-      onConflict: "source,source_external_id",
-    })
+    .upsert(productRows, { onConflict: "source,source_external_id" })
     .select("id, source_external_id");
 
   if (productError || !upsertedProducts) {
@@ -58,6 +60,8 @@ export const saveProteinRankingSnapshot = async (
 
   const metricRows = products.map(({ product, metrics }) => ({
     product_id: productIdByExternalId.get(product.sourceExternalId),
+    canonical_brand: metrics.canonicalBrand,
+    rakuten_rank: metrics.rakutenRank,
     content_weight_g: metrics.contentWeightG,
     serving_size_g: metrics.servingSizeG,
     protein_per_serving_g: metrics.proteinPerServingG,
@@ -71,19 +75,16 @@ export const saveProteinRankingSnapshot = async (
     excluded: metrics.excluded,
     exclusion_reason: metrics.exclusionReason,
     raw_extraction: metrics.rawExtraction,
-    updated_at: new Date().toISOString(),
+    updated_at: timestamp,
   }));
 
-  const { error: metricError } = await supabase.from("product_metrics").upsert(metricRows, {
-    onConflict: "product_id",
-  });
+  const { error: metricError } = await supabase.from("product_metrics").upsert(metricRows, { onConflict: "product_id" });
 
   if (metricError) {
     throw new Error(`Failed to upsert product metrics: ${metricError.message}`);
   }
 
   const { error: deleteError } = await supabase.from("rankings").delete().in("ranking_key", RANKING_KEYS);
-
   if (deleteError) {
     throw new Error(`Failed to reset rankings: ${deleteError.message}`);
   }
@@ -96,12 +97,11 @@ export const saveProteinRankingSnapshot = async (
       score: item.score,
       comment: item.comment,
       score_breakdown: item.scoreBreakdown,
-      updated_at: new Date().toISOString(),
+      updated_at: timestamp,
     }))
   );
 
   const { error: rankingError } = await supabase.from("rankings").insert(rankingRows);
-
   if (rankingError) {
     throw new Error(`Failed to save rankings: ${rankingError.message}`);
   }
@@ -159,21 +159,20 @@ export const fetchProteinRankingPageData = async (): Promise<ProteinRankingPageD
     };
   }
 
-  const [{ data: productRows, error: productError }, { data: metricRows, error: metricError }] =
-    await Promise.all([
-      supabase
-        .from("products")
-        .select(
-          "id, title, image_url, price_yen, review_average, review_count, item_url, affiliate_url, shop_name, matched_queries, source_external_id"
-        )
-        .in("id", productIds),
-      supabase
-        .from("product_metrics")
-        .select(
-          "product_id, content_weight_g, serving_size_g, protein_per_serving_g, protein_per_100g_g, protein_ratio, protein_type, women_keyword_matches, beauty_keyword_matches, diet_keyword_matches, price_per_protein_gram, excluded, exclusion_reason"
-        )
-        .in("product_id", productIds),
-    ]);
+  const [{ data: productRows, error: productError }, { data: metricRows, error: metricError }] = await Promise.all([
+    supabase
+      .from("products")
+      .select(
+        "id, ec_provider, title, image_url, price_yen, review_average, review_count, item_url, affiliate_url, shop_name, matched_queries, source_external_id"
+      )
+      .in("id", productIds),
+    supabase
+      .from("product_metrics")
+      .select(
+        "product_id, canonical_brand, rakuten_rank, content_weight_g, serving_size_g, protein_per_serving_g, protein_per_100g_g, protein_ratio, protein_type, women_keyword_matches, beauty_keyword_matches, diet_keyword_matches, price_per_protein_gram, excluded, exclusion_reason"
+      )
+      .in("product_id", productIds),
+  ]);
 
   if (productError || metricError || !productRows) {
     console.error("Failed to load ranking products or metrics", productError ?? metricError);
@@ -189,20 +188,12 @@ export const fetchProteinRankingPageData = async (): Promise<ProteinRankingPageD
   }
 
   const productsById = new Map((productRows as ProductRow[]).map((product) => [product.id, product]));
-  const metricsByProductId = new Map(
-    ((metricRows ?? []) as ProductMetricRow[]).map((metric) => [metric.product_id, metric])
-  );
-
-  const itemsByRankingKey = new Map<RankingKey, RankingCardItem[]>(
-    RANKING_KEYS.map((key) => [key, [] as RankingCardItem[]])
-  );
+  const metricsByProductId = new Map(((metricRows ?? []) as ProductMetricRow[]).map((metric) => [metric.product_id, metric]));
+  const itemsByRankingKey = new Map<RankingKey, RankingCardItem[]>(RANKING_KEYS.map((key) => [key, []]));
 
   (rankingRows as RankingRow[]).forEach((row) => {
     const product = productsById.get(row.product_id);
-
-    if (!product) {
-      return;
-    }
+    if (!product) return;
 
     itemsByRankingKey.get(row.ranking_key)?.push({
       rank: row.rank_position,
@@ -217,7 +208,6 @@ export const fetchProteinRankingPageData = async (): Promise<ProteinRankingPageD
     if (!latest || row.updated_at > latest) {
       return row.updated_at;
     }
-
     return latest;
   }, null);
 

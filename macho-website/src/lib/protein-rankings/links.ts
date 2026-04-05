@@ -6,5 +6,4 @@ type LinkInput = {
   itemUrl: string;
 };
 
-export const buildProductOutboundLink = ({ affiliateUrl, itemUrl }: LinkInput) =>
-  affiliateUrl ?? itemUrl;
+export const buildProductOutboundLink = ({ affiliateUrl, itemUrl }: LinkInput) => affiliateUrl ?? itemUrl;

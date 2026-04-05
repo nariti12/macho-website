@@ -1,26 +1,33 @@
-export type RankingKey = "cost-performance" | "composition" | "women";
+export type RankingKey = "male" | "female";
 
 export type ProteinType = "wpi" | "wpc" | "whey" | "soy" | "casein" | "other";
 
-export type NormalizedRakutenProduct = {
+export type CommerceProvider = "rakuten";
+
+export type NormalizedRakutenRankingProduct = {
   source: "rakuten";
   sourceExternalId: string;
+  ecProvider: "rakuten";
   title: string;
   description: string;
   imageUrl: string | null;
   priceYen: number;
-  reviewAverage: number;
+  reviewAverage: number | null;
   reviewCount: number;
   itemUrl: string;
   affiliateUrl: string | null;
   shopName: string | null;
+  brandName: string | null;
   matchedQueries: string[];
   discoveryScore: number;
+  rakutenRank: number;
   rawPayload: unknown;
 };
 
 export type ProductMetricInput = {
-  product: NormalizedRakutenProduct;
+  product: NormalizedRakutenRankingProduct;
+  canonicalBrand: string | null;
+  rakutenRank: number;
   contentWeightG: number | null;
   servingSizeG: number | null;
   proteinPerServingG: number | null;
@@ -38,7 +45,7 @@ export type ProductMetricInput = {
 };
 
 export type EnrichedProduct = {
-  product: NormalizedRakutenProduct;
+  product: NormalizedRakutenRankingProduct;
   metrics: ProductMetricInput;
 };
 
@@ -61,6 +68,7 @@ export type RankedProductInput = EnrichedProduct & {
 
 export type ProductRow = {
   id: string;
+  ec_provider: CommerceProvider;
   title: string;
   image_url: string | null;
   price_yen: number;
@@ -75,6 +83,8 @@ export type ProductRow = {
 
 export type ProductMetricRow = {
   product_id: string;
+  canonical_brand: string | null;
+  rakuten_rank: number | null;
   content_weight_g: number | null;
   serving_size_g: number | null;
   protein_per_serving_g: number | null;
