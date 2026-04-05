@@ -3,8 +3,6 @@ import type { RankingKey } from "@/lib/protein-rankings/types";
 export const RAKUTEN_PROTEIN_GENRE_ID = "567603";
 export const RAKUTEN_RANKING_ENDPOINT =
   "https://openapi.rakuten.co.jp/ichibaranking/api/IchibaItem/Ranking/20220601";
-export const RAKUTEN_ITEM_SEARCH_ENDPOINT =
-  "https://app.rakuten.co.jp/services/api/IchibaItem/Search/20220601";
 export const RAKUTEN_RANKING_PAGES = 2;
 export const RAKUTEN_RANKING_PAGE_SIZE = 30;
 export const RAKUTEN_REQUEST_DELAY_MS = 450;
@@ -116,13 +114,6 @@ export const TRUSTED_MALE_BRANDS = [
   "grong",
   "グロング",
   "fixit",
-] as const;
-
-export const MALE_SUPPLEMENTAL_SEARCH_QUERIES = [
-  "x-plosion プロテイン",
-  "xplosion プロテイン",
-  "ビーレジェンド プロテイン",
-  "ゴールドスタンダード プロテイン",
 ] as const;
 
 export const MYBEST_MALE_URL = "https://my-best.com/3389";
