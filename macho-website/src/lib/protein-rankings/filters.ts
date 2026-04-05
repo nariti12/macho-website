@@ -6,9 +6,10 @@ export const applyRankingFilters = (metrics: ProductMetricInput): ProductMetricI
     return metrics;
   }
 
-  const combinedText =
-    `${metrics.product.title} ${metrics.product.description} ${metrics.product.brandName ?? ""}`.toLowerCase();
-  const bannedKeyword = BANNED_PRODUCT_KEYWORDS.find((keyword) => combinedText.includes(keyword.toLowerCase()));
+  // Description text often contains related supplement words, so exclusion should
+  // rely on title/brand only to avoid dropping legitimate protein products.
+  const titleText = `${metrics.product.title} ${metrics.product.brandName ?? ""} ${metrics.product.shopName ?? ""}`.toLowerCase();
+  const bannedKeyword = BANNED_PRODUCT_KEYWORDS.find((keyword) => titleText.includes(keyword.toLowerCase()));
 
   if (bannedKeyword) {
     return {
@@ -18,7 +19,7 @@ export const applyRankingFilters = (metrics: ProductMetricInput): ProductMetricI
     };
   }
 
-  const bannedBrand = BANNED_BRANDS.find((brand) => combinedText.includes(brand.toLowerCase()));
+  const bannedBrand = BANNED_BRANDS.find((brand) => titleText.includes(brand.toLowerCase()));
   if (bannedBrand) {
     return {
       ...metrics,

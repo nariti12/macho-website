@@ -22,23 +22,12 @@ export const BANNED_PRODUCT_KEYWORDS = [
   "ボトル",
   "スプーン",
   "ケース",
-  "クレアチン",
-  "bcaa",
-  "eaa",
-  "アミノ酸",
-  "マルチビタミン",
-  "青汁",
   "グミ",
   "ゼリー",
   "スープ",
   "クッキー",
   "パンケーキ",
-  "スムージー",
-  "サプリ",
-  "タブレット",
-  "カプセル",
   "シリアル",
-  "飲料",
 ] as const;
 
 export const BANNED_BRANDS = ["savas", "ザバス"] as const;
