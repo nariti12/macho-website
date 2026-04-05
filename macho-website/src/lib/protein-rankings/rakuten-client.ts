@@ -26,6 +26,8 @@ const getRequiredEnv = (name: "RAKUTEN_APPLICATION_ID" | "RAKUTEN_ACCESS_KEY") =
   return value;
 };
 
+const getSiteOrigin = () => process.env.RAKUTEN_SITE_ORIGIN?.trim() || "https://www.machoda.com";
+
 const buildAffiliateUrl = (itemUrl: string) => {
   const affiliateId = process.env.RAKUTEN_AFFILIATE_ID;
   if (!affiliateId) return itemUrl;
@@ -67,6 +69,8 @@ const fetchPage = async (page: number) => {
       headers: {
         Accept: "application/json",
         Authorization: `Bearer ${accessKey}`,
+        Origin: getSiteOrigin(),
+        Referer: `${getSiteOrigin()}/`,
       },
       next: { revalidate: 0 },
     });
