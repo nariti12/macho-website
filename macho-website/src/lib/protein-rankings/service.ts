@@ -1,4 +1,5 @@
 import { applyRankingFilters } from "@/lib/protein-rankings/filters";
+import { MYBEST_FEMALE_SIGNAL_BONUS, MYBEST_MALE_SIGNAL_BONUS } from "@/lib/protein-rankings/constants";
 import { extractMetricsFromProduct } from "@/lib/protein-rankings/extractors";
 import { fetchMyBestReferenceTitles } from "@/lib/protein-rankings/mybest-client";
 import { saveProteinRankingSnapshot } from "@/lib/protein-rankings/repository";
@@ -44,7 +45,7 @@ const getExpertSignals = async (products: EnrichedProduct[]): Promise<Map<string
       if (matchesMale) {
         signals.push({
           sourceExternalId: product.product.sourceExternalId,
-          bonus: 0.05,
+          bonus: MYBEST_MALE_SIGNAL_BONUS,
           signalKey: "mybest_male",
           note: "my-best 男性向け記事掲載",
           isActive: true,
@@ -54,7 +55,7 @@ const getExpertSignals = async (products: EnrichedProduct[]): Promise<Map<string
       if (matchesFemale) {
         signals.push({
           sourceExternalId: product.product.sourceExternalId,
-          bonus: 0.05,
+          bonus: MYBEST_FEMALE_SIGNAL_BONUS,
           signalKey: "mybest_female",
           note: "my-best 女性向け記事掲載",
           isActive: true,

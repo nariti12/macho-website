@@ -118,7 +118,8 @@ export const TRUSTED_MALE_BRANDS = [
 
 export const MYBEST_MALE_URL = "https://my-best.com/3389";
 export const MYBEST_FEMALE_URL = "https://my-best.com/23907";
-export const MYBEST_SIGNAL_BONUS = 0.05;
+export const MYBEST_MALE_SIGNAL_BONUS = 0.05;
+export const MYBEST_FEMALE_SIGNAL_BONUS = 0.14;
 
 export const TITLE_NOISE_PATTERNS = [
   /【[^】]*】/g,
@@ -165,4 +166,4 @@ export const FEMALE_WEIGHTS = {
   suitability: 0.15,
 } as const;
 
-export const MAX_EXPERT_BONUS = 0.1;
+export const MAX_EXPERT_BONUS = 0.15;

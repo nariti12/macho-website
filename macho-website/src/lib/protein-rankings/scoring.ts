@@ -45,8 +45,10 @@ const femaleBaseSuitability = (candidate: EnrichedProduct) => {
 };
 
 const getExpertBonus = (signals: ExpertSignalRecord[]) =>
-  clamp01(signals.filter((signal) => signal.isActive).reduce((sum, signal) => sum + Math.max(signal.bonus, 0), 0)) *
-  MAX_EXPERT_BONUS;
+  Math.min(
+    MAX_EXPERT_BONUS,
+    signals.filter((signal) => signal.isActive).reduce((sum, signal) => sum + Math.max(signal.bonus, 0), 0)
+  );
 
 const normalizeBrandKey = (candidate: EnrichedProduct) =>
   (candidate.metrics.canonicalBrand ??
