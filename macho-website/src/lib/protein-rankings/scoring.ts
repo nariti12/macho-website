@@ -142,10 +142,20 @@ export const buildRankings = (
     const explicitWomenTitle =
       candidate.product.title.includes("女性") ||
       candidate.product.title.includes("レディース") ||
-      candidate.metrics.womenKeywordMatches.length >= 2;
+      candidate.metrics.womenKeywordMatches.length >= 2 ||
+      candidate.metrics.beautyKeywordMatches.length >= 2 ||
+      candidate.metrics.dietKeywordMatches.length >= 2;
+
+    const maleFriendly =
+      candidate.metrics.proteinType === "whey" ||
+      candidate.metrics.proteinType === "wpc" ||
+      candidate.metrics.proteinType === "wpi" ||
+      hasTrustedMaleBrand(candidate) ||
+      candidate.product.title.includes("ホエイ");
 
     return (
       candidate.metrics.rakutenRank !== null &&
+      maleFriendly &&
       !explicitWomenTitle &&
       candidate.metrics.proteinType !== "soy"
     );
@@ -172,13 +182,13 @@ export const buildRankings = (
       const salesScore = salesRankToScore(candidate.metrics.rakutenRank);
       const reviewScore = reviewScores.get(candidate.product.sourceExternalId) ?? 0.45;
       const expertBonus = getExpertBonus(signals);
-      const trustedBrandBonus = hasTrustedMaleBrand(candidate) ? 0.08 : 0;
+      const trustedBrandBonus = hasTrustedMaleBrand(candidate) ? 0.1 : 0;
       const suitabilityScore = maleSuitabilityScore(candidate);
       const reviewPenalty = candidate.product.reviewCount > 0 && candidate.product.reviewCount < STRICT_MIN_REVIEW_COUNT ? 0.92 : 1;
       const score =
         (salesScore * MALE_WEIGHTS.sales +
           reviewScore * MALE_WEIGHTS.review +
-          suitabilityScore * 0.12 +
+          suitabilityScore * 0.08 +
           expertBonus +
           trustedBrandBonus) *
         reviewPenalty;
