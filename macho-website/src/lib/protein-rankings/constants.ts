@@ -36,8 +36,6 @@ export const CHILDREN_EXCLUSION_KEYWORDS = [
   "子供",
   "こども",
   "小学生",
-  "中学生",
-  "高校生",
   "成長期",
   "育ち盛り",
 ] as const;
