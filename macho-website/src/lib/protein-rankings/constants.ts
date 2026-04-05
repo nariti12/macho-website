@@ -4,7 +4,7 @@ export const RAKUTEN_PROTEIN_GENRE_ID = "567603";
 export const RAKUTEN_RANKING_ENDPOINT =
   "https://openapi.rakuten.co.jp/ichibaranking/api/IchibaItem/Ranking/20220601";
 export const RAKUTEN_ITEM_SEARCH_ENDPOINT =
-  "https://openapi.rakuten.co.jp/ichiba-item-search/api/v1/Item/Search";
+  "https://app.rakuten.co.jp/services/api/IchibaItem/Search/20220601";
 export const RAKUTEN_RANKING_PAGES = 2;
 export const RAKUTEN_RANKING_PAGE_SIZE = 30;
 export const RAKUTEN_REQUEST_DELAY_MS = 450;
