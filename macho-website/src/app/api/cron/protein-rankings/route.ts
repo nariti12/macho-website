@@ -43,6 +43,7 @@ const handleCronRequest = async (request: Request) => {
     }
 
     const result = await refreshProteinRankings();
+    revalidatePath("/supplements-ranking");
     revalidatePath("/supplements-top3");
     console.info("Protein rankings refreshed", result);
 

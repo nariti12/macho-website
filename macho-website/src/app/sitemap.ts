@@ -12,7 +12,7 @@ const staticRoutes = [
   "/menu",
   "/intake-calculator",
   "/high-protein",
-  "/supplements-top3",
+  "/supplements-ranking",
   "/training-wear",
   "/training-gear",
   "/blog",

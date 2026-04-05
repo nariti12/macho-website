@@ -1,6 +1,6 @@
 ## Overview
 
-`macho-website` は Next.js App Router ベースのサイトです。`/supplements-top3` では、楽天売上ランキングを母集団に再選抜した「男性向け最強プロテイン TOP5 / 女性向け最強プロテイン TOP5」を表示します。ページ表示時は Supabase に保存済みのランキングのみを読み込みます。
+`macho-website` は Next.js App Router ベースのサイトです。`/supplements-ranking` では、楽天売上ランキングを母集団に再選抜した「男性向け最強プロテイン TOP5 / 女性向け最強プロテイン TOP5」を表示します。ページ表示時は Supabase に保存済みのランキングのみを読み込みます。
 
 ## Getting Started
 
@@ -56,7 +56,7 @@ supabase db push
 4. `my-best` の男性向け / 女性向け記事に掲載された商品を補助加点に変換する
 5. 男性向け / 女性向けのスコアを計算
 6. Supabase の `products` / `product_metrics` / `rankings` に保存
-6. `/supplements-top3` は保存済みデータを表示
+6. `/supplements-ranking` は保存済みデータを表示
 
 男性向けは楽天順位を主軸に、レビュー、定番ブランド、`my-best` 掲載を補助にして再選抜します。女性向けは楽天順位を主軸に、レビュー、女性向けキーワード、`my-best` 掲載を補助にして再選抜します。
 

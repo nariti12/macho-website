@@ -38,7 +38,7 @@ export function HomePage() {
     { label: "用途別\n最強筋トレメニュー", href: "/menu" },
     { label: "１日摂取カロリー/\nたんぱく質 計算機", href: "/intake-calculator" },
     { label: "高たんぱく質一覧", href: "/high-protein" },
-    { label: "プロテイン/サプリ 最強TOP5", href: "/supplements-top3" },
+    { label: "最強プロテイン\n売上TOP5", href: "/supplements-ranking" },
     { label: "トレーニングウェア", href: "/training-wear" },
     { label: "トレーニングギア", href: "/training-gear" },
   ];
