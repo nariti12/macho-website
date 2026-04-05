@@ -19,6 +19,16 @@ const salesRankToScore = (rank: number | null) => {
   return clamp01((TOTAL_RAKUTEN_CANDIDATES - rank + 1) / TOTAL_RAKUTEN_CANDIDATES);
 };
 
+const maleRankPriorityBonus = (rank: number | null) => {
+  if (!rank || rank <= 0) return 0;
+  if (rank === 1) return 0.35;
+  if (rank === 2) return 0.22;
+  if (rank === 3) return 0.14;
+  if (rank <= 5) return 0.08;
+  if (rank <= 10) return 0.04;
+  return 0;
+};
+
 const reviewAverageToScore = (reviewAverage: number | null) => {
   if (!reviewAverage) return 0.55;
   return clamp01((reviewAverage - 3.5) / 1.5);
@@ -184,13 +194,15 @@ export const buildRankings = (
       const expertBonus = getExpertBonus(signals);
       const trustedBrandBonus = hasTrustedMaleBrand(candidate) ? 0.1 : 0;
       const suitabilityScore = maleSuitabilityScore(candidate);
+      const rankPriorityBonus = maleRankPriorityBonus(candidate.metrics.rakutenRank);
       const reviewPenalty = candidate.product.reviewCount > 0 && candidate.product.reviewCount < STRICT_MIN_REVIEW_COUNT ? 0.92 : 1;
       const score =
         (salesScore * MALE_WEIGHTS.sales +
           reviewScore * MALE_WEIGHTS.review +
           suitabilityScore * 0.08 +
           expertBonus +
-          trustedBrandBonus) *
+          trustedBrandBonus +
+          rankPriorityBonus) *
         reviewPenalty;
 
       return {
@@ -203,6 +215,7 @@ export const buildRankings = (
           suitabilityScore,
           expertBonus,
           trustedBrandBonus,
+          rankPriorityBonus,
           reviewPenalty,
         },
       };
