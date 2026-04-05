@@ -8,7 +8,7 @@ import {
   TOP_RANKING_LIMIT,
   TRUSTED_MALE_BRANDS,
 } from "@/lib/protein-rankings/constants";
-import type { EnrichedProduct, ExpertSignalRecord, ProteinType, RankedProductInput } from "@/lib/protein-rankings/types";
+import type { EnrichedProduct, ExpertSignalRecord, RankedProductInput } from "@/lib/protein-rankings/types";
 
 const TOTAL_RAKUTEN_CANDIDATES = RAKUTEN_RANKING_PAGE_SIZE * RAKUTEN_RANKING_PAGES;
 
@@ -27,62 +27,26 @@ const reviewAverageToScore = (reviewAverage: number | null) => {
 const reviewConfidence = (reviewAverage: number | null, reviewCount: number) =>
   clamp01(reviewAverageToScore(reviewAverage) * 0.6 + (Math.log10(reviewCount + 1) / Math.log10(5000 + 1)) * 0.4);
 
-const proteinTypeScore = (proteinType: ProteinType) => {
-  switch (proteinType) {
-    case "wpi":
-      return 1;
-    case "wpc":
-      return 0.92;
-    case "whey":
-      return 0.84;
-    case "soy":
-      return 0.62;
-    case "casein":
-      return 0.6;
-    default:
-      return 0.45;
-  }
-};
+const femaleBaseSuitability = (candidate: EnrichedProduct) => {
+  const title = candidate.product.title;
+  const keywordCount =
+    candidate.metrics.womenKeywordMatches.length +
+    candidate.metrics.beautyKeywordMatches.length +
+    candidate.metrics.dietKeywordMatches.length;
 
-const femaleBaseSuitability = (proteinType: ProteinType) => {
-  switch (proteinType) {
-    case "soy":
-      return 1;
-    case "wpi":
-      return 0.45;
-    case "wpc":
-      return 0.42;
-    case "whey":
-      return 0.36;
-    default:
-      return 0.3;
-  }
+  let score = 0.2;
+  if (candidate.metrics.proteinType === "soy") score += 0.35;
+  if (title.includes("女性") || title.includes("レディース")) score += 0.2;
+  if (title.includes("美容")) score += 0.15;
+  if (title.includes("置き換え") || title.includes("ダイエット")) score += 0.1;
+  score += Math.min(0.2, keywordCount * 0.05);
+
+  return clamp01(score);
 };
 
 const getExpertBonus = (signals: ExpertSignalRecord[]) =>
   clamp01(signals.filter((signal) => signal.isActive).reduce((sum, signal) => sum + Math.max(signal.bonus, 0), 0)) *
   MAX_EXPERT_BONUS;
-
-const createRobustNormalizer = (values: number[], higherBetter = true) => {
-  const filtered = values.filter((value) => Number.isFinite(value)).sort((left, right) => left - right);
-
-  if (filtered.length === 0) {
-    return () => 0.45;
-  }
-
-  const low = filtered[Math.max(0, Math.floor((filtered.length - 1) * 0.1))];
-  const high = filtered[Math.min(filtered.length - 1, Math.ceil((filtered.length - 1) * 0.9))];
-
-  if (Math.abs(high - low) < 1e-6) {
-    return () => 0.55;
-  }
-
-  return (value: number) => {
-    const clipped = Math.min(high, Math.max(low, value));
-    const normalized = (clipped - low) / (high - low);
-    return higherBetter ? clamp01(normalized) : clamp01(1 - normalized);
-  };
-};
 
 const normalizeBrandKey = (candidate: EnrichedProduct) =>
   (candidate.metrics.canonicalBrand ??
@@ -117,11 +81,11 @@ const sortAndTrim = (items: RankedProductInput[]) => {
     }));
 };
 
-const buildComment = (candidate: EnrichedProduct) => {
+const buildComment = (candidate: EnrichedProduct, signals: ExpertSignalRecord[]) => {
   const base = candidate.metrics.rakutenRank ? `楽天 ${candidate.metrics.rakutenRank}位 の売上上位。` : "楽天売上上位。";
 
-  if (candidate.metrics.proteinRatio) {
-    return `${base} たんぱく質含有率は約 ${(candidate.metrics.proteinRatio * 100).toFixed(1)}% です。`;
+  if (signals.some((signal) => signal.signalKey === "mybest_male" || signal.signalKey === "mybest_female")) {
+    return `${base} my-best掲載実績があり、レビュー評価も安定しています。`;
   }
 
   return base;
@@ -140,19 +104,6 @@ export const buildRankings = (
     ])
   );
 
-  const costNormalizer = createRobustNormalizer(
-    eligible
-      .map((candidate) => candidate.metrics.pricePerProteinGram)
-      .filter((value): value is number => typeof value === "number"),
-    false
-  );
-
-  const proteinNormalizer = createRobustNormalizer(
-    eligible
-      .map((candidate) => candidate.metrics.proteinRatio)
-      .filter((value): value is number => typeof value === "number")
-  );
-
   const maleBase = eligible.filter((candidate) => {
     const explicitWomenTitle =
       candidate.product.title.includes("女性") ||
@@ -162,11 +113,7 @@ export const buildRankings = (
     return (
       candidate.metrics.rakutenRank !== null &&
       !explicitWomenTitle &&
-      candidate.metrics.proteinType !== "soy" &&
-      (candidate.metrics.proteinType === "whey" ||
-        candidate.metrics.proteinType === "wpc" ||
-        candidate.metrics.proteinType === "wpi" ||
-        candidate.metrics.proteinRatio !== null)
+      candidate.metrics.proteinType !== "soy"
     );
   });
 
@@ -187,35 +134,21 @@ export const buildRankings = (
 
   const male = sortAndTrim(
     maleCandidates.map((candidate) => {
+      const signals = expertSignalsByProductId.get(candidate.product.sourceExternalId) ?? [];
       const salesScore = salesRankToScore(candidate.metrics.rakutenRank);
       const reviewScore = reviewScores.get(candidate.product.sourceExternalId) ?? 0.45;
-      const proteinScore =
-        candidate.metrics.proteinRatio !== null
-          ? proteinNormalizer(candidate.metrics.proteinRatio)
-          : proteinTypeScore(candidate.metrics.proteinType);
-      const costScore =
-        candidate.metrics.pricePerProteinGram !== null ? costNormalizer(candidate.metrics.pricePerProteinGram) : 0.45;
-      const expertBonus = getExpertBonus(expertSignalsByProductId.get(candidate.product.sourceExternalId) ?? []);
+      const expertBonus = getExpertBonus(signals);
       const trustedBrandBonus = hasTrustedMaleBrand(candidate) ? 0.04 : 0;
       const reviewPenalty = candidate.product.reviewCount > 0 && candidate.product.reviewCount < STRICT_MIN_REVIEW_COUNT ? 0.92 : 1;
-      const score =
-        (salesScore * MALE_WEIGHTS.sales +
-          reviewScore * MALE_WEIGHTS.review +
-          proteinScore * MALE_WEIGHTS.protein +
-          costScore * MALE_WEIGHTS.cost +
-          expertBonus +
-          trustedBrandBonus) *
-        reviewPenalty;
+      const score = (salesScore * MALE_WEIGHTS.sales + reviewScore * MALE_WEIGHTS.review + expertBonus + trustedBrandBonus) * reviewPenalty;
 
       return {
         ...candidate,
         score,
-        comment: buildComment(candidate),
+        comment: buildComment(candidate, signals),
         scoreBreakdown: {
           salesScore,
           reviewScore,
-          proteinScore,
-          costScore,
           expertBonus,
           trustedBrandBonus,
           reviewPenalty,
@@ -226,35 +159,27 @@ export const buildRankings = (
 
   const female = sortAndTrim(
     femaleCandidates.map((candidate) => {
+      const signals = expertSignalsByProductId.get(candidate.product.sourceExternalId) ?? [];
       const salesScore = salesRankToScore(candidate.metrics.rakutenRank);
       const reviewScore = reviewScores.get(candidate.product.sourceExternalId) ?? 0.45;
-      const keywordScore = clamp01(
-        candidate.metrics.womenKeywordMatches.length / 3 +
-          candidate.metrics.beautyKeywordMatches.length / 4 +
-          candidate.metrics.dietKeywordMatches.length / 4
-      );
-      const suitabilityScore = clamp01(femaleBaseSuitability(candidate.metrics.proteinType) * 0.55 + keywordScore * 0.45);
-      const costScore =
-        candidate.metrics.pricePerProteinGram !== null ? costNormalizer(candidate.metrics.pricePerProteinGram) : 0.45;
-      const expertBonus = getExpertBonus(expertSignalsByProductId.get(candidate.product.sourceExternalId) ?? []);
+      const suitabilityScore = femaleBaseSuitability(candidate);
+      const expertBonus = getExpertBonus(signals);
       const soyBonus = candidate.metrics.proteinType === "soy" ? 0.03 : 0;
       const score =
         salesScore * FEMALE_WEIGHTS.sales +
         reviewScore * FEMALE_WEIGHTS.review +
         suitabilityScore * FEMALE_WEIGHTS.suitability +
-        costScore * FEMALE_WEIGHTS.cost +
         expertBonus +
         soyBonus;
 
       return {
         ...candidate,
         score,
-        comment: buildComment(candidate),
+        comment: buildComment(candidate, signals),
         scoreBreakdown: {
           salesScore,
           reviewScore,
           suitabilityScore,
-          costScore,
           expertBonus,
           soyBonus,
         },

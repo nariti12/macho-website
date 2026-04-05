@@ -7,14 +7,6 @@ import type { CommerceProvider, ProductMetricRow, ProteinRankingPageData, Protei
 
 const profileImageSrc = "/picture/ore.png";
 
-const formatYen = (value: number | null | undefined) =>
-  typeof value === "number" ? `¥${value.toLocaleString("ja-JP")}` : "不明";
-
-const formatWeight = (value: number | null | undefined) => {
-  if (!value) return "不明";
-  return value >= 1000 ? `${(value / 1000).toFixed(value % 1000 === 0 ? 0 : 1)}kg` : `${value.toFixed(0)}g`;
-};
-
 const formatProteinType = (proteinType: ProteinType | null | undefined) => {
   switch (proteinType) {
     case "wpi":
@@ -79,14 +71,12 @@ const MetricChip = ({ label, value }: { label: string; value: string }) => (
 const renderMaleHighlights = (item: RankingCardItem) => (
   <>
     <MetricChip label="売上順位" value={formatSalesRanks(item.metrics)} />
-    <MetricChip label="価格" value={formatYen(item.product.price_yen)} />
+    <MetricChip label="レビュー" value={formatReview(item)} />
     <MetricChip label="タイプ" value={formatProteinType(item.metrics?.protein_type)} />
     <MetricChip
-      label="たんぱく質含有率"
-      value={item.metrics?.protein_ratio ? `${(item.metrics.protein_ratio * 100).toFixed(1)}%` : "不明"}
+      label="ブランド"
+      value={item.metrics?.canonical_brand || item.product.shop_name || "不明"}
     />
-    <MetricChip label="内容量" value={formatWeight(item.metrics?.content_weight_g)} />
-    <MetricChip label="レビュー" value={formatReview(item)} />
   </>
 );
 
@@ -100,14 +90,9 @@ const renderFemaleHighlights = (item: RankingCardItem) => {
   return (
     <>
       <MetricChip label="売上順位" value={formatSalesRanks(item.metrics)} />
-      <MetricChip label="価格" value={formatYen(item.product.price_yen)} />
+      <MetricChip label="レビュー" value={formatReview(item)} />
       <MetricChip label="タイプ" value={formatProteinType(item.metrics?.protein_type)} />
       <MetricChip label="女性向けポイント" value={womenPoints || "女性向け訴求は控えめ"} />
-      <MetricChip
-        label="たんぱく質含有率"
-        value={item.metrics?.protein_ratio ? `${(item.metrics.protein_ratio * 100).toFixed(1)}%` : "不明"}
-      />
-      <MetricChip label="レビュー" value={formatReview(item)} />
     </>
   );
 };
@@ -184,7 +169,7 @@ export function SupplementsTopPage({ data }: { data: ProteinRankingPageData }) {
               </span>
               <h1 className="text-3xl font-bold text-[#7C2D12] sm:text-4xl">最強プロテインランキング TOP5</h1>
               <p className="max-w-3xl text-base leading-7 text-slate-700">
-                楽天売上ランキングを母集団に、レビューや成分情報、用途との相性を見直して男性向けと女性向けに再整理しています。ページ表示時は保存済みランキングのみを読み込み、日次更新で差し替える構成です。
+                楽天売上ランキングを母集団に、レビュー、my-best掲載、用途との相性を見直して男性向けと女性向けに再整理しています。ページ表示時は保存済みランキングのみを読み込み、日次更新で差し替える構成です。
               </p>
               {updatedAtLabel ? (
                 <p className="text-sm text-slate-500">最終更新: {updatedAtLabel}</p>

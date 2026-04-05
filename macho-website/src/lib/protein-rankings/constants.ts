@@ -149,23 +149,20 @@ export const RANKING_LABELS: Record<RankingKey, string> = {
 
 export const RANKING_DESCRIPTIONS: Record<RankingKey, string> = {
   male:
-    "楽天売上ランキングをベースに、レビュー、たんぱく質情報、価格バランスを見直して選んだ男性向け上位5商品です。",
+    "楽天売上ランキングをベースに、レビュー、定番ブランド、my-best掲載を見直して選んだ男性向け上位5商品です。",
   female:
-    "楽天売上ランキングをベースに、レビュー、ソイ適性、女性向け訴求を見直して選んだ女性向け上位5商品です。",
+    "楽天売上ランキングをベースに、レビュー、女性向け訴求、my-best掲載を見直して選んだ女性向け上位5商品です。",
 };
 
 export const MALE_WEIGHTS = {
-  sales: 0.5,
-  review: 0.2,
-  protein: 0.15,
-  cost: 0.1,
+  sales: 0.55,
+  review: 0.25,
 } as const;
 
 export const FEMALE_WEIGHTS = {
-  sales: 0.45,
-  review: 0.2,
-  suitability: 0.2,
-  cost: 0.1,
+  sales: 0.5,
+  review: 0.25,
+  suitability: 0.15,
 } as const;
 
 export const MAX_EXPERT_BONUS = 0.1;
