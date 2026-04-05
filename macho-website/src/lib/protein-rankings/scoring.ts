@@ -81,14 +81,28 @@ const sortAndTrim = (items: RankedProductInput[]) => {
     }));
 };
 
-const buildComment = (candidate: EnrichedProduct, signals: ExpertSignalRecord[]) => {
-  const base = candidate.metrics.rakutenRank ? `楽天 ${candidate.metrics.rakutenRank}位 の売上上位。` : "楽天売上上位。";
+const buildComment = (candidate: EnrichedProduct, signals: ExpertSignalRecord[], rankingKey: "male" | "female") => {
+  const hasMyBestSignal = signals.some((signal) => signal.signalKey === "mybest_male" || signal.signalKey === "mybest_female");
+  const trustedBrand = hasTrustedMaleBrand(candidate);
 
-  if (signals.some((signal) => signal.signalKey === "mybest_male" || signal.signalKey === "mybest_female")) {
-    return `${base} my-best掲載実績があり、レビュー評価も安定しています。`;
+  if (rankingKey === "male") {
+    if (hasMyBestSignal && trustedBrand) {
+      return "楽天売上上位で、定番ブランドとしての支持と my-best 掲載実績があります。";
+    }
+    if (trustedBrand) {
+      return "楽天売上上位で、定番ブランドとして選ばれやすい一品です。";
+    }
+    if (hasMyBestSignal) {
+      return "楽天売上上位で、my-best 掲載実績がある定番候補です。";
+    }
+    return "楽天売上上位で、レビュー評価も安定している候補です。";
   }
 
-  return base;
+  if (hasMyBestSignal) {
+    return "楽天売上上位で、my-best 掲載実績があり女性向けとして選びやすい一品です。";
+  }
+
+  return "楽天売上上位で、女性向けの訴求が分かりやすい候補です。";
 };
 
 export const buildRankings = (
@@ -145,7 +159,7 @@ export const buildRankings = (
       return {
         ...candidate,
         score,
-        comment: buildComment(candidate, signals),
+        comment: buildComment(candidate, signals, "male"),
         scoreBreakdown: {
           salesScore,
           reviewScore,
@@ -175,7 +189,7 @@ export const buildRankings = (
       return {
         ...candidate,
         score,
-        comment: buildComment(candidate, signals),
+        comment: buildComment(candidate, signals, "female"),
         scoreBreakdown: {
           salesScore,
           reviewScore,

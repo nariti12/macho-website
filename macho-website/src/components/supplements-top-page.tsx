@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { SiteHeader } from "@/components/site-header";
 import { buildProductOutboundLink } from "@/lib/protein-rankings/links";
-import type { CommerceProvider, ProductMetricRow, ProteinRankingPageData, ProteinType, RankingCardItem, RankingKey } from "@/lib/protein-rankings/types";
+import type { CommerceProvider, ProteinRankingPageData, ProteinType, RankingCardItem, RankingKey } from "@/lib/protein-rankings/types";
 
 const profileImageSrc = "/picture/ore.png";
 
@@ -47,12 +47,6 @@ const formatReview = (item: RankingCardItem) => {
   return "不明";
 };
 
-const formatSalesRanks = (metrics: ProductMetricRow | null) => {
-  if (!metrics) return "不明";
-
-  return metrics.rakuten_rank ? `楽天 ${metrics.rakuten_rank}位` : "不明";
-};
-
 const getOutboundLabel = (provider: CommerceProvider) => {
   switch (provider) {
     case "rakuten":
@@ -70,7 +64,6 @@ const MetricChip = ({ label, value }: { label: string; value: string }) => (
 
 const renderMaleHighlights = (item: RankingCardItem) => (
   <>
-    <MetricChip label="売上順位" value={formatSalesRanks(item.metrics)} />
     <MetricChip label="レビュー" value={formatReview(item)} />
     <MetricChip label="タイプ" value={formatProteinType(item.metrics?.protein_type)} />
     <MetricChip
@@ -89,7 +82,6 @@ const renderFemaleHighlights = (item: RankingCardItem) => {
 
   return (
     <>
-      <MetricChip label="売上順位" value={formatSalesRanks(item.metrics)} />
       <MetricChip label="レビュー" value={formatReview(item)} />
       <MetricChip label="タイプ" value={formatProteinType(item.metrics?.protein_type)} />
       <MetricChip label="女性向けポイント" value={womenPoints || "女性向け訴求は控えめ"} />
@@ -146,9 +138,6 @@ const RankingCard = ({ rankingKey, item }: { rankingKey: RankingKey; item: Ranki
         >
           {getOutboundLabel(item.product.ec_provider)}
         </Link>
-        {item.product.matched_queries.length > 0 ? (
-          <p className="text-xs text-slate-500">売上順位: {item.product.matched_queries.join(" / ")}</p>
-        ) : null}
       </div>
     </div>
   </article>

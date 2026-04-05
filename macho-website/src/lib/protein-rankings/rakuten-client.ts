@@ -54,12 +54,16 @@ type RakutenRankingResponse = {
 const fetchPage = async (page: number) => {
   const applicationId = getRequiredEnv("RAKUTEN_APPLICATION_ID");
   const accessKey = getRequiredEnv("RAKUTEN_ACCESS_KEY");
+  const affiliateId = process.env.RAKUTEN_AFFILIATE_ID;
   const url = new URL(RAKUTEN_RANKING_ENDPOINT);
   url.searchParams.set("applicationId", applicationId);
   url.searchParams.set("accessKey", accessKey);
   url.searchParams.set("genreId", RAKUTEN_PROTEIN_GENRE_ID);
   url.searchParams.set("page", String(page));
   url.searchParams.set("format", "json");
+  if (affiliateId) {
+    url.searchParams.set("affiliateId", affiliateId);
+  }
 
   let attempt = 0;
 
@@ -128,7 +132,7 @@ export const fetchRakutenProteinRankingEntries = async (): Promise<NormalizedRak
         reviewAverage: Number.isFinite(parsedReviewAverage) ? parsedReviewAverage : null,
         reviewCount: typeof item.reviewCount === "number" ? item.reviewCount : 0,
         itemUrl,
-        affiliateUrl: buildAffiliateUrl(item.affiliateUrl ?? itemUrl),
+        affiliateUrl: item.affiliateUrl ?? buildAffiliateUrl(itemUrl),
         shopName: stripHtml(item.shopName) || null,
         brandName: stripHtml(item.shopName) || null,
         matchedQueries: [`楽天 ${rank}位`],

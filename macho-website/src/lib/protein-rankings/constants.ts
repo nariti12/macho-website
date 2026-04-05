@@ -155,8 +155,8 @@ export const RANKING_DESCRIPTIONS: Record<RankingKey, string> = {
 };
 
 export const MALE_WEIGHTS = {
-  sales: 0.55,
-  review: 0.25,
+  sales: 0.65,
+  review: 0.2,
 } as const;
 
 export const FEMALE_WEIGHTS = {
