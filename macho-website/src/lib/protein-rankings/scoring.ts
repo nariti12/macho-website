@@ -178,7 +178,8 @@ export const buildRankings = (
       candidate.metrics.womenKeywordMatches.length > 0 ||
       candidate.metrics.beautyKeywordMatches.length > 0 ||
       candidate.metrics.dietKeywordMatches.length > 0 ||
-      candidate.product.title.includes("女性")
+      candidate.product.title.includes("女性") ||
+      candidate.product.title.includes("美容")
   );
 
   const femaleCandidates =
@@ -236,12 +237,14 @@ export const buildRankings = (
       const costScore =
         candidate.metrics.pricePerProteinGram !== null ? costNormalizer(candidate.metrics.pricePerProteinGram) : 0.45;
       const expertBonus = getExpertBonus(expertSignalsByProductId.get(candidate.product.sourceExternalId) ?? []);
+      const soyBonus = candidate.metrics.proteinType === "soy" ? 0.03 : 0;
       const score =
         salesScore * FEMALE_WEIGHTS.sales +
         reviewScore * FEMALE_WEIGHTS.review +
         suitabilityScore * FEMALE_WEIGHTS.suitability +
         costScore * FEMALE_WEIGHTS.cost +
-        expertBonus;
+        expertBonus +
+        soyBonus;
 
       return {
         ...candidate,
@@ -253,6 +256,7 @@ export const buildRankings = (
           suitabilityScore,
           costScore,
           expertBonus,
+          soyBonus,
         },
       };
     })

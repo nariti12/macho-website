@@ -3,6 +3,8 @@ import type { RankingKey } from "@/lib/protein-rankings/types";
 export const RAKUTEN_PROTEIN_GENRE_ID = "567603";
 export const RAKUTEN_RANKING_ENDPOINT =
   "https://openapi.rakuten.co.jp/ichibaranking/api/IchibaItem/Ranking/20220601";
+export const RAKUTEN_ITEM_SEARCH_ENDPOINT =
+  "https://openapi.rakuten.co.jp/ichiba-item-search/api/v1/Item/Search";
 export const RAKUTEN_RANKING_PAGES = 2;
 export const RAKUTEN_RANKING_PAGE_SIZE = 30;
 export const RAKUTEN_REQUEST_DELAY_MS = 450;
@@ -28,6 +30,18 @@ export const BANNED_PRODUCT_KEYWORDS = [
   "クッキー",
   "パンケーキ",
   "シリアル",
+] as const;
+
+export const CHILDREN_EXCLUSION_KEYWORDS = [
+  "ジュニア",
+  "キッズ",
+  "子供",
+  "こども",
+  "小学生",
+  "中学生",
+  "高校生",
+  "成長期",
+  "育ち盛り",
 ] as const;
 
 export const BANNED_BRANDS = ["savas", "ザバス"] as const;
@@ -104,6 +118,17 @@ export const TRUSTED_MALE_BRANDS = [
   "fixit",
 ] as const;
 
+export const MALE_SUPPLEMENTAL_SEARCH_QUERIES = [
+  "x-plosion プロテイン",
+  "xplosion プロテイン",
+  "ビーレジェンド プロテイン",
+  "ゴールドスタンダード プロテイン",
+] as const;
+
+export const MYBEST_MALE_URL = "https://my-best.com/3389";
+export const MYBEST_FEMALE_URL = "https://my-best.com/23907";
+export const MYBEST_SIGNAL_BONUS = 0.05;
+
 export const TITLE_NOISE_PATTERNS = [
   /【[^】]*】/g,
   /\([^)]*\)/g,
@@ -139,17 +164,17 @@ export const RANKING_DESCRIPTIONS: Record<RankingKey, string> = {
 };
 
 export const MALE_WEIGHTS = {
-  sales: 0.6,
-  review: 0.25,
-  protein: 0.1,
-  cost: 0.05,
+  sales: 0.5,
+  review: 0.2,
+  protein: 0.15,
+  cost: 0.1,
 } as const;
 
 export const FEMALE_WEIGHTS = {
-  sales: 0.55,
+  sales: 0.45,
   review: 0.2,
   suitability: 0.2,
-  cost: 0.05,
+  cost: 0.1,
 } as const;
 
 export const MAX_EXPERT_BONUS = 0.1;

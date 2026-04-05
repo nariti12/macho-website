@@ -1,4 +1,4 @@
-import { BANNED_BRANDS, BANNED_PRODUCT_KEYWORDS, MIN_REVIEW_COUNT } from "@/lib/protein-rankings/constants";
+import { BANNED_BRANDS, BANNED_PRODUCT_KEYWORDS, CHILDREN_EXCLUSION_KEYWORDS, MIN_REVIEW_COUNT } from "@/lib/protein-rankings/constants";
 import type { ProductMetricInput } from "@/lib/protein-rankings/types";
 
 export const applyRankingFilters = (metrics: ProductMetricInput): ProductMetricInput => {
@@ -16,6 +16,15 @@ export const applyRankingFilters = (metrics: ProductMetricInput): ProductMetricI
       ...metrics,
       excluded: true,
       exclusionReason: `${bannedKeyword} を含むため除外`,
+    };
+  }
+
+  const childKeyword = CHILDREN_EXCLUSION_KEYWORDS.find((keyword) => titleText.includes(keyword.toLowerCase()));
+  if (childKeyword) {
+    return {
+      ...metrics,
+      excluded: true,
+      exclusionReason: `${childKeyword} 向け商品のため除外`,
     };
   }
 
