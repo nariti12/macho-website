@@ -157,11 +157,11 @@ export const buildRankings = (
       candidate.metrics.dietKeywordMatches.length >= 2;
 
     const maleFriendly =
-      candidate.metrics.proteinType === "whey" ||
-      candidate.metrics.proteinType === "wpc" ||
-      candidate.metrics.proteinType === "wpi" ||
-      hasTrustedMaleBrand(candidate) ||
-      candidate.product.title.includes("ホエイ");
+      hasTrustedMaleBrand(candidate) &&
+      (candidate.metrics.proteinType === "whey" ||
+        candidate.metrics.proteinType === "wpc" ||
+        candidate.metrics.proteinType === "wpi" ||
+        candidate.product.title.includes("ホエイ"));
 
     return (
       candidate.metrics.rakutenRank !== null &&
@@ -171,7 +171,7 @@ export const buildRankings = (
     );
   });
 
-  const maleCandidates = maleBase.length >= TOP_RANKING_LIMIT ? maleBase : eligible.filter((candidate) => candidate.metrics.rakutenRank !== null);
+  const maleCandidates = maleBase;
 
   const femaleBase = eligible.filter(
     (candidate) =>
