@@ -175,16 +175,17 @@ export const buildRankings = (
 
   const femaleBase = eligible.filter(
     (candidate) =>
-      candidate.metrics.proteinType === "soy" ||
-      candidate.metrics.womenKeywordMatches.length > 0 ||
-      candidate.metrics.beautyKeywordMatches.length > 0 ||
-      candidate.metrics.dietKeywordMatches.length > 0 ||
-      candidate.product.title.includes("女性") ||
-      candidate.product.title.includes("美容")
+      candidate.metrics.proteinType === "soy" &&
+      (candidate.metrics.womenKeywordMatches.length > 0 ||
+        candidate.metrics.beautyKeywordMatches.length > 0 ||
+        candidate.metrics.dietKeywordMatches.length > 0 ||
+        candidate.product.title.includes("女性") ||
+        candidate.product.title.includes("美容") ||
+        candidate.product.title.includes("ダイエット") ||
+        candidate.product.title.includes("置き換え"))
   );
 
-  const femaleCandidates =
-    femaleBase.length >= TOP_RANKING_LIMIT ? femaleBase : eligible.filter((candidate) => candidate.metrics.rakutenRank !== null);
+  const femaleCandidates = femaleBase;
 
   const male = sortAndTrim(
     maleCandidates.map((candidate) => {
