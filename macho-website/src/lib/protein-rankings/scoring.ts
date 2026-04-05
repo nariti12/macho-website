@@ -73,24 +73,6 @@ const hasTrustedMaleBrand = (candidate: EnrichedProduct) => {
   return TRUSTED_MALE_BRANDS.some((brand) => haystack.includes(brand.toLowerCase()));
 };
 
-const maleSuitabilityScore = (candidate: EnrichedProduct) => {
-  const title = candidate.product.title;
-  let score = 0.35;
-
-  if (candidate.metrics.proteinType === "whey") score += 0.2;
-  if (candidate.metrics.proteinType === "wpc") score += 0.22;
-  if (candidate.metrics.proteinType === "wpi") score += 0.24;
-  if (candidate.metrics.proteinType === "soy") score -= 0.25;
-
-  if (title.includes("女性") || title.includes("レディース")) score -= 0.28;
-  if (candidate.metrics.womenKeywordMatches.length >= 2) score -= 0.18;
-  if (hasTrustedMaleBrand(candidate)) score += 0.16;
-  if ((candidate.metrics.rakutenRank ?? 999) <= 3 && hasTrustedMaleBrand(candidate)) score += 0.14;
-  if ((candidate.metrics.rakutenRank ?? 999) <= 10 && title.includes("ホエイ")) score += 0.08;
-
-  return clamp01(score);
-};
-
 const sortAndTrim = (items: RankedProductInput[]) => {
   const seenBrands = new Set<string>();
 
@@ -148,19 +130,9 @@ export const buildRankings = (
     ])
   );
 
-  const trustedMalePool = eligible.filter(
+  const maleCandidates = eligible.filter(
     (candidate) => candidate.metrics.rakutenRank !== null && hasTrustedMaleBrand(candidate)
   );
-
-  const maleBase = trustedMalePool.filter((candidate) => {
-    const explicitWomenTitle =
-      candidate.product.title.includes("女性") ||
-      candidate.product.title.includes("レディース");
-
-    return !explicitWomenTitle && candidate.metrics.proteinType !== "soy";
-  });
-
-  const maleCandidates = maleBase.length >= TOP_RANKING_LIMIT ? maleBase : trustedMalePool;
 
   const femaleBase = eligible.filter(
     (candidate) =>
@@ -183,13 +155,11 @@ export const buildRankings = (
       const reviewScore = reviewScores.get(candidate.product.sourceExternalId) ?? 0.45;
       const expertBonus = getExpertBonus(signals);
       const trustedBrandBonus = hasTrustedMaleBrand(candidate) ? 0.1 : 0;
-      const suitabilityScore = maleSuitabilityScore(candidate);
       const rankPriorityBonus = maleRankPriorityBonus(candidate.metrics.rakutenRank);
       const reviewPenalty = candidate.product.reviewCount > 0 && candidate.product.reviewCount < STRICT_MIN_REVIEW_COUNT ? 0.92 : 1;
       const score =
         (salesScore * MALE_WEIGHTS.sales +
           reviewScore * MALE_WEIGHTS.review +
-          suitabilityScore * 0.08 +
           expertBonus +
           trustedBrandBonus +
           rankPriorityBonus) *
@@ -202,7 +172,6 @@ export const buildRankings = (
         scoreBreakdown: {
           salesScore,
           reviewScore,
-          suitabilityScore,
           expertBonus,
           trustedBrandBonus,
           rankPriorityBonus,
