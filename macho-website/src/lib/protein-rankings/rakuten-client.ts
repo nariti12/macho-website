@@ -50,8 +50,11 @@ type RakutenRankingResponse = {
 };
 
 const fetchPage = async (page: number) => {
+  const applicationId = getRequiredEnv("RAKUTEN_APPLICATION_ID");
+  const accessKey = getRequiredEnv("RAKUTEN_ACCESS_KEY");
   const url = new URL(RAKUTEN_RANKING_ENDPOINT);
-  url.searchParams.set("applicationId", getRequiredEnv("RAKUTEN_APPLICATION_ID"));
+  url.searchParams.set("applicationId", applicationId);
+  url.searchParams.set("accessKey", accessKey);
   url.searchParams.set("genreId", RAKUTEN_PROTEIN_GENRE_ID);
   url.searchParams.set("page", String(page));
   url.searchParams.set("period", "daily");
@@ -63,7 +66,7 @@ const fetchPage = async (page: number) => {
     const response = await fetch(url, {
       headers: {
         Accept: "application/json",
-        Authorization: `Bearer ${getRequiredEnv("RAKUTEN_ACCESS_KEY")}`,
+        Authorization: `Bearer ${accessKey}`,
       },
       next: { revalidate: 0 },
     });
