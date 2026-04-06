@@ -1,5 +1,7 @@
 import type { RankingKey } from "@/lib/protein-rankings/types";
 
+export const RAKUTEN_RANKING_ENDPOINT =
+  "https://openapi.rakuten.co.jp/ichibaranking/api/IchibaItem/Ranking/20220601";
 export const RAKUTEN_PUBLIC_RANKING_URL = "https://ranking.rakuten.co.jp/daily/567603/";
 export const RAKUTEN_RANKING_PAGES = 1;
 export const RAKUTEN_RANKING_PAGE_SIZE = 80;
