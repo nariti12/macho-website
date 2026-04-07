@@ -1,7 +1,6 @@
 import {
   MALE_FIXED_BRAND_CONFIG,
   MALE_FIXED_BRAND_ORDER,
-  RAKUTEN_MAX_RETRIES,
   RAKUTEN_ITEM_SEARCH_ENDPOINT,
   RAKUTEN_RANKING_ENDPOINT,
   RAKUTEN_PUBLIC_RANKING_URL,
@@ -82,33 +81,21 @@ const extractImageUrl = (block: string) => {
 };
 
 const fetchRankingPageHtml = async () => {
-  let attempt = 0;
+  const response = await fetch(RAKUTEN_PUBLIC_RANKING_URL, {
+    headers: {
+      Accept: "text/html,application/xhtml+xml",
+      "User-Agent":
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+    },
+    next: { revalidate: 0 },
+  });
 
-  while (attempt < RAKUTEN_MAX_RETRIES) {
-    const response = await fetch(RAKUTEN_PUBLIC_RANKING_URL, {
-      headers: {
-        Accept: "text/html,application/xhtml+xml",
-        "User-Agent":
-          "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
-      },
-      next: { revalidate: 0 },
-    });
-
-    if (response.ok) {
-      return await response.text();
-    }
-
-    const body = await response.text();
-    attempt += 1;
-
-    if (attempt >= RAKUTEN_MAX_RETRIES) {
-      throw new Error(`Rakuten ranking page request failed: ${response.status} ${body.slice(0, 200)}`.trim());
-    }
-
-    await sleep(RAKUTEN_REQUEST_DELAY_MS * attempt);
+  if (response.ok) {
+    return await response.text();
   }
 
-  throw new Error("Rakuten ranking page request failed: retries exhausted");
+  const body = await response.text();
+  throw new Error(`Rakuten ranking page request failed: ${response.status} ${body.slice(0, 200)}`.trim());
 };
 
 type RakutenRankingResponse = {
