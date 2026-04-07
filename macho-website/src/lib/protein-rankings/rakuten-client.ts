@@ -110,7 +110,7 @@ type RakutenRankingResponse = {
       itemUrl?: string;
       affiliateUrl?: string;
       shopName?: string;
-      mediumImageUrls?: Array<{ imageUrl?: string }>;
+      mediumImageUrls?: Array<{ imageUrl?: string } | string>;
     };
   }>;
 };
@@ -126,8 +126,21 @@ type RakutenItemSearchResponseV2 = {
     itemUrl?: string;
     affiliateUrl?: string;
     shopName?: string;
-    mediumImageUrls?: Array<{ imageUrl?: string }>;
+    mediumImageUrls?: Array<{ imageUrl?: string } | string>;
   }>;
+};
+
+const getFirstMediumImageUrl = (images?: Array<{ imageUrl?: string } | string>) => {
+  if (!images || images.length === 0) return null;
+  for (const image of images) {
+    if (typeof image === "string" && image.trim()) {
+      return image;
+    }
+    if (typeof image === "object" && image?.imageUrl) {
+      return image.imageUrl;
+    }
+  }
+  return null;
 };
 
 const fetchRankingApiPage = async (page: number) => {
@@ -182,7 +195,7 @@ const fetchRakutenRankingApiEntries = async (): Promise<NormalizedRakutenRanking
       }
 
       const parsedReviewAverage = item.reviewAverage ? Number(item.reviewAverage) : null;
-      const imageUrl = item.mediumImageUrls?.find((image) => image.imageUrl)?.imageUrl ?? null;
+      const imageUrl = getFirstMediumImageUrl(item.mediumImageUrls);
       const rank = (page - 1) * RAKUTEN_RANKING_PAGE_SIZE + index + 1;
 
       entries.push({
@@ -283,7 +296,7 @@ const fetchCuratedRakutenItem = async (
     ecProvider: "rakuten",
     title: stripHtml(item.itemName),
     description: stripHtml(item.itemCaption) || stripHtml(item.itemName),
-    imageUrl: item.mediumImageUrls?.find((image) => image.imageUrl)?.imageUrl ?? config.fallbackImagePath,
+    imageUrl: getFirstMediumImageUrl(item.mediumImageUrls) ?? config.fallbackImagePath,
     priceYen: typeof item.itemPrice === "number" ? item.itemPrice : 0,
     reviewAverage: Number.isFinite(parsedReviewAverage) ? Number(parsedReviewAverage) : null,
     reviewCount: typeof item.reviewCount === "number" ? item.reviewCount : 0,
