@@ -33,8 +33,6 @@ export const BANNED_PRODUCT_KEYWORDS = [
 export const CHILDREN_EXCLUSION_KEYWORDS = [
   "ジュニア",
   "キッズ",
-  "子供",
-  "こども",
   "小学生",
   "成長期",
   "育ち盛り",
@@ -111,7 +109,6 @@ export const TRUSTED_MALE_BRANDS = [
   "リフト",
   "grong",
   "グロング",
-  "fixit",
 ] as const;
 
 export const MYBEST_MALE_URL = "https://my-best.com/3389";
