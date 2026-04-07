@@ -2,6 +2,8 @@ import type { RankingKey } from "@/lib/protein-rankings/types";
 
 export const RAKUTEN_RANKING_ENDPOINT =
   "https://openapi.rakuten.co.jp/ichibaranking/api/IchibaItem/Ranking/20220601";
+export const RAKUTEN_ITEM_SEARCH_ENDPOINT =
+  "https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20220601";
 export const RAKUTEN_PUBLIC_RANKING_URL = "https://ranking.rakuten.co.jp/daily/567603/";
 export const RAKUTEN_RANKING_PAGES = 1;
 export const RAKUTEN_RANKING_PAGE_SIZE = 80;
@@ -138,7 +140,7 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
   },
   "gold standard": {
     label: "Gold Standard",
-    aliases: ["gold standard", "ゴールドスタンダード", "optimum nutrition", "オン"],
+    aliases: ["gold standard", "ゴールドスタンダード", "optimum nutrition"],
     fallbackTitle: "Gold Standard 100% Whey",
     fallbackSearchTerm: "Gold Standard 100% Whey",
     fallbackImagePath: "/images/protein/gold-standard.svg",

@@ -1,5 +1,8 @@
 import {
+  MALE_FIXED_BRAND_CONFIG,
+  MALE_FIXED_BRAND_ORDER,
   RAKUTEN_MAX_RETRIES,
+  RAKUTEN_ITEM_SEARCH_ENDPOINT,
   RAKUTEN_RANKING_ENDPOINT,
   RAKUTEN_PUBLIC_RANKING_URL,
   RAKUTEN_RANKING_PAGE_SIZE,
@@ -125,6 +128,21 @@ type RakutenRankingResponse = {
   }>;
 };
 
+type RakutenItemSearchResponseV2 = {
+  Items?: Array<{
+    itemCode?: string;
+    itemName?: string;
+    itemCaption?: string;
+    itemPrice?: number;
+    reviewAverage?: string | number;
+    reviewCount?: number;
+    itemUrl?: string;
+    affiliateUrl?: string;
+    shopName?: string;
+    mediumImageUrls?: Array<{ imageUrl?: string }>;
+  }>;
+};
+
 const fetchRankingApiPage = async (page: number) => {
   const applicationId = getRequiredEnv("RAKUTEN_APPLICATION_ID");
   const accessKey = getRequiredEnv("RAKUTEN_ACCESS_KEY");
@@ -205,6 +223,97 @@ const fetchRakutenRankingApiEntries = async (): Promise<NormalizedRakutenRanking
   }
 
   return entries;
+};
+
+const normalizeBrandText = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/【[^】]*】/g, " ")
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/（[^）]*）/g, " ")
+    .replace(/[^\p{L}\p{N}]+/gu, "");
+
+const matchesBrandAliases = (title: string, shopName: string | null, aliases: string[]) => {
+  const haystack = normalizeBrandText(`${title} ${shopName ?? ""}`);
+  return aliases.some((alias) => haystack.includes(normalizeBrandText(alias)));
+};
+
+const fetchCuratedRakutenItem = async (
+  brandKey: (typeof MALE_FIXED_BRAND_ORDER)[number]
+): Promise<NormalizedRakutenRankingProduct | null> => {
+  const applicationId = getRequiredEnv("RAKUTEN_APPLICATION_ID");
+  const accessKey = getRequiredEnv("RAKUTEN_ACCESS_KEY");
+  const affiliateId = process.env.RAKUTEN_AFFILIATE_ID;
+  const config = MALE_FIXED_BRAND_CONFIG[brandKey];
+  const url = new URL(RAKUTEN_ITEM_SEARCH_ENDPOINT);
+  url.searchParams.set("applicationId", applicationId);
+  url.searchParams.set("accessKey", accessKey);
+  url.searchParams.set("keyword", config.fallbackSearchTerm);
+  url.searchParams.set("hits", "5");
+  url.searchParams.set("page", "1");
+  url.searchParams.set("format", "json");
+  url.searchParams.set("formatVersion", "2");
+  url.searchParams.set(
+    "elements",
+    "itemCode,itemName,itemCaption,itemPrice,reviewAverage,reviewCount,itemUrl,affiliateUrl,shopName,mediumImageUrls"
+  );
+  if (affiliateId) {
+    url.searchParams.set("affiliateId", affiliateId);
+  }
+
+  const response = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${accessKey}`,
+      Origin: getSiteOrigin(),
+      Referer: `${getSiteOrigin()}/`,
+    },
+    next: { revalidate: 0 },
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    console.warn(`Rakuten curated item search failed for ${brandKey}: ${response.status} ${body.slice(0, 200)}`);
+    return null;
+  }
+
+  const payload = (await response.json()) as RakutenItemSearchResponseV2;
+  const items = payload.Items ?? [];
+  const item =
+    items.find((entry) => matchesBrandAliases(stripHtml(entry.itemName), stripHtml(entry.shopName) || null, config.aliases)) ??
+    items[0];
+
+  if (!item?.itemCode || !item.itemName || !item.itemUrl) {
+    return null;
+  }
+
+  const parsedReviewAverage =
+    typeof item.reviewAverage === "string" ? Number(item.reviewAverage) : item.reviewAverage ?? null;
+
+  return {
+    source: "rakuten",
+    sourceExternalId: item.itemCode,
+    ecProvider: "rakuten",
+    title: stripHtml(item.itemName),
+    description: stripHtml(item.itemCaption) || stripHtml(item.itemName),
+    imageUrl: item.mediumImageUrls?.find((image) => image.imageUrl)?.imageUrl ?? config.fallbackImagePath,
+    priceYen: typeof item.itemPrice === "number" ? item.itemPrice : 0,
+    reviewAverage: Number.isFinite(parsedReviewAverage) ? Number(parsedReviewAverage) : null,
+    reviewCount: typeof item.reviewCount === "number" ? item.reviewCount : 0,
+    itemUrl: item.itemUrl,
+    affiliateUrl: item.affiliateUrl ?? buildAffiliateUrl(item.itemUrl),
+    shopName: stripHtml(item.shopName) || config.label,
+    brandName: config.label,
+    matchedQueries: [`curated ${config.label}`],
+    discoveryScore: 0.9,
+    rakutenRank: 999,
+    rawPayload: item,
+  };
+};
+
+export const fetchCuratedRakutenStapleEntries = async (): Promise<NormalizedRakutenRankingProduct[]> => {
+  const results = await Promise.all(MALE_FIXED_BRAND_ORDER.map((brandKey) => fetchCuratedRakutenItem(brandKey)));
+  return results.filter((item): item is NormalizedRakutenRankingProduct => Boolean(item));
 };
 
 export const fetchRakutenProteinRankingEntries = async (): Promise<NormalizedRakutenRankingProduct[]> => {

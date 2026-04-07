@@ -3,7 +3,7 @@ import { MYBEST_FEMALE_SIGNAL_BONUS, MYBEST_MALE_SIGNAL_BONUS } from "@/lib/prot
 import { extractMetricsFromProduct } from "@/lib/protein-rankings/extractors";
 import { fetchMyBestReferenceTitles } from "@/lib/protein-rankings/mybest-client";
 import { saveProteinRankingSnapshot } from "@/lib/protein-rankings/repository";
-import { fetchRakutenProteinRankingEntries } from "@/lib/protein-rankings/rakuten-client";
+import { fetchCuratedRakutenStapleEntries, fetchRakutenProteinRankingEntries } from "@/lib/protein-rankings/rakuten-client";
 import { buildRankings } from "@/lib/protein-rankings/scoring";
 import type { EnrichedProduct, ExpertSignalRecord } from "@/lib/protein-rankings/types";
 
@@ -74,8 +74,20 @@ const getExpertSignals = async (products: EnrichedProduct[]): Promise<Map<string
 };
 
 export const refreshProteinRankings = async () => {
-  const rakutenEntries = await fetchRakutenProteinRankingEntries();
-  const enrichedProducts: EnrichedProduct[] = rakutenEntries.map((product) => {
+  const [rakutenEntries, curatedEntries] = await Promise.all([
+    fetchRakutenProteinRankingEntries(),
+    fetchCuratedRakutenStapleEntries(),
+  ]);
+  const mergedEntries = new Map<string, (typeof rakutenEntries)[number]>();
+  rakutenEntries.forEach((entry) => {
+    mergedEntries.set(entry.sourceExternalId, entry);
+  });
+  curatedEntries.forEach((entry) => {
+    mergedEntries.set(entry.sourceExternalId, entry);
+  });
+
+  const allEntries = Array.from(mergedEntries.values());
+  const enrichedProducts: EnrichedProduct[] = allEntries.map((product) => {
     const extracted = extractMetricsFromProduct(product);
 
     return {
@@ -93,7 +105,7 @@ export const refreshProteinRankings = async () => {
 
   return {
     ...saved,
-    candidateCount: rakutenEntries.length,
+    candidateCount: allEntries.length,
     eligibleCount: enrichedProducts.filter((item) => !item.metrics.excluded).length,
   };
 };
