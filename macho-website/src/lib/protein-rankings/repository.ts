@@ -26,7 +26,16 @@ export const saveProteinRankingSnapshot = async ({ products, rankings }: SaveInp
   const supabase = createSupabaseAdminClient();
   const timestamp = new Date().toISOString();
 
-  const productRows = products.map(({ product }) => ({
+  const rankingProducts = RANKING_KEYS.flatMap((rankingKey) => rankings[rankingKey].map((item) => item as EnrichedProduct));
+  const uniqueProducts = new Map<string, EnrichedProduct>();
+
+  [...products, ...rankingProducts].forEach((entry) => {
+    uniqueProducts.set(entry.product.sourceExternalId, entry);
+  });
+
+  const allProducts = Array.from(uniqueProducts.values());
+
+  const productRows = allProducts.map(({ product }) => ({
     source: product.source,
     source_external_id: product.sourceExternalId,
     ec_provider: product.ecProvider,
@@ -58,7 +67,7 @@ export const saveProteinRankingSnapshot = async ({ products, rankings }: SaveInp
     upsertedProducts.map((product) => [product.source_external_id as string, product.id as string])
   );
 
-  const metricRows = products.map(({ product, metrics }) => ({
+  const metricRows = allProducts.map(({ product, metrics }) => ({
     product_id: productIdByExternalId.get(product.sourceExternalId),
     canonical_brand: metrics.canonicalBrand,
     rakuten_rank: metrics.rakutenRank,
