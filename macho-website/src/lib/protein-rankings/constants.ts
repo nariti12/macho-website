@@ -155,13 +155,13 @@ export const TITLE_NOISE_PATTERNS = [
 ] as const;
 
 export const RANKING_LABELS: Record<RankingKey, string> = {
-  male: "男性向け最強プロテイン TOP5",
+  male: "おすすめプロテイン TOP5",
   female: "女性向け最強プロテイン TOP5",
 };
 
 export const RANKING_DESCRIPTIONS: Record<RankingKey, string> = {
   male:
-    "楽天売上ランキングをベースに、レビュー、定番ブランド、my-best掲載を見直して選んだ男性向け上位5商品です。",
+    "定番ブランドの中から、今おすすめしやすいプロテインを5つに絞って掲載しています。",
   female:
     "楽天売上ランキングをベースに、レビュー、女性向け訴求、my-best掲載を見直して選んだ女性向け上位5商品です。",
 };

@@ -1,6 +1,6 @@
 ## Overview
 
-`macho-website` は Next.js App Router ベースのサイトです。`/supplements-ranking` では、「男性向け最強プロテイン TOP5 / 女性向け最強プロテイン TOP5」を表示します。ページ表示時は Supabase に保存済みのランキングのみを読み込みます。
+`macho-website` は Next.js App Router ベースのサイトです。`/supplements-ranking` では、「おすすめプロテイン TOP5」を表示します。ページ表示時は Supabase に保存済みのランキングのみを読み込みます。
 
 ## Getting Started
 
@@ -58,7 +58,7 @@ supabase db push
 6. Supabase の `products` / `product_metrics` / `rankings` に保存
 6. `/supplements-ranking` は保存済みデータを表示
 
-男性向けは固定の定番5ブランドを優先順で並べ、その中で取得できた商品を採用します。女性向けは楽天順位を主軸に、レビュー、女性向けキーワード、`my-best` 掲載を補助にして再選抜します。
+固定の定番5ブランドを優先順で並べ、その中で取得できた商品を採用します。
 
 ## Vercel Cron
 

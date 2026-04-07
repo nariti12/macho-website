@@ -13,7 +13,7 @@ import type {
   RankingRow,
 } from "@/lib/protein-rankings/types";
 
-const RANKING_KEYS: RankingKey[] = ["male", "female"];
+const RANKING_KEYS: RankingKey[] = ["male"];
 
 type RankingPayload = Record<RankingKey, Array<RankedProductInput & { rankPosition: number }>>;
 

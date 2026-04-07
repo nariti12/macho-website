@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { SiteHeader } from "@/components/site-header";
 import { buildProductOutboundLink } from "@/lib/protein-rankings/links";
-import type { CommerceProvider, ProteinRankingPageData, ProteinType, RankingCardItem, RankingKey } from "@/lib/protein-rankings/types";
+import type { CommerceProvider, ProteinRankingPageData, ProteinType, RankingCardItem } from "@/lib/protein-rankings/types";
 
 const profileImageSrc = "/picture/ore.png";
 
@@ -73,23 +73,7 @@ const renderMaleHighlights = (item: RankingCardItem) => (
   </>
 );
 
-const renderFemaleHighlights = (item: RankingCardItem) => {
-  const womenPoints = item.metrics
-    ? [...item.metrics.women_keyword_matches, ...item.metrics.beauty_keyword_matches, ...item.metrics.diet_keyword_matches]
-        .slice(0, 3)
-        .join("・")
-    : "";
-
-  return (
-    <>
-      <MetricChip label="レビュー" value={formatReview(item)} />
-      <MetricChip label="タイプ" value={formatProteinType(item.metrics?.protein_type)} />
-      <MetricChip label="女性向けポイント" value={womenPoints || "女性向け訴求は控えめ"} />
-    </>
-  );
-};
-
-const RankingCard = ({ rankingKey, item }: { rankingKey: RankingKey; item: RankingCardItem }) => (
+const RankingCard = ({ item }: { item: RankingCardItem }) => (
   <article className="grid gap-5 rounded-3xl border border-[#FCD27B] bg-white/95 p-5 shadow-xl sm:grid-cols-[108px_1fr] sm:p-6">
     <div className="flex items-start gap-4 sm:block">
       <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#FF8A23] text-sm font-bold text-white shadow-lg">
@@ -122,7 +106,7 @@ const RankingCard = ({ rankingKey, item }: { rankingKey: RankingKey; item: Ranki
       </div>
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {rankingKey === "male" ? renderMaleHighlights(item) : renderFemaleHighlights(item)}
+        {renderMaleHighlights(item)}
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -158,7 +142,7 @@ export function SupplementsTopPage({ data }: { data: ProteinRankingPageData }) {
               </span>
               <h1 className="text-3xl font-bold text-[#7C2D12] sm:text-4xl">最強プロテインランキング TOP5</h1>
               <p className="max-w-3xl text-base leading-7 text-slate-700">
-                楽天売上ランキングを母集団に、レビュー、my-best掲載、用途との相性を見直して男性向けと女性向けに再整理しています。ページ表示時は保存済みランキングのみを読み込み、日次更新で差し替える構成です。
+                定番ブランドの中から、今おすすめしやすいプロテインを5つに絞って掲載しています。ページ表示時は保存済みランキングのみを読み込み、日次更新で差し替える構成です。
               </p>
               {updatedAtLabel ? (
                 <p className="text-sm text-slate-500">最終更新: {updatedAtLabel}</p>
@@ -182,7 +166,7 @@ export function SupplementsTopPage({ data }: { data: ProteinRankingPageData }) {
               ) : (
                 <div className="grid gap-5">
                   {section.items.map((item) => (
-                    <RankingCard key={`${section.key}-${item.product.id}`} rankingKey={section.key} item={item} />
+                    <RankingCard key={`${section.key}-${item.product.id}`} item={item} />
                   ))}
                 </div>
               )}
