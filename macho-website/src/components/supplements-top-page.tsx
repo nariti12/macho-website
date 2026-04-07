@@ -140,14 +140,14 @@ export function SupplementsTopPage({ data }: { data: ProteinRankingPageData }) {
               <span className="inline-flex w-fit rounded-full bg-[#FFE7C2] px-4 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#9A3412]">
                 Protein Ranking
               </span>
-              <h1 className="text-3xl font-bold text-[#7C2D12] sm:text-4xl">最強プロテインランキング TOP5</h1>
+              <h1 className="text-3xl font-bold text-[#7C2D12] sm:text-4xl">おすすめプロテイン TOP5</h1>
               <p className="max-w-3xl text-base leading-7 text-slate-700">
-                定番ブランドの中から、今おすすめしやすいプロテインを5つに絞って掲載しています。ページ表示時は保存済みランキングのみを読み込み、日次更新で差し替える構成です。
+                はじめて選ぶ人でも比較しやすいように、定番ブランドの中からおすすめしやすい5つをまとめました。迷ったときの入口として使いやすいラインナップに絞っています。
               </p>
               {updatedAtLabel ? (
                 <p className="text-sm text-slate-500">最終更新: {updatedAtLabel}</p>
               ) : (
-                <p className="text-sm text-slate-500">まだランキングデータがありません。初回 cron 実行後に TOP5 が表示されます。</p>
+                <p className="text-sm text-slate-500">ランキングを準備中です。更新が完了すると、ここにおすすめの5商品が表示されます。</p>
               )}
             </div>
           </section>
@@ -161,7 +161,7 @@ export function SupplementsTopPage({ data }: { data: ProteinRankingPageData }) {
 
               {section.items.length === 0 ? (
                 <div className="rounded-3xl border border-dashed border-[#FCD27B] bg-[#FFF8EE] p-8 text-sm text-slate-600">
-                  まだ表示できるデータがありません。cron 更新を実行するとここに TOP5 が並びます。
+                  まだおすすめを表示できていません。更新が反映されると、ここにTOP5が並びます。
                 </div>
               ) : (
                 <div className="grid gap-5">

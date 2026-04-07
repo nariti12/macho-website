@@ -6,28 +6,28 @@ import { buildUrl } from "@/lib/seo";
 
 const pageUrl = buildUrl("/supplements-ranking");
 const description =
-  "楽天売上ランキングをもとに、男性向けと女性向けに再選抜した最強プロテイン TOP5 を自動更新でお届けします。";
+  "迷ったらここから選べる、おすすめプロテイン TOP5。定番ブランドを中心に、今選びやすい5つをまとめています。";
 
 export const metadata: Metadata = {
-  title: "最強プロテインランキング TOP5｜マチョ田の部屋",
+  title: "おすすめプロテイン TOP5｜マチョ田の部屋",
   description,
   alternates: {
     canonical: pageUrl,
   },
   openGraph: {
-    title: "最強プロテインランキング TOP5｜マチョ田の部屋",
+    title: "おすすめプロテイン TOP5｜マチョ田の部屋",
     description,
     url: pageUrl,
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "最強プロテインランキング TOP5｜マチョ田の部屋",
+    title: "おすすめプロテイン TOP5｜マチョ田の部屋",
     description,
   },
 };
 
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 export default async function SupplementsRankingPage() {
   const data = await fetchProteinRankingPageData();

@@ -207,7 +207,7 @@ export const RANKING_LABELS: Record<RankingKey, string> = {
 
 export const RANKING_DESCRIPTIONS: Record<RankingKey, string> = {
   male:
-    "定番ブランドの中から、今おすすめしやすいプロテインを5つに絞って掲載しています。",
+    "定番ブランドの中から、今選びやすく続けやすいおすすめの5つをまとめています。",
   female:
     "楽天売上ランキングをベースに、レビュー、女性向け訴求、my-best掲載を見直して選んだ女性向け上位5商品です。",
 };
