@@ -130,7 +130,7 @@ export const buildRankings = (
     ])
   );
 
-  const maleCandidates = eligible.filter(
+  const maleCandidates = candidates.filter(
     (candidate) => candidate.metrics.rakutenRank !== null && hasTrustedMaleBrand(candidate)
   );
 
