@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" role="img" aria-label="X-PLOSION">
+  <rect width="480" height="480" rx="40" fill="#1f2937"/>
+  <rect x="28" y="28" width="424" height="424" rx="28" fill="#111827" stroke="#fb923c" stroke-width="8"/>
+  <text x="240" y="215" text-anchor="middle" font-family="Arial, sans-serif" font-size="54" font-weight="700" fill="#fb923c">X-PLOSION</text>
+  <text x="240" y="285" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" fill="#f9fafb">Whey Protein</text>
+</svg>

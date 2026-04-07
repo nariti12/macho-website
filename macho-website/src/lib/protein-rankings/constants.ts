@@ -126,6 +126,7 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     aliases: string[];
     fallbackTitle: string;
     fallbackSearchTerm: string;
+    fallbackImagePath: string;
   }
 > = {
   "x-plosion": {
@@ -133,30 +134,35 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     aliases: ["x-plosion", "xplosion", "エクスプロージョン"],
     fallbackTitle: "X-PLOSION ホエイプロテイン",
     fallbackSearchTerm: "X-PLOSION ホエイプロテイン",
+    fallbackImagePath: "/images/protein/xplosion.svg",
   },
   "gold standard": {
     label: "Gold Standard",
     aliases: ["gold standard", "ゴールドスタンダード", "optimum nutrition", "オン"],
     fallbackTitle: "Gold Standard 100% Whey",
     fallbackSearchTerm: "Gold Standard 100% Whey",
+    fallbackImagePath: "/images/protein/gold-standard.svg",
   },
   "be legend": {
     label: "be LEGEND",
     aliases: ["be legend", "ビーレジェンド", "belegend"],
     fallbackTitle: "be LEGEND ホエイプロテイン",
     fallbackSearchTerm: "be LEGEND ホエイプロテイン",
+    fallbackImagePath: "/images/protein/be-legend.svg",
   },
   myprotein: {
     label: "myprotein",
     aliases: ["myprotein", "マイプロテイン", "impact whey", "impact ホエイ"],
     fallbackTitle: "myprotein Impact ホエイプロテイン",
     fallbackSearchTerm: "myprotein Impact ホエイプロテイン",
+    fallbackImagePath: "/images/protein/myprotein.svg",
   },
   winzone: {
     label: "WINZONE",
     aliases: ["winzone", "ウィンゾーン", "日本新薬"],
     fallbackTitle: "WINZONE ホエイプロテイン",
     fallbackSearchTerm: "WINZONE ホエイプロテイン",
+    fallbackImagePath: "/images/protein/winzone.svg",
   },
 };
 

@@ -180,7 +180,7 @@ export const buildRankings = (
         ecProvider: "rakuten",
         title: config.fallbackTitle,
         description: config.fallbackTitle,
-        imageUrl: null,
+        imageUrl: config.fallbackImagePath,
         priceYen: 0,
         reviewAverage: null,
         reviewCount: 0,
@@ -200,7 +200,7 @@ export const buildRankings = (
           ecProvider: "rakuten",
           title: config.fallbackTitle,
           description: config.fallbackTitle,
-          imageUrl: null,
+          imageUrl: config.fallbackImagePath,
           priceYen: 0,
           reviewAverage: null,
           reviewCount: 0,
@@ -259,6 +259,10 @@ export const buildRankings = (
     return [
       {
         ...candidate,
+        product: {
+          ...candidate.product,
+          imageUrl: candidate.product.imageUrl ?? MALE_FIXED_BRAND_CONFIG[brandKey].fallbackImagePath,
+        },
         score,
         rankPosition: index + 1,
         comment: MALE_FIXED_COMMENTS[brandKey],

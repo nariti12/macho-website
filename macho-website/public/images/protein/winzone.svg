@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" role="img" aria-label="WINZONE">
+  <rect width="480" height="480" rx="40" fill="#1e3a8a"/>
+  <rect x="28" y="28" width="424" height="424" rx="28" fill="#1d4ed8" stroke="#93c5fd" stroke-width="8"/>
+  <text x="240" y="220" text-anchor="middle" font-family="Arial, sans-serif" font-size="54" font-weight="700" fill="#eff6ff">WINZONE</text>
+  <text x="240" y="286" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" fill="#dbeafe">Whey Protein</text>
+</svg>
