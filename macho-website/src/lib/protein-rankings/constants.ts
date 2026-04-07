@@ -111,6 +111,22 @@ export const TRUSTED_MALE_BRANDS = [
   "グロング",
 ] as const;
 
+export const MALE_FIXED_BRAND_ORDER = [
+  "x-plosion",
+  "gold standard",
+  "be legend",
+  "myprotein",
+  "winzone",
+] as const;
+
+export const MALE_FIXED_COMMENTS: Record<(typeof MALE_FIXED_BRAND_ORDER)[number], string> = {
+  "x-plosion": "コスパが強く、味も無難に選びやすい定番として最上位に固定しています。",
+  "gold standard": "価格は高めですが、定番感と成分面の安心感、味の評価を重視して上位固定にしています。",
+  "be legend": "派手な弱点が少なく、飲みやすさと無難さで選びやすい定番として位置付けています。",
+  "myprotein": "価格の強さと定番ブランドとしての知名度を評価しつつ、味の好みが分かれやすい点も踏まえた順位です。",
+  "winzone": "味の濃さや個性がはっきりしていて、ハマる人には強い定番として残しています。",
+};
+
 export const MYBEST_MALE_URL = "https://my-best.com/3389";
 export const MYBEST_FEMALE_URL = "https://my-best.com/23907";
 export const MYBEST_MALE_SIGNAL_BONUS = 0.12;

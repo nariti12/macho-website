@@ -1,5 +1,7 @@
 import {
   FEMALE_WEIGHTS,
+  MALE_FIXED_BRAND_ORDER,
+  MALE_FIXED_COMMENTS,
   MALE_WEIGHTS,
   MAX_EXPERT_BONUS,
   RAKUTEN_RANKING_PAGE_SIZE,
@@ -73,6 +75,11 @@ const hasTrustedMaleBrand = (candidate: EnrichedProduct) => {
   return TRUSTED_MALE_BRANDS.some((brand) => haystack.includes(brand.toLowerCase()));
 };
 
+const getMaleBrandKey = (candidate: EnrichedProduct) => {
+  const haystack = `${candidate.product.title} ${candidate.product.brandName ?? ""} ${candidate.metrics.canonicalBrand ?? ""}`.toLowerCase();
+  return MALE_FIXED_BRAND_ORDER.find((brand) => haystack.includes(brand));
+};
+
 const sortAndTrim = (items: RankedProductInput[]) => {
   const seenBrands = new Set<string>();
 
@@ -131,7 +138,7 @@ export const buildRankings = (
   );
 
   const maleCandidates = candidates.filter(
-    (candidate) => candidate.metrics.rakutenRank !== null && hasTrustedMaleBrand(candidate)
+    (candidate) => candidate.metrics.rakutenRank !== null && getMaleBrandKey(candidate)
   );
 
   const femaleBase = eligible.filter(
@@ -148,38 +155,43 @@ export const buildRankings = (
 
   const femaleCandidates = femaleBase;
 
-  const male = sortAndTrim(
-    maleCandidates.map((candidate) => {
-      const signals = expertSignalsByProductId.get(candidate.product.sourceExternalId) ?? [];
-      const salesScore = salesRankToScore(candidate.metrics.rakutenRank);
-      const reviewScore = reviewScores.get(candidate.product.sourceExternalId) ?? 0.45;
-      const expertBonus = getExpertBonus(signals);
-      const trustedBrandBonus = hasTrustedMaleBrand(candidate) ? 0.1 : 0;
-      const rankPriorityBonus = maleRankPriorityBonus(candidate.metrics.rakutenRank);
-      const reviewPenalty = candidate.product.reviewCount > 0 && candidate.product.reviewCount < STRICT_MIN_REVIEW_COUNT ? 0.92 : 1;
-      const score =
-        (salesScore * MALE_WEIGHTS.sales +
-          reviewScore * MALE_WEIGHTS.review +
-          expertBonus +
-          trustedBrandBonus +
-          rankPriorityBonus) *
-        reviewPenalty;
+  const bestMaleByBrand = new Map<string, EnrichedProduct>();
+  for (const candidate of maleCandidates) {
+    const brandKey = getMaleBrandKey(candidate);
+    if (!brandKey) continue;
+    const current = bestMaleByBrand.get(brandKey);
+    if (!current || (candidate.metrics.rakutenRank ?? 999) < (current.metrics.rakutenRank ?? 999)) {
+      bestMaleByBrand.set(brandKey, candidate);
+    }
+  }
 
-      return {
+  const male = MALE_FIXED_BRAND_ORDER.flatMap((brandKey, index) => {
+    const candidate = bestMaleByBrand.get(brandKey);
+    if (!candidate) return [];
+
+    const signals = expertSignalsByProductId.get(candidate.product.sourceExternalId) ?? [];
+    const salesScore = salesRankToScore(candidate.metrics.rakutenRank);
+    const reviewScore = reviewScores.get(candidate.product.sourceExternalId) ?? 0.45;
+    const expertBonus = getExpertBonus(signals);
+    const rankPriorityBonus = maleRankPriorityBonus(candidate.metrics.rakutenRank);
+    const score = Number((1 - index * 0.01 + salesScore * 0.001 + reviewScore * 0.001 + expertBonus * 0.001 + rankPriorityBonus * 0.001).toFixed(5));
+
+    return [
+      {
         ...candidate,
         score,
-        comment: buildComment(candidate, signals, "male"),
+        rankPosition: index + 1,
+        comment: MALE_FIXED_COMMENTS[brandKey],
         scoreBreakdown: {
+          fixedRankOrder: MALE_FIXED_BRAND_ORDER.length - index,
           salesScore,
           reviewScore,
           expertBonus,
-          trustedBrandBonus,
           rankPriorityBonus,
-          reviewPenalty,
         },
-      };
-    })
-  );
+      },
+    ];
+  });
 
   const female = sortAndTrim(
     femaleCandidates.map((candidate) => {
