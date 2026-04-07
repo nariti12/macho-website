@@ -1,5 +1,6 @@
 import {
   FEMALE_WEIGHTS,
+  MALE_FIXED_BRAND_CONFIG,
   MALE_FIXED_BRAND_ORDER,
   MALE_FIXED_COMMENTS,
   MALE_WEIGHTS,
@@ -10,6 +11,7 @@ import {
   TOP_RANKING_LIMIT,
   TRUSTED_MALE_BRANDS,
 } from "@/lib/protein-rankings/constants";
+import { buildRakutenAffiliateUrl } from "@/lib/protein-rankings/links";
 import type { EnrichedProduct, ExpertSignalRecord, RankedProductInput } from "@/lib/protein-rankings/types";
 
 const TOTAL_RAKUTEN_CANDIDATES = RAKUTEN_RANKING_PAGE_SIZE * RAKUTEN_RANKING_PAGES;
@@ -77,7 +79,9 @@ const hasTrustedMaleBrand = (candidate: EnrichedProduct) => {
 
 const getMaleBrandKey = (candidate: EnrichedProduct) => {
   const haystack = `${candidate.product.title} ${candidate.product.brandName ?? ""} ${candidate.metrics.canonicalBrand ?? ""}`.toLowerCase();
-  return MALE_FIXED_BRAND_ORDER.find((brand) => haystack.includes(brand));
+  return MALE_FIXED_BRAND_ORDER.find((brand) =>
+    MALE_FIXED_BRAND_CONFIG[brand].aliases.some((alias) => haystack.includes(alias.toLowerCase()))
+  );
 };
 
 const sortAndTrim = (items: RankedProductInput[]) => {
@@ -165,9 +169,85 @@ export const buildRankings = (
     }
   }
 
+  const buildMaleFallback = (brandKey: (typeof MALE_FIXED_BRAND_ORDER)[number]): RankedProductInput => {
+    const config = MALE_FIXED_BRAND_CONFIG[brandKey];
+    const searchUrl = `https://search.rakuten.co.jp/search/mall/${encodeURIComponent(config.fallbackSearchTerm)}/`;
+
+    return {
+      product: {
+        source: "rakuten",
+        sourceExternalId: `curated:${brandKey}`,
+        ecProvider: "rakuten",
+        title: config.fallbackTitle,
+        description: config.fallbackTitle,
+        imageUrl: null,
+        priceYen: 0,
+        reviewAverage: null,
+        reviewCount: 0,
+        itemUrl: searchUrl,
+        affiliateUrl: buildRakutenAffiliateUrl(searchUrl),
+        shopName: config.label,
+        brandName: config.label,
+        matchedQueries: ["curated fixed top 5"],
+        discoveryScore: 0,
+        rakutenRank: 999,
+        rawPayload: { curated: true, brandKey },
+      },
+      metrics: {
+        product: {
+          source: "rakuten",
+          sourceExternalId: `curated:${brandKey}`,
+          ecProvider: "rakuten",
+          title: config.fallbackTitle,
+          description: config.fallbackTitle,
+          imageUrl: null,
+          priceYen: 0,
+          reviewAverage: null,
+          reviewCount: 0,
+          itemUrl: searchUrl,
+          affiliateUrl: buildRakutenAffiliateUrl(searchUrl),
+          shopName: config.label,
+          brandName: config.label,
+          matchedQueries: ["curated fixed top 5"],
+          discoveryScore: 0,
+          rakutenRank: 999,
+          rawPayload: { curated: true, brandKey },
+        },
+        canonicalBrand: config.label,
+        rakutenRank: 999,
+        contentWeightG: null,
+        servingSizeG: null,
+        proteinPerServingG: null,
+        proteinPer100gG: null,
+        proteinRatio: null,
+        proteinType: "whey",
+        womenKeywordMatches: [],
+        beautyKeywordMatches: [],
+        dietKeywordMatches: [],
+        pricePerProteinGram: null,
+        excluded: false,
+        exclusionReason: null,
+        rawExtraction: { curated: true, brandKey },
+      },
+      score: 0,
+      comment: MALE_FIXED_COMMENTS[brandKey],
+      scoreBreakdown: {
+        fixedRankOrder: MALE_FIXED_BRAND_ORDER.indexOf(brandKey) + 1,
+      },
+    };
+  };
+
   const male = MALE_FIXED_BRAND_ORDER.flatMap((brandKey, index) => {
     const candidate = bestMaleByBrand.get(brandKey);
-    if (!candidate) return [];
+    if (!candidate) {
+      return [
+        {
+          ...buildMaleFallback(brandKey),
+          score: Number((1 - index * 0.01).toFixed(5)),
+          rankPosition: index + 1,
+        },
+      ];
+    }
 
     const signals = expertSignalsByProductId.get(candidate.product.sourceExternalId) ?? [];
     const salesScore = salesRankToScore(candidate.metrics.rakutenRank);

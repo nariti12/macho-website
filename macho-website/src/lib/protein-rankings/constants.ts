@@ -119,12 +119,58 @@ export const MALE_FIXED_BRAND_ORDER = [
   "winzone",
 ] as const;
 
+export const MALE_FIXED_BRAND_CONFIG: Record<
+  (typeof MALE_FIXED_BRAND_ORDER)[number],
+  {
+    label: string;
+    aliases: string[];
+    fallbackTitle: string;
+    fallbackSearchTerm: string;
+  }
+> = {
+  "x-plosion": {
+    label: "X-PLOSION",
+    aliases: ["x-plosion", "xplosion", "エクスプロージョン"],
+    fallbackTitle: "X-PLOSION ホエイプロテイン",
+    fallbackSearchTerm: "X-PLOSION ホエイプロテイン",
+  },
+  "gold standard": {
+    label: "Gold Standard",
+    aliases: ["gold standard", "ゴールドスタンダード", "optimum nutrition", "オン"],
+    fallbackTitle: "Gold Standard 100% Whey",
+    fallbackSearchTerm: "Gold Standard 100% Whey",
+  },
+  "be legend": {
+    label: "be LEGEND",
+    aliases: ["be legend", "ビーレジェンド", "belegend"],
+    fallbackTitle: "be LEGEND ホエイプロテイン",
+    fallbackSearchTerm: "be LEGEND ホエイプロテイン",
+  },
+  myprotein: {
+    label: "myprotein",
+    aliases: ["myprotein", "マイプロテイン", "impact whey", "impact ホエイ"],
+    fallbackTitle: "myprotein Impact ホエイプロテイン",
+    fallbackSearchTerm: "myprotein Impact ホエイプロテイン",
+  },
+  winzone: {
+    label: "WINZONE",
+    aliases: ["winzone", "ウィンゾーン", "日本新薬"],
+    fallbackTitle: "WINZONE ホエイプロテイン",
+    fallbackSearchTerm: "WINZONE ホエイプロテイン",
+  },
+};
+
 export const MALE_FIXED_COMMENTS: Record<(typeof MALE_FIXED_BRAND_ORDER)[number], string> = {
-  "x-plosion": "コスパが強く、味も無難に選びやすい定番として最上位に固定しています。",
-  "gold standard": "価格は高めですが、定番感と成分面の安心感、味の評価を重視して上位固定にしています。",
-  "be legend": "派手な弱点が少なく、飲みやすさと無難さで選びやすい定番として位置付けています。",
-  "myprotein": "価格の強さと定番ブランドとしての知名度を評価しつつ、味の好みが分かれやすい点も踏まえた順位です。",
-  "winzone": "味の濃さや個性がはっきりしていて、ハマる人には強い定番として残しています。",
+  "x-plosion":
+    "大容量でも続けやすい価格帯が強みで、味も極端に外しにくい定番として1位に固定しています。",
+  "gold standard":
+    "価格は高めですが、成分設計の安心感と味の評価が強く、王道の2位として固定しています。",
+  "be legend":
+    "フレーバーの選びやすさと飲みやすさが強みで、大きな弱点が少ない無難枠として3位に置いています。",
+  myprotein:
+    "価格と知名度は強い一方で、味は好みが分かれやすい前提で4位に固定しています。",
+  winzone:
+    "味の主張がはっきりして好みは分かれますが、ハマる人には刺さる定番として5位に残しています。",
 };
 
 export const MYBEST_MALE_URL = "https://my-best.com/3389";
