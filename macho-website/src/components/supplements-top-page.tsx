@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { SiteHeader } from "@/components/site-header";
+import { MALE_FIXED_BRAND_CONFIG, MALE_FIXED_BRAND_ORDER } from "@/lib/protein-rankings/constants";
 import { buildProductOutboundLink } from "@/lib/protein-rankings/links";
 import type { CommerceProvider, ProteinRankingPageData, ProteinType, RankingCardItem } from "@/lib/protein-rankings/types";
 
@@ -55,6 +56,14 @@ const getOutboundLabel = (provider: CommerceProvider) => {
   }
 };
 
+const getFallbackImagePath = (item: RankingCardItem) => {
+  const haystack = `${item.product.title} ${item.metrics?.canonical_brand ?? ""} ${item.product.shop_name ?? ""}`.toLowerCase();
+  const brandKey = MALE_FIXED_BRAND_ORDER.find((key) =>
+    MALE_FIXED_BRAND_CONFIG[key].aliases.some((alias) => haystack.includes(alias.toLowerCase()))
+  );
+  return brandKey ? MALE_FIXED_BRAND_CONFIG[brandKey].fallbackImagePath : null;
+};
+
 const MetricChip = ({ label, value }: { label: string; value: string }) => (
   <div className="rounded-2xl bg-[#FFF4E7] px-4 py-3 text-sm text-slate-700 shadow-inner">
     <div className="text-xs font-semibold uppercase tracking-wide text-[#C2410C]">{label}</div>
@@ -80,8 +89,14 @@ const RankingCard = ({ item }: { item: RankingCardItem }) => (
         {item.rank}
       </div>
       <div className="relative mt-0 aspect-square w-24 overflow-hidden rounded-2xl bg-[#FFF4E7] sm:mt-4 sm:w-[108px]">
-        {item.product.image_url ? (
-          <Image src={item.product.image_url} alt={item.product.title} fill sizes="108px" className="object-cover" />
+        {item.product.image_url || getFallbackImagePath(item) ? (
+          <Image
+            src={item.product.image_url ?? (getFallbackImagePath(item) as string)}
+            alt={item.product.title}
+            fill
+            sizes="108px"
+            className="object-cover"
+          />
         ) : (
           <div className="flex h-full items-center justify-center text-xs text-slate-500">画像なし</div>
         )}
@@ -142,7 +157,7 @@ export function SupplementsTopPage({ data }: { data: ProteinRankingPageData }) {
               </span>
               <h1 className="text-3xl font-bold text-[#7C2D12] sm:text-4xl">おすすめプロテイン TOP5</h1>
               <p className="max-w-3xl text-base leading-7 text-slate-700">
-                はじめて選ぶ人でも比較しやすいように、定番ブランドの中からおすすめしやすい5つをまとめました。迷ったときの入口として使いやすいラインナップに絞っています。
+                総合的に評価して、最強クラスにおすすめしやすいプロテインをTOP5でご紹介します。
               </p>
               {updatedAtLabel ? (
                 <p className="text-sm text-slate-500">最終更新: {updatedAtLabel}</p>

@@ -6,7 +6,7 @@ import { buildUrl } from "@/lib/seo";
 
 const pageUrl = buildUrl("/supplements-ranking");
 const description =
-  "迷ったらここから選べる、おすすめプロテイン TOP5。定番ブランドを中心に、今選びやすい5つをまとめています。";
+  "総合的に評価して、最強クラスにおすすめしやすいプロテインをTOP5でご紹介します。";
 
 export const metadata: Metadata = {
   title: "おすすめプロテイン TOP5｜マチョ田の部屋",
