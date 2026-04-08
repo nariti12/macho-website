@@ -308,7 +308,7 @@ const fetchCuratedRakutenItem = async (
 
   return {
     source: "rakuten",
-    sourceExternalId: item.itemCode,
+    sourceExternalId: `curated:${brandKey}`,
     ecProvider: "rakuten",
     title: stripHtml(item.itemName),
     description: stripHtml(item.itemCaption) || stripHtml(item.itemName),
@@ -323,7 +323,10 @@ const fetchCuratedRakutenItem = async (
     matchedQueries: [`curated ${config.label}`],
     discoveryScore: 0.9,
     rakutenRank: 999,
-    rawPayload: item,
+    rawPayload: {
+      ...item,
+      fetchedItemCode: item.itemCode,
+    },
   };
 };
 

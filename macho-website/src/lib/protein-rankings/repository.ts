@@ -34,20 +34,63 @@ export const saveProteinRankingSnapshot = async ({ products, rankings }: SaveInp
   });
 
   const allProducts = Array.from(uniqueProducts.values());
+  const curatedSourceExternalIds = allProducts
+    .map((entry) => entry.product.sourceExternalId)
+    .filter((value) => value.startsWith("curated:"));
+
+  const existingCuratedProducts =
+    curatedSourceExternalIds.length > 0
+      ? await supabase
+          .from("products")
+          .select(
+            "source_external_id, title, image_url, price_yen, review_average, review_count, item_url, affiliate_url, shop_name"
+          )
+          .in("source_external_id", curatedSourceExternalIds)
+      : { data: [], error: null };
+
+  if (existingCuratedProducts.error) {
+    throw new Error(`Failed to load existing curated products: ${existingCuratedProducts.error.message}`);
+  }
+
+  const existingCuratedByExternalId = new Map(
+    (existingCuratedProducts.data ?? []).map((row) => [row.source_external_id as string, row])
+  );
 
   const productRows = allProducts.map(({ product }) => ({
+    ...(product.sourceExternalId.startsWith("curated:")
+      ? (() => {
+          const existing = existingCuratedByExternalId.get(product.sourceExternalId);
+          const isFallbackImage = typeof product.imageUrl === "string" && product.imageUrl.startsWith("/images/protein/");
+          const isFallbackLink = product.itemUrl.includes("search.rakuten.co.jp");
+          return {
+            title: isFallbackLink ? ((existing?.title as string | undefined) ?? product.title) : product.title,
+            image_url: isFallbackImage ? ((existing?.image_url as string | null | undefined) ?? product.imageUrl) : product.imageUrl,
+            price_yen: product.priceYen > 0 ? product.priceYen : ((existing?.price_yen as number | undefined) ?? 0),
+            review_average:
+              product.reviewAverage ?? ((existing?.review_average as number | null | undefined) ?? null),
+            review_count: product.reviewCount > 0 ? product.reviewCount : ((existing?.review_count as number | undefined) ?? 0),
+            item_url: isFallbackLink ? ((existing?.item_url as string | undefined) ?? product.itemUrl) : product.itemUrl,
+            affiliate_url:
+              isFallbackLink
+                ? ((existing?.affiliate_url as string | null | undefined) ?? product.affiliateUrl)
+                : product.affiliateUrl,
+            shop_name: isFallbackLink ? ((existing?.shop_name as string | null | undefined) ?? product.shopName) : product.shopName,
+          };
+        })()
+      : {
+          title: product.title,
+          image_url: product.imageUrl,
+          price_yen: product.priceYen,
+          review_average: product.reviewAverage,
+          review_count: product.reviewCount,
+          item_url: product.itemUrl,
+          affiliate_url: product.affiliateUrl,
+          shop_name: product.shopName,
+        }),
     source: product.source,
     source_external_id: product.sourceExternalId,
     ec_provider: product.ecProvider,
-    title: product.title,
     description: product.description,
-    image_url: product.imageUrl,
-    price_yen: product.priceYen,
-    review_average: product.reviewAverage,
-    review_count: product.reviewCount,
-    item_url: product.itemUrl,
-    affiliate_url: product.affiliateUrl,
-    shop_name: product.shopName,
     matched_queries: product.matchedQueries,
     discovery_score: product.discoveryScore,
     raw_payload: product.rawPayload,
