@@ -143,6 +143,8 @@ const getFirstMediumImageUrl = (images?: Array<{ imageUrl?: string } | string>) 
   return null;
 };
 
+const shouldRetryRakutenSearch = (status: number) => status === 429 || status >= 500;
+
 const fetchRankingApiPage = async (page: number) => {
   const applicationId = getRequiredEnv("RAKUTEN_APPLICATION_ID");
   const accessKey = getRequiredEnv("RAKUTEN_ACCESS_KEY");
@@ -261,23 +263,37 @@ const fetchCuratedRakutenItem = async (
     url.searchParams.set("affiliateId", affiliateId);
   }
 
-  const response = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-      Authorization: `Bearer ${accessKey}`,
-      Origin: getSiteOrigin(),
-      Referer: `${getSiteOrigin()}/`,
-    },
-    next: { revalidate: 0 },
-  });
+  let payload: RakutenItemSearchResponseV2 | null = null;
 
-  if (!response.ok) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const response = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${accessKey}`,
+        Origin: getSiteOrigin(),
+        Referer: `${getSiteOrigin()}/`,
+      },
+      next: { revalidate: 0 },
+    });
+
+    if (response.ok) {
+      payload = (await response.json()) as RakutenItemSearchResponseV2;
+      break;
+    }
+
     const body = await response.text();
-    console.warn(`Rakuten curated item search failed for ${brandKey}: ${response.status} ${body.slice(0, 200)}`);
+    if (!shouldRetryRakutenSearch(response.status) || attempt === 2) {
+      console.warn(`Rakuten curated item search failed for ${brandKey}: ${response.status} ${body.slice(0, 200)}`);
+      return null;
+    }
+
+    await sleep(RAKUTEN_REQUEST_DELAY_MS * (attempt + 1));
+  }
+
+  if (!payload) {
     return null;
   }
 
-  const payload = (await response.json()) as RakutenItemSearchResponseV2;
   const items = payload.Items ?? [];
   const item =
     items.find((entry) => matchesBrandAliases(stripHtml(entry.itemName), stripHtml(entry.shopName) || null, config.aliases)) ??
@@ -312,8 +328,17 @@ const fetchCuratedRakutenItem = async (
 };
 
 export const fetchCuratedRakutenStapleEntries = async (): Promise<NormalizedRakutenRankingProduct[]> => {
-  const results = await Promise.all(MALE_FIXED_BRAND_ORDER.map((brandKey) => fetchCuratedRakutenItem(brandKey)));
-  return results.filter((item): item is NormalizedRakutenRankingProduct => Boolean(item));
+  const results: NormalizedRakutenRankingProduct[] = [];
+
+  for (const brandKey of MALE_FIXED_BRAND_ORDER) {
+    const item = await fetchCuratedRakutenItem(brandKey);
+    if (item) {
+      results.push(item);
+    }
+    await sleep(250);
+  }
+
+  return results;
 };
 
 export const fetchRakutenProteinRankingEntries = async (): Promise<NormalizedRakutenRankingProduct[]> => {
