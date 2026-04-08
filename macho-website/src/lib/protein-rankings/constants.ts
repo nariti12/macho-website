@@ -125,60 +125,78 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
   (typeof MALE_FIXED_BRAND_ORDER)[number],
   {
     label: string;
+    displayName: string;
     aliases: string[];
     fallbackTitle: string;
     fallbackSearchTerm: string;
     fallbackImagePath: string;
+    tasteRating: "◎" | "〇" | "△";
+    formulaRating: "◎" | "〇" | "△";
   }
 > = {
   "x-plosion": {
     label: "X-PLOSION",
+    displayName: "X-PLOSION（エクスプロージョン）",
     aliases: ["x-plosion", "xplosion", "エクスプロージョン"],
     fallbackTitle: "X-PLOSION ホエイプロテイン",
     fallbackSearchTerm: "X-PLOSION ホエイプロテイン",
     fallbackImagePath: "/images/protein/xplosion.svg",
+    tasteRating: "〇",
+    formulaRating: "〇",
   },
   "gold standard": {
     label: "Gold Standard",
+    displayName: "Gold Standard（ゴールドスタンダード）",
     aliases: ["gold standard", "ゴールドスタンダード", "optimum nutrition"],
     fallbackTitle: "Gold Standard 100% Whey",
     fallbackSearchTerm: "Gold Standard 100% Whey",
     fallbackImagePath: "/images/protein/gold-standard.svg",
+    tasteRating: "◎",
+    formulaRating: "◎",
   },
   "be legend": {
     label: "be LEGEND",
+    displayName: "be LEGEND（ビーレジェンド）",
     aliases: ["be legend", "ビーレジェンド", "belegend"],
     fallbackTitle: "be LEGEND ホエイプロテイン",
     fallbackSearchTerm: "be LEGEND ホエイプロテイン",
     fallbackImagePath: "/images/protein/be-legend.svg",
+    tasteRating: "〇",
+    formulaRating: "〇",
   },
   myprotein: {
     label: "myprotein",
+    displayName: "Myprotein（マイプロテイン）",
     aliases: ["myprotein", "マイプロテイン", "impact whey", "impact ホエイ"],
     fallbackTitle: "myprotein Impact ホエイプロテイン",
     fallbackSearchTerm: "myprotein Impact ホエイプロテイン",
     fallbackImagePath: "/images/protein/myprotein.svg",
+    tasteRating: "△",
+    formulaRating: "◎",
   },
   winzone: {
     label: "WINZONE",
+    displayName: "WINZONE（ウィンゾーン）",
     aliases: ["winzone", "ウィンゾーン", "日本新薬"],
     fallbackTitle: "WINZONE ホエイプロテイン",
     fallbackSearchTerm: "WINZONE ホエイプロテイン",
     fallbackImagePath: "/images/protein/winzone.svg",
+    tasteRating: "〇",
+    formulaRating: "〇",
   },
 };
 
 export const MALE_FIXED_COMMENTS: Record<(typeof MALE_FIXED_BRAND_ORDER)[number], string> = {
   "x-plosion":
-    "大容量でも続けやすい価格帯が強みで、味も極端に外しにくい定番として1位に固定しています。",
+    "総合的にみて現状で一番良いプロテイン。味と成分がバランスよく、かつコスパ最強なので、これを買っておけば間違いはないです。",
   "gold standard":
-    "価格は高めですが、成分設計の安心感と味の評価が強く、王道の2位として固定しています。",
+    "世界No1プロテインです。成分、味ともに最強ですが、その分他の国産プロテインと比べると高いです。",
   "be legend":
-    "フレーバーの選びやすさと飲みやすさが強みで、大きな弱点が少ない無難枠として3位に置いています。",
+    "バランス良く無難なプロテインです。味は全体的に割と甘い印象です。",
   myprotein:
-    "価格と知名度は強い一方で、味は好みが分かれやすい前提で4位に固定しています。",
+    "成分はかなり優秀なんですが、味ははっきり言ってまずいです。個人の感想ではなく、皆言ってます。",
   winzone:
-    "味の主張がはっきりして好みは分かれますが、ハマる人には刺さる定番として5位に残しています。",
+    "味がめっちゃ濃いので濃い味好きな人はハマるかも。少し高めです。",
 };
 
 export const MYBEST_MALE_URL = "https://my-best.com/3389";
@@ -214,8 +232,7 @@ export const RANKING_LABELS: Record<RankingKey, string> = {
 };
 
 export const RANKING_DESCRIPTIONS: Record<RankingKey, string> = {
-  male:
-    "総合的に評価して、最強クラスにおすすめしやすいプロテインを5つに絞っています。",
+  male: "",
   female:
     "楽天売上ランキングをベースに、レビュー、女性向け訴求、my-best掲載を見直して選んだ女性向け上位5商品です。",
 };

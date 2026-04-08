@@ -5,8 +5,7 @@ import { fetchProteinRankingPageData } from "@/lib/protein-rankings/repository";
 import { buildUrl } from "@/lib/seo";
 
 const pageUrl = buildUrl("/supplements-ranking");
-const description =
-  "総合的に評価して、最強クラスにおすすめしやすいプロテインをTOP5でご紹介します。";
+const description = "総合的に評価して、おすすめしたい最強プロテインTOP5をご紹介します。";
 
 export const metadata: Metadata = {
   title: "おすすめプロテイン TOP5｜マチョ田の部屋",

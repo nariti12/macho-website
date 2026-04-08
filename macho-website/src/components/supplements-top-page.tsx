@@ -4,25 +4,23 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { MALE_FIXED_BRAND_CONFIG, MALE_FIXED_BRAND_ORDER } from "@/lib/protein-rankings/constants";
 import { buildProductOutboundLink } from "@/lib/protein-rankings/links";
-import type { CommerceProvider, ProteinRankingPageData, ProteinType, RankingCardItem } from "@/lib/protein-rankings/types";
+import type { CommerceProvider, ProteinRankingPageData, RankingCardItem } from "@/lib/protein-rankings/types";
 
 const profileImageSrc = "/picture/ore.png";
 
-const formatProteinType = (proteinType: ProteinType | null | undefined) => {
-  switch (proteinType) {
-    case "wpi":
-      return "WPI";
-    case "wpc":
-      return "WPC";
-    case "whey":
-      return "ホエイ";
-    case "soy":
-      return "ソイ";
-    case "casein":
-      return "カゼイン";
-    default:
-      return "その他";
+const getBrandKey = (item: RankingCardItem) => {
+  const sourceExternalId = item.product.source_external_id;
+  if (sourceExternalId.startsWith("curated:")) {
+    const key = sourceExternalId.replace("curated:", "");
+    if (key in MALE_FIXED_BRAND_CONFIG) {
+      return key as (typeof MALE_FIXED_BRAND_ORDER)[number];
+    }
   }
+
+  const haystack = `${item.product.title} ${item.metrics?.canonical_brand ?? ""} ${item.product.shop_name ?? ""}`.toLowerCase();
+  return MALE_FIXED_BRAND_ORDER.find((key) =>
+    MALE_FIXED_BRAND_CONFIG[key].aliases.some((alias) => haystack.includes(alias.toLowerCase()))
+  );
 };
 
 const formatUpdatedAt = (value: string | null) =>
@@ -38,14 +36,26 @@ const formatUpdatedAt = (value: string | null) =>
 
 const formatReview = (item: RankingCardItem) => {
   if (item.product.review_average) {
-    return `${item.product.review_average.toFixed(2)} / 5 (${item.product.review_count}件)`;
+    return `${item.product.review_average.toFixed(2)}点/5点（レビュー数${item.product.review_count}件）`;
   }
 
   if (item.product.review_count > 0) {
-    return `${item.product.review_count}件`;
+    return `レビュー数${item.product.review_count}件`;
   }
 
   return "不明";
+};
+
+const formatPricePerKg = (item: RankingCardItem) => {
+  const weightG = item.metrics?.content_weight_g;
+  const priceYen = item.product.price_yen;
+
+  if (!weightG || weightG <= 0 || !priceYen || priceYen <= 0) {
+    return "不明";
+  }
+
+  const pricePerKg = Math.round((priceYen / weightG) * 1000);
+  return `${pricePerKg.toLocaleString("ja-JP")}円`;
 };
 
 const getOutboundLabel = (provider: CommerceProvider) => {
@@ -57,11 +67,13 @@ const getOutboundLabel = (provider: CommerceProvider) => {
 };
 
 const getFallbackImagePath = (item: RankingCardItem) => {
-  const haystack = `${item.product.title} ${item.metrics?.canonical_brand ?? ""} ${item.product.shop_name ?? ""}`.toLowerCase();
-  const brandKey = MALE_FIXED_BRAND_ORDER.find((key) =>
-    MALE_FIXED_BRAND_CONFIG[key].aliases.some((alias) => haystack.includes(alias.toLowerCase()))
-  );
+  const brandKey = getBrandKey(item);
   return brandKey ? MALE_FIXED_BRAND_CONFIG[brandKey].fallbackImagePath : null;
+};
+
+const getDisplayTitle = (item: RankingCardItem) => {
+  const brandKey = getBrandKey(item);
+  return brandKey ? MALE_FIXED_BRAND_CONFIG[brandKey].displayName : item.product.title;
 };
 
 const MetricChip = ({ label, value }: { label: string; value: string }) => (
@@ -74,10 +86,14 @@ const MetricChip = ({ label, value }: { label: string; value: string }) => (
 const renderMaleHighlights = (item: RankingCardItem) => (
   <>
     <MetricChip label="レビュー" value={formatReview(item)} />
-    <MetricChip label="タイプ" value={formatProteinType(item.metrics?.protein_type)} />
+    <MetricChip label="1kgあたり" value={formatPricePerKg(item)} />
     <MetricChip
-      label="ブランド"
-      value={item.metrics?.canonical_brand || item.product.shop_name || "不明"}
+      label="美味しさ"
+      value={getBrandKey(item) ? MALE_FIXED_BRAND_CONFIG[getBrandKey(item) as (typeof MALE_FIXED_BRAND_ORDER)[number]].tasteRating : "不明"}
+    />
+    <MetricChip
+      label="成分"
+      value={getBrandKey(item) ? MALE_FIXED_BRAND_CONFIG[getBrandKey(item) as (typeof MALE_FIXED_BRAND_ORDER)[number]].formulaRating : "不明"}
     />
   </>
 );
@@ -109,14 +125,8 @@ const RankingCard = ({ item }: { item: RankingCardItem }) => (
           <span className="rounded-full bg-[#FFE7C2] px-3 py-1 text-xs font-semibold text-[#9A3412]">
             SCORE {item.score.toFixed(3)}
           </span>
-          {item.metrics?.canonical_brand ? (
-            <span className="rounded-full bg-[#FFF4E7] px-3 py-1 text-xs text-slate-600">{item.metrics.canonical_brand}</span>
-          ) : null}
-          {item.product.shop_name ? (
-            <span className="rounded-full bg-[#FFF4E7] px-3 py-1 text-xs text-slate-600">{item.product.shop_name}</span>
-          ) : null}
         </div>
-        <h3 className="text-xl font-bold leading-tight text-[#7C2D12]">{item.product.title}</h3>
+        <h3 className="text-xl font-bold leading-tight text-[#7C2D12]">{getDisplayTitle(item)}</h3>
         <p className="text-sm leading-6 text-slate-600">{item.comment}</p>
       </div>
 
@@ -157,7 +167,7 @@ export function SupplementsTopPage({ data }: { data: ProteinRankingPageData }) {
               </span>
               <h1 className="text-3xl font-bold text-[#7C2D12] sm:text-4xl">おすすめプロテイン TOP5</h1>
               <p className="max-w-3xl text-base leading-7 text-slate-700">
-                総合的に評価して、最強クラスにおすすめしやすいプロテインをTOP5でご紹介します。
+                総合的に評価して、おすすめしたい最強プロテインTOP5をご紹介します。
               </p>
               {updatedAtLabel ? (
                 <p className="text-sm text-slate-500">最終更新: {updatedAtLabel}</p>
@@ -171,7 +181,6 @@ export function SupplementsTopPage({ data }: { data: ProteinRankingPageData }) {
             <section key={section.key} className="rounded-[32px] bg-white/95 p-6 shadow-2xl sm:p-8">
               <div className="mb-6 flex flex-col gap-3">
                 <h2 className="text-2xl font-bold text-[#7C2D12] sm:text-3xl">{section.title}</h2>
-                <p className="text-sm leading-6 text-slate-600">{section.description}</p>
               </div>
 
               {section.items.length === 0 ? (

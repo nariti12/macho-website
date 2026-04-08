@@ -50,15 +50,21 @@ supabase db push
 
 表示ページは保存済みランキングだけを読み込みます。外部モールへのアクセスは cron 側に限定しています。
 
-1. `/api/cron/protein-rankings` が楽天の公開ランキングページを優先し、失敗時は楽天ランキング API realtime からプロテイン上位商品を取得
-2. 商品名からソイ / ホエイ、女性向け / 美容系キーワードを抽出する
-3. `SAVAS / ザバス`、シェイカー、バー、子供向けなどの除外ルールを適用
-4. `my-best` の男性向け記事に掲載された商品を補助加点に変換する
-5. 固定のおすすめプロテイン TOP5 を計算する
-6. Supabase の `products` / `product_metrics` / `rankings` に保存
-6. `/supplements-ranking` は保存済みデータを表示
+1. `/api/cron/protein-rankings` が楽天の商品検索 API から固定5ブランドの商品情報を取得
+2. 内容量を抽出して `1kgあたり` の価格を計算
+3. 固定順のおすすめプロテイン TOP5 を作成
+4. Supabase の `products` / `product_metrics` / `rankings` に保存
+5. `/supplements-ranking` は保存済みデータを表示
 
-固定の定番5ブランドを優先順で並べ、その中で取得できた商品を優先して採用します。取得できなかったブランドは楽天検索導線で補完し、TOP5が欠けないようにしています。
+固定の5ブランドを次の順で表示します。
+
+1. `X-PLOSION`
+2. `Gold Standard`
+3. `be LEGEND`
+4. `myprotein`
+5. `WINZONE`
+
+取得できなかったブランドは楽天検索導線で補完し、TOP5が欠けないようにしています。
 
 ## Vercel Cron
 
