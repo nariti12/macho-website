@@ -27,12 +27,20 @@ const normalizeTitle = (value: string) => {
 };
 
 const extractWeightCandidates = (text: string) =>
-  Array.from(text.matchAll(/(\d+(?:\.\d+)?)\s?(kg|g)/gi))
-    .map((match) => {
+  [
+    ...Array.from(text.matchAll(/(\d+(?:\.\d+)?)\s?(kg|g)\s*[×xX＊*]\s*(\d+)/gi)).map((match) => {
+      const amount = Number(match[1]);
+      const unit = match[2].toLowerCase();
+      const count = Number(match[3]);
+      const base = unit === "kg" ? amount * 1000 : amount;
+      return base * count;
+    }),
+    ...Array.from(text.matchAll(/(\d+(?:\.\d+)?)\s?(kg|g)/gi)).map((match) => {
       const amount = Number(match[1]);
       const unit = match[2].toLowerCase();
       return unit === "kg" ? amount * 1000 : amount;
-    })
+    }),
+  ]
     .filter((value) => value >= 100 && value <= 6000);
 
 const findContentWeight = (title: string, description: string) => {
@@ -46,7 +54,7 @@ const findContentWeight = (title: string, description: string) => {
 
   if (uniqueTitleWeights.length > 1) {
     return {
-      contentWeightG: [...uniqueTitleWeights].sort((left, right) => left - right)[0],
+      contentWeightG: [...uniqueTitleWeights].sort((left, right) => right - left)[0],
       hasAmbiguousSizeOptions,
     };
   }

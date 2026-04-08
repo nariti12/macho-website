@@ -240,6 +240,34 @@ const matchesBrandAliases = (title: string, shopName: string | null, aliases: st
   return aliases.some((alias) => haystack.includes(normalizeBrandText(alias)));
 };
 
+const estimateWeightG = (title: string) => {
+  const totals = [
+    ...Array.from(title.matchAll(/(\d+(?:\.\d+)?)\s?(kg|g)\s*[×xX＊*]\s*(\d+)/gi)).map((match) => {
+      const amount = Number(match[1]);
+      const unit = match[2].toLowerCase();
+      const count = Number(match[3]);
+      const base = unit === "kg" ? amount * 1000 : amount;
+      return base * count;
+    }),
+    ...Array.from(title.matchAll(/(\d+(?:\.\d+)?)\s?(kg|g)/gi)).map((match) => {
+      const amount = Number(match[1]);
+      const unit = match[2].toLowerCase();
+      return unit === "kg" ? amount * 1000 : amount;
+    }),
+  ].filter((value) => value >= 100 && value <= 6000);
+
+  if (totals.length === 0) return null;
+  return totals.sort((left, right) => right - left)[0];
+};
+
+const getCuratedItemPenalty = (title: string) => {
+  const normalized = title.toLowerCase();
+  if (normalized.includes("お試し")) return 1000;
+  if (normalized.includes("シェイカー")) return 800;
+  if (normalized.includes("セット")) return 300;
+  return 0;
+};
+
 const fetchCuratedRakutenItem = async (
   brandKey: (typeof MALE_FIXED_BRAND_ORDER)[number]
 ): Promise<NormalizedRakutenRankingProduct | null> => {
@@ -295,9 +323,22 @@ const fetchCuratedRakutenItem = async (
   }
 
   const items = payload.Items ?? [];
-  const item =
-    items.find((entry) => matchesBrandAliases(stripHtml(entry.itemName), stripHtml(entry.shopName) || null, config.aliases)) ??
-    items[0];
+  const rankedItems = items
+    .filter((entry) => matchesBrandAliases(stripHtml(entry.itemName), stripHtml(entry.shopName) || null, config.aliases))
+    .map((entry) => {
+      const title = stripHtml(entry.itemName);
+      const weightG = estimateWeightG(title);
+      const weightPenalty = weightG ? Math.abs(weightG - config.preferredWeightG) / 10 : 500;
+      const penalty = weightPenalty + getCuratedItemPenalty(title);
+
+      return {
+        entry,
+        penalty,
+      };
+    })
+    .sort((left, right) => left.penalty - right.penalty);
+
+  const item = rankedItems[0]?.entry ?? items[0];
 
   if (!item?.itemCode || !item.itemName || !item.itemUrl) {
     return null;

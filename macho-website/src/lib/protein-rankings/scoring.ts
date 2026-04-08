@@ -3,11 +3,9 @@ import {
   MALE_FIXED_BRAND_CONFIG,
   MALE_FIXED_BRAND_ORDER,
   MALE_FIXED_COMMENTS,
-  MALE_WEIGHTS,
   MAX_EXPERT_BONUS,
   RAKUTEN_RANKING_PAGE_SIZE,
   RAKUTEN_RANKING_PAGES,
-  STRICT_MIN_REVIEW_COUNT,
   TOP_RANKING_LIMIT,
   TRUSTED_MALE_BRANDS,
 } from "@/lib/protein-rankings/constants";
@@ -21,16 +19,6 @@ const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 const salesRankToScore = (rank: number | null) => {
   if (!rank || rank <= 0) return 0;
   return clamp01((TOTAL_RAKUTEN_CANDIDATES - rank + 1) / TOTAL_RAKUTEN_CANDIDATES);
-};
-
-const maleRankPriorityBonus = (rank: number | null) => {
-  if (!rank || rank <= 0) return 0;
-  if (rank === 1) return 0.35;
-  if (rank === 2) return 0.22;
-  if (rank === 3) return 0.14;
-  if (rank <= 5) return 0.08;
-  if (rank <= 10) return 0.04;
-  return 0;
 };
 
 const reviewAverageToScore = (reviewAverage: number | null) => {
@@ -59,10 +47,7 @@ const femaleBaseSuitability = (candidate: EnrichedProduct) => {
 };
 
 const getExpertBonus = (signals: ExpertSignalRecord[]) =>
-  Math.min(
-    MAX_EXPERT_BONUS,
-    signals.filter((signal) => signal.isActive).reduce((sum, signal) => sum + Math.max(signal.bonus, 0), 0)
-  );
+  Math.min(MAX_EXPERT_BONUS, signals.filter((signal) => signal.isActive).reduce((sum, signal) => sum + Math.max(signal.bonus, 0), 0));
 
 const normalizeBrandKey = (candidate: EnrichedProduct) =>
   (candidate.metrics.canonicalBrand ??
@@ -132,10 +117,8 @@ export const buildRankings = (
   candidates: EnrichedProduct[],
   expertSignalsByProductId: Map<string, ExpertSignalRecord[]>
 ) => {
-  const eligible = candidates.filter((candidate) => !candidate.metrics.excluded);
-
   const reviewScores = new Map(
-    eligible.map((candidate) => [
+    candidates.map((candidate) => [
       candidate.product.sourceExternalId,
       reviewConfidence(candidate.product.reviewAverage, candidate.product.reviewCount),
     ])
@@ -145,7 +128,7 @@ export const buildRankings = (
     (candidate) => candidate.metrics.rakutenRank !== null && getMaleBrandKey(candidate)
   );
 
-  const femaleBase = eligible.filter(
+  const femaleBase = candidates.filter(
     (candidate) =>
       candidate.metrics.proteinType === "soy" &&
       (candidate.metrics.womenKeywordMatches.length > 0 ||
@@ -250,11 +233,8 @@ export const buildRankings = (
     }
 
     const signals = expertSignalsByProductId.get(candidate.product.sourceExternalId) ?? [];
-    const salesScore = salesRankToScore(candidate.metrics.rakutenRank);
-    const reviewScore = reviewScores.get(candidate.product.sourceExternalId) ?? 0.45;
     const expertBonus = getExpertBonus(signals);
-    const rankPriorityBonus = maleRankPriorityBonus(candidate.metrics.rakutenRank);
-    const score = Number((1 - index * 0.01 + salesScore * 0.001 + reviewScore * 0.001 + expertBonus * 0.001 + rankPriorityBonus * 0.001).toFixed(5));
+    const score = Number((1 - index * 0.01 + expertBonus * 0.001).toFixed(5));
 
     return [
       {
@@ -268,10 +248,7 @@ export const buildRankings = (
         comment: MALE_FIXED_COMMENTS[brandKey],
         scoreBreakdown: {
           fixedRankOrder: MALE_FIXED_BRAND_ORDER.length - index,
-          salesScore,
-          reviewScore,
           expertBonus,
-          rankPriorityBonus,
         },
       },
     ];

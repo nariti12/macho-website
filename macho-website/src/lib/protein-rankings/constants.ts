@@ -130,6 +130,8 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     fallbackTitle: string;
     fallbackSearchTerm: string;
     fallbackImagePath: string;
+    preferredWeightG: number;
+    fallbackPricePerKgYen: number;
     tasteRating: "◎" | "〇" | "△";
     formulaRating: "◎" | "〇" | "△";
   }
@@ -139,8 +141,10 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     displayName: "X-PLOSION（エクスプロージョン）",
     aliases: ["x-plosion", "xplosion", "エクスプロージョン"],
     fallbackTitle: "X-PLOSION ホエイプロテイン",
-    fallbackSearchTerm: "X-PLOSION ホエイプロテイン",
+    fallbackSearchTerm: "X-PLOSION ホエイプロテイン 3kg",
     fallbackImagePath: "/images/protein/xplosion.svg",
+    preferredWeightG: 3000,
+    fallbackPricePerKgYen: 3593,
     tasteRating: "〇",
     formulaRating: "〇",
   },
@@ -149,8 +153,10 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     displayName: "Gold Standard（ゴールドスタンダード）",
     aliases: ["gold standard", "ゴールドスタンダード", "optimum nutrition"],
     fallbackTitle: "Gold Standard 100% Whey",
-    fallbackSearchTerm: "Gold Standard 100% Whey",
+    fallbackSearchTerm: "Gold Standard 100% Whey 2.27kg",
     fallbackImagePath: "/images/protein/gold-standard.svg",
+    preferredWeightG: 2270,
+    fallbackPricePerKgYen: 6599,
     tasteRating: "◎",
     formulaRating: "◎",
   },
@@ -159,8 +165,10 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     displayName: "be LEGEND（ビーレジェンド）",
     aliases: ["be legend", "ビーレジェンド", "belegend"],
     fallbackTitle: "be LEGEND ホエイプロテイン",
-    fallbackSearchTerm: "be LEGEND ホエイプロテイン",
+    fallbackSearchTerm: "be LEGEND ホエイプロテイン 1kg",
     fallbackImagePath: "/images/protein/be-legend.svg",
+    preferredWeightG: 1000,
+    fallbackPricePerKgYen: 4999,
     tasteRating: "〇",
     formulaRating: "〇",
   },
@@ -169,8 +177,10 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     displayName: "Myprotein（マイプロテイン）",
     aliases: ["myprotein", "マイプロテイン", "impact whey", "impact ホエイ"],
     fallbackTitle: "myprotein Impact ホエイプロテイン",
-    fallbackSearchTerm: "myprotein Impact ホエイプロテイン",
+    fallbackSearchTerm: "myprotein Impact ホエイプロテイン 1kg",
     fallbackImagePath: "/images/protein/myprotein.svg",
+    preferredWeightG: 1000,
+    fallbackPricePerKgYen: 4390,
     tasteRating: "△",
     formulaRating: "◎",
   },
@@ -179,8 +189,10 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     displayName: "WINZONE（ウィンゾーン）",
     aliases: ["winzone", "ウィンゾーン", "日本新薬"],
     fallbackTitle: "WINZONE ホエイプロテイン",
-    fallbackSearchTerm: "WINZONE ホエイプロテイン",
+    fallbackSearchTerm: "WINZONE ホエイプロテイン 1kg",
     fallbackImagePath: "/images/protein/winzone.svg",
+    preferredWeightG: 1000,
+    fallbackPricePerKgYen: 4873,
     tasteRating: "〇",
     formulaRating: "〇",
   },
