@@ -211,6 +211,14 @@ export const MALE_FIXED_COMMENTS: Record<(typeof MALE_FIXED_BRAND_ORDER)[number]
     "味がめっちゃ濃いので濃い味好きな人はハマるかも。少し高めです。",
 };
 
+export const MALE_FIXED_SCORES: Record<(typeof MALE_FIXED_BRAND_ORDER)[number], number> = {
+  "x-plosion": 100,
+  "gold standard": 95,
+  "be legend": 80,
+  winzone: 75,
+  myprotein: 70,
+};
+
 export const MYBEST_MALE_URL = "https://my-best.com/3389";
 export const MYBEST_FEMALE_URL = "https://my-best.com/23907";
 export const MYBEST_MALE_SIGNAL_BONUS = 0.12;

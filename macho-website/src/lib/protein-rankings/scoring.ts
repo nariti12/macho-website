@@ -3,6 +3,7 @@ import {
   MALE_FIXED_BRAND_CONFIG,
   MALE_FIXED_BRAND_ORDER,
   MALE_FIXED_COMMENTS,
+  MALE_FIXED_SCORES,
   MAX_EXPERT_BONUS,
   RAKUTEN_RANKING_PAGE_SIZE,
   RAKUTEN_RANKING_PAGES,
@@ -226,7 +227,7 @@ export const buildRankings = (
       return [
         {
           ...buildMaleFallback(brandKey),
-          score: Number((1 - index * 0.01).toFixed(5)),
+          score: MALE_FIXED_SCORES[brandKey],
           rankPosition: index + 1,
         },
       ];
@@ -234,7 +235,6 @@ export const buildRankings = (
 
     const signals = expertSignalsByProductId.get(candidate.product.sourceExternalId) ?? [];
     const expertBonus = getExpertBonus(signals);
-    const score = Number((1 - index * 0.01 + expertBonus * 0.001).toFixed(5));
 
     return [
       {
@@ -243,7 +243,7 @@ export const buildRankings = (
           ...candidate.product,
           imageUrl: candidate.product.imageUrl ?? MALE_FIXED_BRAND_CONFIG[brandKey].fallbackImagePath,
         },
-        score,
+        score: MALE_FIXED_SCORES[brandKey],
         rankPosition: index + 1,
         comment: MALE_FIXED_COMMENTS[brandKey],
         scoreBreakdown: {
