@@ -117,8 +117,8 @@ export const MALE_FIXED_BRAND_ORDER = [
   "x-plosion",
   "gold standard",
   "be legend",
-  "myprotein",
   "winzone",
+  "myprotein",
 ] as const;
 
 export const MALE_FIXED_BRAND_CONFIG: Record<
