@@ -279,7 +279,7 @@ const fetchCuratedRakutenItem = async (
   url.searchParams.set("applicationId", applicationId);
   url.searchParams.set("accessKey", accessKey);
   url.searchParams.set("keyword", config.fallbackSearchTerm);
-  url.searchParams.set("hits", "5");
+  url.searchParams.set("hits", "10");
   url.searchParams.set("page", "1");
   url.searchParams.set("format", "json");
   url.searchParams.set("formatVersion", "2");
