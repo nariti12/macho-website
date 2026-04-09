@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { SiteHeader } from "@/components/site-header";
-import { MALE_FIXED_BRAND_CONFIG, MALE_FIXED_BRAND_ORDER } from "@/lib/protein-rankings/constants";
+import { MALE_FIXED_BRAND_CONFIG, MALE_FIXED_BRAND_ORDER, MALE_FIXED_SCORES } from "@/lib/protein-rankings/constants";
 import { buildProductOutboundLink } from "@/lib/protein-rankings/links";
 import type { CommerceProvider, ProteinRankingPageData, RankingCardItem } from "@/lib/protein-rankings/types";
 
@@ -90,6 +90,14 @@ const getDisplayTitle = (item: RankingCardItem) => {
   return brandKey ? MALE_FIXED_BRAND_CONFIG[brandKey].displayName : item.product.title;
 };
 
+const getDisplayScore = (item: RankingCardItem) => {
+  const brandKey = getBrandKey(item);
+  if (brandKey) {
+    return MALE_FIXED_SCORES[brandKey];
+  }
+  return Math.round(item.score * 100);
+};
+
 const MetricChip = ({ label, value }: { label: string; value: string }) => (
   <div className="rounded-2xl bg-[#FFF4E7] px-4 py-3 text-sm text-slate-700 shadow-inner">
     <div className="text-xs font-semibold uppercase tracking-wide text-[#C2410C]">{label}</div>
@@ -137,7 +145,7 @@ const RankingCard = ({ item }: { item: RankingCardItem }) => (
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-[#FFE7C2] px-3 py-1 text-xs font-semibold text-[#9A3412]">
-            SCORE {item.score.toFixed(3)}
+            SCORE {getDisplayScore(item)}
           </span>
         </div>
         <h3 className="text-xl font-bold leading-tight text-[#7C2D12]">{getDisplayTitle(item)}</h3>

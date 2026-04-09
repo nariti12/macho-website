@@ -227,7 +227,7 @@ export const buildRankings = (
       return [
         {
           ...buildMaleFallback(brandKey),
-          score: MALE_FIXED_SCORES[brandKey],
+          score: MALE_FIXED_SCORES[brandKey] / 100,
           rankPosition: index + 1,
         },
       ];
@@ -243,7 +243,7 @@ export const buildRankings = (
           ...candidate.product,
           imageUrl: candidate.product.imageUrl ?? MALE_FIXED_BRAND_CONFIG[brandKey].fallbackImagePath,
         },
-        score: MALE_FIXED_SCORES[brandKey],
+        score: MALE_FIXED_SCORES[brandKey] / 100,
         rankPosition: index + 1,
         comment: MALE_FIXED_COMMENTS[brandKey],
         scoreBreakdown: {
