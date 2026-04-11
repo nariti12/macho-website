@@ -145,10 +145,11 @@ const normalizeBrand = (product: NormalizedRakutenRankingProduct, normalizedText
 };
 
 export const extractMetricsFromProduct = (product: NormalizedRakutenRankingProduct): ProductMetricInput => {
+  const titleWithWeight = stripHtml(product.title);
   const normalizedTitle = normalizeTitle(product.title);
   const normalizedDescription = stripHtml(product.description);
   const normalizedText = `${normalizedTitle} ${normalizedDescription}`.trim();
-  const { contentWeightG, hasAmbiguousSizeOptions } = findContentWeight(normalizedTitle, normalizedDescription);
+  const { contentWeightG, hasAmbiguousSizeOptions } = findContentWeight(titleWithWeight, normalizedDescription);
   const servingSizeG = findServingSize(normalizedText);
   const proteinPerServingG = findProteinPerServing(normalizedText);
   const proteinPer100gG = findProteinPer100g(normalizedText);
@@ -184,7 +185,7 @@ export const extractMetricsFromProduct = (product: NormalizedRakutenRankingProdu
       normalizedDescription,
       normalizedText,
       hasAmbiguousSizeOptions,
-      titleWeightCandidates: extractWeightCandidates(normalizedTitle),
+      titleWeightCandidates: extractWeightCandidates(titleWithWeight),
       descriptionWeightCandidates: extractWeightCandidates(normalizedDescription),
     },
   };
