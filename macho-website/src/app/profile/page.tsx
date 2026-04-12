@@ -49,7 +49,7 @@ export default function ProfilePage() {
     jobTitle: "AIエンジニア",
     url: buildUrl("/profile"),
     image: profileImageFullUrl,
-    sameAs: ["https://x.com/narita1_", "https://www.youtube.com/@ganmochan"],
+    sameAs: ["https://x.com/machoda_", "https://www.youtube.com/@ganmochan"],
     knowsAbout: ["筋トレ", "AI", "データ分析"],
   });
 
@@ -77,7 +77,7 @@ export default function ProfilePage() {
               </div>
               <div className="flex gap-4">
                 <Link
-                  href="https://x.com/narita1_"
+                  href="https://x.com/machoda_"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex h-12 w-12 items-center justify-center rounded-xl bg-black text-white transition-transform duration-200 hover:scale-105"
