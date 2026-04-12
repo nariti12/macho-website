@@ -55,9 +55,9 @@ export const metadata: Metadata = {
     images: [new URL("/picture/man.png", siteUrl).toString()],
   },
   icons: {
-    icon: new URL("/picture/ore.png", siteUrl).toString(),
-    shortcut: new URL("/picture/ore.png", siteUrl).toString(),
-    apple: new URL("/picture/ore.png", siteUrl).toString(),
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/apple-icon.png",
   },
 };
 
