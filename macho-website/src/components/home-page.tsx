@@ -39,7 +39,7 @@ export function HomePage() {
     { label: "１日摂取カロリー/\nたんぱく質 計算機", href: "/intake-calculator" },
     { label: "高たんぱく質一覧", href: "/high-protein" },
     { label: "おすすめプロテイン", href: "/supplements-ranking" },
-    { label: "トレーニングウェア", href: "/training-wear" },
+    { label: "おすすめ\nトレーニングシューズ", href: "/training-wear" },
     { label: "トレーニングギア", href: "/training-gear" },
   ];
 
@@ -153,7 +153,7 @@ export function HomePage() {
       name: "マチョ田の部屋",
       url: buildUrl(""),
       logo: buildUrl("/picture/ore.png"),
-      sameAs: ["https://x.com/narita1_", "https://www.youtube.com/@ganmochan"],
+      sameAs: ["https://x.com/machoda_", "https://www.youtube.com/@ganmochan"],
       contactPoint: [
         {
           "@type": "ContactPoint",

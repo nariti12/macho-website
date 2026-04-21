@@ -9,7 +9,8 @@ type LinkInput = {
 export const buildRakutenAffiliateUrl = (url: string) => {
   const affiliateId = process.env.RAKUTEN_AFFILIATE_ID;
   if (!affiliateId) return url;
-  return `${url}${url.includes("?") ? "&" : "?"}scid=af_pc_etc&sc2id=${affiliateId}`;
+  if (url.startsWith("https://hb.afl.rakuten.co.jp/")) return url;
+  return `https://hb.afl.rakuten.co.jp/hgc/${affiliateId}/?pc=${encodeURIComponent(url)}&link_type=text`;
 };
 
 export const buildProductOutboundLink = ({ affiliateUrl, itemUrl }: LinkInput) => affiliateUrl ?? itemUrl;
