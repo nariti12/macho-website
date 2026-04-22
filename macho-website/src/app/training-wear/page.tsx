@@ -92,7 +92,7 @@ export const metadata: Metadata = {
   },
 };
 
-export const revalidate = 60 * 60 * 24;
+export const revalidate = 86400;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
