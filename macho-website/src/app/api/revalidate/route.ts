@@ -37,10 +37,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ skipped: true, reason: `Unsupported api: ${apiName}` });
   }
 
-  revalidateTag("blog-list", "max");
+  revalidateTag("blog-list");
 
   if (contentId) {
-    revalidateTag(`blog-${contentId}`, "max");
+    revalidateTag(`blog-${contentId}`);
   }
 
   return NextResponse.json({ revalidated: true, contentId: contentId ?? null });
