@@ -62,20 +62,20 @@ const shoeItems: ShoeItem[] = [
 
 export const metadata: Metadata = {
   title: "おすすめトレーニングシューズ｜マチョ田の部屋",
-  description: "総合的に評価して、おすすめしたいトレーニングシューズをTOP5でご紹介します。",
+  description: "カッコよくてジムに最適なトレーニングシューズをご紹介します。",
   alternates: {
     canonical: pageUrl,
   },
   openGraph: {
     title: "おすすめトレーニングシューズ｜マチョ田の部屋",
-    description: "筋トレ用におすすめしたいトレーニングシューズを、マチョ田目線で5つに絞って紹介します。",
+    description: "カッコよくてジムに最適なトレーニングシューズをご紹介します。",
     url: pageUrl,
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "おすすめトレーニングシューズ｜マチョ田の部屋",
-    description: "総合的に評価して、おすすめしたいトレーニングシューズをTOP5でご紹介します。",
+    description: "カッコよくてジムに最適なトレーニングシューズをご紹介します。",
   },
 };
 
@@ -103,7 +103,7 @@ export default async function TrainingWearPage() {
               </span>
               <h1 className="text-3xl font-bold text-[#7C2D12] sm:text-4xl">おすすめトレーニングシューズ TOP5</h1>
               <p className="max-w-3xl text-base leading-7 text-slate-700">
-                総合的に評価して、おすすめしたいトレーニングシューズTOP5をご紹介します。
+                カッコよくてジムに最適なトレーニングシューズをご紹介します。
               </p>
             </div>
           </section>
