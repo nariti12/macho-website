@@ -14,15 +14,7 @@ type ShoeItem = {
   name: string;
   comment: string;
   searchUrl: string;
-  searchKeyword: string;
-  fallbackImage: string;
-};
-
-type RakutenSearchResponse = {
-  Items?: Array<{
-    itemName?: string;
-    mediumImageUrls?: Array<string | { imageUrl?: string }>;
-  }>;
+  imageUrl: string;
 };
 
 const shoeItems: ShoeItem[] = [
@@ -30,46 +22,41 @@ const shoeItems: ShoeItem[] = [
     rank: 1,
     name: "イノヴェイト",
     comment: "ただただかっこいい。ジムでも街でも映える、見た目重視で選びたい人におすすめです。",
-    searchKeyword: "INOV8 トレーニング",
     searchUrl:
       "https://search.rakuten.co.jp/search/mall/INOV8%E3%80%80%E3%83%88%E3%83%AC%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0/",
-    fallbackImage: "/images/profile-placeholder.svg",
+    imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/store-descente/cabinet/542/nt5ssz93m_1001.jpg",
   },
   {
     rank: 2,
     name: "ビブラム ファイブフィンガーズ",
     comment: "プロの選手も愛用している方が多い印象。素足感覚で踏ん張りたいトレーニング向けです。",
-    searchKeyword: "ビブラム ファイブフィンガーズ",
     searchUrl:
       "https://search.rakuten.co.jp/search/mall/%E3%83%93%E3%83%96%E3%83%A9%E3%83%A0+%E3%83%95%E3%82%A1%E3%82%A4%E3%83%96%E3%83%95%E3%82%A3%E3%83%B3%E3%82%AC%E3%83%BC%E3%82%BA/?l-id=pc_header_search_suggest",
-    fallbackImage: "/images/profile-placeholder.svg",
+    imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/vibramfivefingers/cabinet/fivefingers/imgrc0087708199.jpg",
   },
   {
     rank: 3,
     name: "親方寅さん トビシューズ",
     comment: "とにかく安い。荷物もかさばらない。現場用シューズですが、筋トレ用としても使いやすいです。",
-    searchKeyword: "寅さん スリッポンシューズ",
     searchUrl:
       "https://search.rakuten.co.jp/search/mall/%E5%AF%85%E3%81%95%E3%82%93%E3%80%80%E3%82%B9%E3%83%AA%E3%83%83%E3%83%9D%E3%83%B3%E3%82%B7%E3%83%A5%E3%83%BC%E3%82%BA/",
-    fallbackImage: "/images/profile-placeholder.svg",
+    imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/luce-8/cabinet/1bn863.jpg",
   },
   {
     rank: 4,
     name: "NIKE メトコン",
     comment: "なんだかんだナイキがかっこいい。ナイキ好きなら、まず候補に入れたい一足です。",
-    searchKeyword: "ナイキ メトコン",
     searchUrl:
       "https://search.rakuten.co.jp/search/mall/%E3%83%8A%E3%82%A4%E3%82%AD+%E3%83%A1%E3%83%88%E3%82%B3%E3%83%B3/?l-id=pc_header_search_suggest",
-    fallbackImage: "/images/profile-placeholder.svg",
+    imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/supersportsxebio/cabinet/1/8250401/8631591_m.jpg",
   },
   {
     rank: 5,
     name: "SAGUARO",
     comment: "コスパ最強ベアフットシューズ。まずベアフット系を試したい人にも選びやすいです。",
-    searchKeyword: "サグアロ ベアフットシューズ",
     searchUrl:
       "https://search.rakuten.co.jp/search/mall/%E3%82%B5%E3%82%B0%E3%82%A2%E3%83%AD+%E3%83%99%E3%82%A2%E3%83%95%E3%83%83%E3%83%88%E3%82%B7%E3%83%A5%E3%83%BC%E3%82%BA/",
-    fallbackImage: "/images/profile-placeholder.svg",
+    imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/saguaro/cabinet/09107349/09133691/xza32_15.jpg",
   },
 ];
 
@@ -94,69 +81,11 @@ export const metadata: Metadata = {
 
 export const revalidate = 86400;
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const getFirstMediumImageUrl = (images?: Array<string | { imageUrl?: string }>) => {
-  if (!images) return null;
-
-  for (const image of images) {
-    if (typeof image === "string" && image.trim()) return image;
-    if (typeof image === "object" && image.imageUrl) return image.imageUrl;
-  }
-
-  return null;
-};
-
-const fetchRakutenImage = async (keyword: string) => {
-  const applicationId = process.env.RAKUTEN_APPLICATION_ID;
-  const accessKey = process.env.RAKUTEN_ACCESS_KEY;
-
-  if (!applicationId || !accessKey) return null;
-
-  const url = new URL("https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20220601");
-  url.searchParams.set("applicationId", applicationId);
-  url.searchParams.set("accessKey", accessKey);
-  url.searchParams.set("keyword", keyword);
-  url.searchParams.set("hits", "3");
-  url.searchParams.set("page", "1");
-  url.searchParams.set("format", "json");
-  url.searchParams.set("formatVersion", "2");
-  url.searchParams.set("elements", "itemName,mediumImageUrls");
-
-  const response = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-      Authorization: `Bearer ${accessKey}`,
-      Origin: process.env.RAKUTEN_SITE_ORIGIN || "https://www.machoda.com",
-      Referer: `${process.env.RAKUTEN_SITE_ORIGIN || "https://www.machoda.com"}/`,
-    },
-    next: { revalidate: 60 * 60 * 24 },
-  });
-
-  if (!response.ok) {
-    console.warn(`Failed to fetch Rakuten image for ${keyword}: ${response.status}`);
-    return null;
-  }
-
-  const payload = (await response.json()) as RakutenSearchResponse;
-  const imageUrl = getFirstMediumImageUrl(payload.Items?.[0]?.mediumImageUrls);
-
-  return imageUrl;
-};
-
 const getItemsWithImages = async () => {
-  const items = [];
-
-  for (const item of shoeItems) {
-    items.push({
-      ...item,
-      imageUrl: (await fetchRakutenImage(item.searchKeyword)) ?? item.fallbackImage,
-      affiliateUrl: buildRakutenAffiliateUrl(item.searchUrl),
-    });
-    await sleep(700);
-  }
-
-  return items;
+  return shoeItems.map((item) => ({
+    ...item,
+    affiliateUrl: buildRakutenAffiliateUrl(item.searchUrl),
+  }));
 };
 
 export default async function TrainingWearPage() {
@@ -203,9 +132,6 @@ export default async function TrainingWearPage() {
 
                   <div className="flex flex-col gap-4">
                     <div className="flex flex-col gap-2">
-                      <span className="w-fit rounded-full bg-[#FFE7C2] px-3 py-1 text-xs font-semibold text-[#9A3412]">
-                        RANK {item.rank}
-                      </span>
                       <h2 className="text-xl font-bold leading-tight text-[#7C2D12]">{item.name}</h2>
                       <p className="text-sm leading-6 text-slate-600">{item.comment}</p>
                     </div>
