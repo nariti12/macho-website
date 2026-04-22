@@ -20,7 +20,7 @@ type ShoeItem = {
 const shoeItems: ShoeItem[] = [
   {
     rank: 1,
-    name: "イノヴェイト",
+    name: "INOV8（イノヴェイト）",
     comment: "ただただかっこいい。ジムでも街でも映える、見た目重視で選びたい人におすすめです。",
     searchUrl:
       "https://search.rakuten.co.jp/search/mall/INOV8%E3%80%80%E3%83%88%E3%83%AC%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0/",
@@ -28,7 +28,7 @@ const shoeItems: ShoeItem[] = [
   },
   {
     rank: 2,
-    name: "ビブラム ファイブフィンガーズ",
+    name: "vibram fivefingers（ビブラム ファイブフィンガーズ）",
     comment: "プロの選手も愛用している方が多い印象。素足感覚で踏ん張りたいトレーニング向けです。",
     searchUrl:
       "https://search.rakuten.co.jp/search/mall/%E3%83%93%E3%83%96%E3%83%A9%E3%83%A0+%E3%83%95%E3%82%A1%E3%82%A4%E3%83%96%E3%83%95%E3%82%A3%E3%83%B3%E3%82%AC%E3%83%BC%E3%82%BA/?l-id=pc_header_search_suggest",
@@ -44,7 +44,7 @@ const shoeItems: ShoeItem[] = [
   },
   {
     rank: 4,
-    name: "NIKE メトコン",
+    name: "NIKE Metcon（メトコン）",
     comment: "なんだかんだナイキがかっこいい。ナイキ好きなら、まず候補に入れたい一足です。",
     searchUrl:
       "https://search.rakuten.co.jp/search/mall/%E3%83%8A%E3%82%A4%E3%82%AD+%E3%83%A1%E3%83%88%E3%82%B3%E3%83%B3/?l-id=pc_header_search_suggest",
@@ -52,7 +52,7 @@ const shoeItems: ShoeItem[] = [
   },
   {
     rank: 5,
-    name: "SAGUARO",
+    name: "SAGUARO（サグアロ） ベアフットシューズ",
     comment: "コスパ最強ベアフットシューズ。まずベアフット系を試したい人にも選びやすいです。",
     searchUrl:
       "https://search.rakuten.co.jp/search/mall/%E3%82%B5%E3%82%B0%E3%82%A2%E3%83%AD+%E3%83%99%E3%82%A2%E3%83%95%E3%83%83%E3%83%88%E3%82%B7%E3%83%A5%E3%83%BC%E3%82%BA/",
