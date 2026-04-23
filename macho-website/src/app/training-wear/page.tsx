@@ -21,7 +21,7 @@ const shoeItems: ShoeItem[] = [
   {
     rank: 1,
     name: "INOV8（イノヴェイト）",
-    comment: "ただただかっこいい。ジムでも街でも映える、見た目重視で選びたい人におすすめです。",
+    comment: "ただただかっこいい。トレーニングにも最適なシューズで、個人的No.1。",
     searchUrl:
       "https://search.rakuten.co.jp/search/mall/INOV8%E3%80%80%E3%83%88%E3%83%AC%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0/",
     imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/store-descente/cabinet/542/nt5ssz93m_1001.jpg",
@@ -29,7 +29,7 @@ const shoeItems: ShoeItem[] = [
   {
     rank: 2,
     name: "vibram fivefingers（ビブラム ファイブフィンガーズ）",
-    comment: "プロの選手も愛用している方が多い印象。素足感覚で踏ん張りたいトレーニング向けです。",
+    comment: "プロの選手も愛用している方が多いです。イケてるゴリマッチョが履いているイメージです。",
     searchUrl:
       "https://search.rakuten.co.jp/search/mall/%E3%83%93%E3%83%96%E3%83%A9%E3%83%A0+%E3%83%95%E3%82%A1%E3%82%A4%E3%83%96%E3%83%95%E3%82%A3%E3%83%B3%E3%82%AC%E3%83%BC%E3%82%BA/?l-id=pc_header_search_suggest",
     imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/vibramfivefingers/cabinet/fivefingers/imgrc0087708199.jpg",
