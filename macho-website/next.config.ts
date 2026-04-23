@@ -30,6 +30,21 @@ const nextConfig: NextConfig = {
         hostname: "image.rakuten.co.jp",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "shop.r10s.jp",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "fitnessshop.jp",
+        pathname: "/**",
+      },
+      {
+        protocol: "http",
+        hostname: "fitnessshop.jp",
+        pathname: "/**",
+      },
     ],
   },
   async redirects() {

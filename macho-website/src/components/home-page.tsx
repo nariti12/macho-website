@@ -40,7 +40,7 @@ export function HomePage() {
     { label: "高たんぱく質一覧", href: "/high-protein" },
     { label: "おすすめプロテイン", href: "/supplements-ranking" },
     { label: "おすすめ\nトレーニングシューズ", href: "/training-wear" },
-    { label: "トレーニングギア", href: "/training-gear" },
+    { label: "おすすめ\nトレーニングギア", href: "/training-gear" },
   ];
 
   useEffect(() => {
