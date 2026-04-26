@@ -56,10 +56,10 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#FCC081" }}>
       <SiteHeader profileImageSrc={profileImageSrc} />
-      <main className="px-6 pb-20 pt-24 text-gray-900">
-        <div className="mx-auto flex w-full max-w-4xl flex-col gap-10 rounded-[32px] bg-white/95 p-10 shadow-2xl">
+      <main className="relative z-10 px-6 pb-20 pt-24 text-gray-900">
+        <div className="relative z-10 mx-auto flex w-full max-w-4xl flex-col gap-10 rounded-[32px] bg-white/95 p-10 shadow-2xl">
           <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: structuredData }} />
-          <section className="flex flex-col items-center gap-8 text-center md:flex-row md:items-center md:text-left">
+          <section className="relative z-10 flex flex-col items-center gap-8 text-center md:flex-row md:items-center md:text-left">
             <div className="overflow-hidden rounded-[28px] border-4 border-[#FFE7C2] bg-[#FFF8F0] shadow-lg">
               <Image
                 src={profileImageSrc}
@@ -75,12 +75,12 @@ export default function ProfilePage() {
                 <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[#FF8A23]">Profile</p>
                 <h1 className="mt-2 text-3xl font-bold text-[#7C2D12] md:text-4xl">マチョ田 / machoda</h1>
               </div>
-              <div className="flex gap-4">
+              <div className="relative z-20 flex gap-4">
                 <Link
                   href="https://x.com/machoda_"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex h-12 w-12 items-center justify-center rounded-xl bg-black text-white transition-transform duration-200 hover:scale-105"
+                  className="relative z-20 flex h-12 w-12 items-center justify-center rounded-xl bg-black text-white transition-transform duration-200 hover:scale-105"
                 >
                   <span className="sr-only">X（旧Twitter）</span>
                   <span aria-hidden className="text-xl font-semibold leading-none">
@@ -91,7 +91,7 @@ export default function ProfilePage() {
                   href="https://www.youtube.com/@ganmochan"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-600 text-white transition-transform duration-200 hover:scale-105"
+                  className="relative z-20 flex h-12 w-12 items-center justify-center rounded-xl bg-red-600 text-white transition-transform duration-200 hover:scale-105"
                 >
                   <span className="sr-only">YouTubeチャンネル</span>
                   <Youtube aria-hidden className="h-6 w-6" />
