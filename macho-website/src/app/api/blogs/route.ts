@@ -19,6 +19,14 @@ interface MicroCMSCategory {
   name?: string;
 }
 
+interface MicroCMSBodyBlock {
+  fieldId?: string;
+  text?: string;
+  name?: string;
+  image?: MicroCMSImage | null;
+  isLeft?: boolean | null;
+}
+
 interface MicroCMSBlog {
   id: string;
   title?: string;
@@ -28,6 +36,7 @@ interface MicroCMSBlog {
   metaDescription?: string;
   body?: string;
   content?: string;
+  content2?: MicroCMSBodyBlock[] | null;
   richEditor?: string;
   publishedAt?: string;
   updatedAt?: string;
@@ -44,6 +53,11 @@ const hasText = (value?: string | null): value is string => typeof value === "st
 const stripHtml = (value: string) => value.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
 const truncate = (value: string, length = 160) =>
   value.length > length ? `${value.slice(0, length).trimEnd()}…` : value;
+const getBodyBlockText = (blocks?: MicroCMSBodyBlock[] | null) =>
+  (blocks ?? [])
+    .map((block) => (hasText(block.text) ? stripHtml(block.text) : ""))
+    .filter(Boolean)
+    .join(" ");
 
 export async function GET() {
   if (!MICROCMS_API_KEY) {
@@ -80,7 +94,7 @@ export async function GET() {
         ? item.summary
         : !hasText(item.metaDescription) && hasText(item.description)
           ? item.description
-          : item.richEditor ?? item.content ?? item.body ?? "";
+          : getBodyBlockText(item.content2) || item.richEditor || item.content || item.body || "";
 
       const summaryText = rawSummary ? truncate(stripHtml(rawSummary)) : DEFAULT_SUMMARY;
 

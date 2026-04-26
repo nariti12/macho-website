@@ -21,6 +21,14 @@ interface MicroCMSCategory {
   name?: string;
 }
 
+interface MicroCMSBodyBlock {
+  fieldId?: string;
+  text?: string;
+  name?: string;
+  image?: MicroCMSImage | null;
+  isLeft?: boolean | null;
+}
+
 interface MicroCMSBlogDetail {
   id: string;
   title?: string;
@@ -30,6 +38,7 @@ interface MicroCMSBlogDetail {
   metaDescription?: string;
   body?: string;
   content?: string;
+  content2?: MicroCMSBodyBlock[] | null;
   richEditor?: string;
   publishedAt?: string;
   updatedAt?: string;
@@ -48,10 +57,18 @@ const hasText = (value?: string | null): value is string => typeof value === "st
 const stripHtml = (value: string) => value.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
 const truncate = (value: string, length = 160) =>
   value.length > length ? `${value.slice(0, length).trimEnd()}…` : value;
+const hasBodyBlocks = (value?: MicroCMSBodyBlock[] | null): value is MicroCMSBodyBlock[] =>
+  Array.isArray(value) && value.length > 0;
+
+const getBodyBlockText = (blocks?: MicroCMSBodyBlock[] | null) =>
+  (blocks ?? [])
+    .map((block) => (hasText(block.text) ? stripHtml(block.text) : ""))
+    .filter(Boolean)
+    .join(" ");
 
 const normalizeBlogDetail = (data: MicroCMSBlogDetail) => {
   const rawBody = data.richEditor ?? data.content ?? data.body ?? "";
-  const sanitizedBody = stripHtml(rawBody);
+  const sanitizedBody = hasBodyBlocks(data.content2) ? getBodyBlockText(data.content2) : stripHtml(rawBody);
 
   const summarySource = hasText(data.summary)
     ? data.summary
@@ -77,6 +94,7 @@ const normalizeBlogDetail = (data: MicroCMSBlogDetail) => {
     publishedAt: data.publishedAt ?? null,
     updatedAt: data.updatedAt ?? null,
     body: rawBody,
+    bodyBlocks: data.content2 ?? [],
     summary,
     metaDescription,
     imageUrl: data.thumbnail?.url ?? data.eyecatch?.url ?? data.mainvisual?.url ?? FALLBACK_IMAGE,
@@ -261,6 +279,8 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ id:
     ],
   });
 
+  const hasConversationBlocks = blog.bodyBlocks.length > 0;
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#FCC081" }}>
       <SiteHeader profileImageSrc={profileImageSrc} />
@@ -322,8 +342,55 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ id:
 
           <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: articleStructuredData }} />
           <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbStructuredData }} />
-          <article className="blog-content">
-            <div dangerouslySetInnerHTML={{ __html: blog.body }} />
+          <article className={hasConversationBlocks ? "space-y-8" : "blog-content"}>
+            {hasConversationBlocks ? (
+              blog.bodyBlocks.map((block, index) => {
+                if (!hasText(block.text)) return null;
+
+                if (block.fieldId === "talkText") {
+                  return (
+                    <div
+                      key={`${block.fieldId ?? "block"}-${index}`}
+                      className={`flex items-start gap-4 ${block.isLeft === false ? "flex-row-reverse" : ""}`}
+                    >
+                      <div className="flex w-20 shrink-0 flex-col items-center gap-2 text-center">
+                        <div className="relative h-14 w-14 overflow-hidden rounded-full border-2 border-[#FFE7C2] bg-white shadow-sm">
+                          {block.image?.url ? (
+                            <Image
+                              src={block.image.url}
+                              alt={block.name ?? "話者アイコン"}
+                              fill
+                              sizes="56px"
+                              className="object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-[#7C2D12]">
+                              ?
+                            </div>
+                          )}
+                        </div>
+                        {hasText(block.name) ? (
+                          <div className="text-xs font-semibold leading-tight text-[#7C2D12]">{block.name}</div>
+                        ) : null}
+                      </div>
+                      <div className="min-w-0 flex-1 rounded-[24px] border border-[#FFD9A1] bg-[#FFF8F0] px-5 py-4 shadow-sm">
+                        <div className="blog-content" dangerouslySetInnerHTML={{ __html: block.text }} />
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div
+                    key={`${block.fieldId ?? "block"}-${index}`}
+                    className="blog-content"
+                    dangerouslySetInnerHTML={{ __html: block.text }}
+                  />
+                );
+              })
+            ) : (
+              <div dangerouslySetInnerHTML={{ __html: blog.body }} />
+            )}
           </article>
 
           {relatedBlogs.length > 0 && (
