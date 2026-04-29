@@ -20,7 +20,6 @@ type GearItem = {
 type GearSection = {
   label: string;
   title: string;
-  intro: string;
   items: GearItem[];
 };
 
@@ -28,7 +27,6 @@ const gearSections: GearSection[] = [
   {
     label: "Training Belt",
     title: "トレーニングベルト",
-    intro: "高重量を扱うなら、まず揃えたい定番ベルトを5つに絞って紹介します。",
     items: [
       {
         rank: 1,
@@ -71,7 +69,6 @@ const gearSections: GearSection[] = [
   {
     label: "Power Grip",
     title: "パワーグリップ",
-    intro: "背中トレや高重量種目で握力を節約したいなら、この2つから選べばまず外しません。",
     items: [
       {
         rank: 1,
@@ -150,7 +147,6 @@ export default function TrainingGearPage() {
                   {section.label}
                 </span>
                 <h2 className="text-2xl font-bold text-[#7C2D12] sm:text-3xl">{section.title}</h2>
-                <p className="max-w-3xl text-sm leading-7 text-slate-700">{section.intro}</p>
               </div>
 
               <div className="grid gap-5">
