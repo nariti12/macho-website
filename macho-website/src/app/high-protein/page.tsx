@@ -4,7 +4,7 @@ import { HighProteinPage } from "@/components/high-protein-page";
 import { buildUrl } from "@/lib/seo";
 
 const DESCRIPTION =
-  "セブンイレブンや外食チェーン、スーパーで買いやすい高たんぱく食品を紹介する一覧ページです。";
+  "コンビニやチェーン店、スーパーで買える、高たんぱくな食品をまとめた一覧ページです。";
 const pageUrl = buildUrl("/high-protein");
 
 export const metadata: Metadata = {
