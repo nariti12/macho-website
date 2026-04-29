@@ -112,12 +112,9 @@ export default function MenuPage() {
               <h1 className="text-3xl font-bold text-[#7C2D12] sm:text-4xl">
                 マチョ田の筋トレメニュー
               </h1>
-              <div className="max-w-3xl space-y-3 text-sm leading-7 text-slate-700 sm:text-base">
+              <div className="max-w-3xl text-sm leading-7 text-slate-700 sm:text-base">
                 <p>
-                  マチョ田は、週4回ジムでトレーニングをしています。メニューは分割法で組んでおり、特に胸を重点的に鍛えているため、週2回は胸トレの日を設けています。
-                </p>
-                <p>
-                  また、腹筋ローラーが大好きで、すべてのトレーニング日に取り入れています。トレーニング時間は大体1時間〜1時間30分ぐらいです。
+                  マチョ田は、週4回ジムでトレーニングをしています。メニューは分割法で組んでおり、特に胸を重点的に鍛えているため、週2回は胸トレの日を設けています。また、腹筋ローラーが大好きで、すべてのトレーニング日に取り入れています。トレーニング時間は大体1時間〜1時間30分ぐらいです。
                 </p>
               </div>
               <div className="rounded-2xl border border-[#FCD27B] bg-[#FFF7EB] px-4 py-3 text-sm font-semibold leading-6 text-[#9A3412]">
@@ -145,11 +142,7 @@ export default function MenuPage() {
                     <span className="rounded-full bg-slate-100 px-4 py-2 text-xs font-semibold text-slate-500">
                       OFF
                     </span>
-                  ) : (
-                    <span className="rounded-full bg-[#FF8A23] px-4 py-2 text-xs font-semibold text-white">
-                      TRAINING
-                    </span>
-                  )}
+                  ) : null}
                 </div>
 
                 {menu.exercises ? (
@@ -163,11 +156,7 @@ export default function MenuPage() {
                       </li>
                     ))}
                   </ul>
-                ) : (
-                  <p className="mt-5 rounded-2xl bg-white/70 px-4 py-3 text-sm leading-6 text-slate-500">
-                    休む日。次のトレーニングに向けて回復します。
-                  </p>
-                )}
+                ) : null}
               </article>
             ))}
           </section>
