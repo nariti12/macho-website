@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 
 import { SiteHeader } from "@/components/site-header";
-import { highProteinCategories, highProteinFoods } from "@/data/high-protein-foods";
+import { highProteinFoods } from "@/data/high-protein-foods";
 
 const profileImageSrc = "/picture/ore.png";
 
@@ -24,6 +24,7 @@ const nutritionItems = [
 export function HighProteinPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchKeyword, setSearchKeyword] = useState("");
+  const categories = useMemo(() => Array.from(new Set(highProteinFoods.map((food) => food.category))), []);
 
   const filteredFoods = useMemo(() => {
     const keyword = searchKeyword.trim().toLowerCase();
@@ -70,7 +71,7 @@ export function HighProteinPage() {
                   >
                     すべて
                   </button>
-                  {highProteinCategories.map((category) => (
+                  {categories.map((category) => (
                     <button
                       key={category}
                       type="button"
@@ -114,9 +115,8 @@ export function HighProteinPage() {
             </aside>
 
             <section className="flex flex-col gap-6">
-              <header className="flex flex-col gap-3 rounded-3xl bg-[#FFE7C2] px-6 py-4 text-sm text-[#7C2D12] shadow-inner sm:flex-row sm:items-center sm:justify-between">
+              <header className="rounded-3xl bg-[#FFE7C2] px-6 py-4 text-sm text-[#7C2D12] shadow-inner">
                 <div className="font-semibold">{filteredFoods.length}件の食品がヒットしました</div>
-                <div className="text-xs sm:text-sm">比較しやすいように商品ごとの成分を掲載しています</div>
               </header>
 
               {filteredFoods.length === 0 ? (

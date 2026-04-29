@@ -6,7 +6,6 @@ export type HighProteinFood = {
   calories: number;
   fat: number;
   carbs: number;
-  sourceUrl: string;
 };
 
 export const highProteinFoods: HighProteinFood[] = [
@@ -18,8 +17,5 @@ export const highProteinFoods: HighProteinFood[] = [
     calories: 261,
     fat: 8.8,
     carbs: 23.3,
-    sourceUrl: "https://www.sej.co.jp/products/a/item/053705/",
   },
 ];
-
-export const highProteinCategories = ["セブンイレブン", "大戸屋", "スーパー食材"];
