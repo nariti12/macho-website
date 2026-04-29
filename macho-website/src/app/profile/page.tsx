@@ -121,7 +121,7 @@ export default function ProfilePage() {
             <div className="md:col-span-2 rounded-3xl border border-[#FFE7C2] bg-[#FFF6EB] p-6 text-left shadow-inner">
               <h2 className="text-lg font-semibold text-[#7C2D12]">趣味</h2>
               <p className="mt-3 text-sm leading-7 text-gray-700">
-                腹筋ローラー、二日酔い（飲み始めたら限界まで飲まないと終われないタイプです）
+                腹筋ローラー、二日酔い
               </p>
             </div>
           </section>
@@ -130,11 +130,10 @@ export default function ProfilePage() {
             <h2 className="text-lg font-semibold text-[#7C2D12]">このサイトについて</h2>
             <p className="mt-3 text-sm leading-7 text-gray-700">
               こんにちは、マチョ田です。
-              このサイトでは、世の中に溢れる筋トレ情報を最適解としてまとめ、分かりやすく整理しています。
+              このサイトでは、世の中にあふれる筋トレ情報を整理し、本当に良いものだけを厳選して掲載しています。
             </p>
             <p className="mt-3 text-sm leading-7 text-gray-700">
-              筋トレの情報を探す時間がもったいないです。
-              分からないことがあれば、まずはこのサイトをチェックして、浮いた時間をトレーニングに回しましょう。
+              少しでも皆さんの筋トレライフにプラスとなる情報をお届けできるよう心がけています。
             </p>
           </section>
         </div>
