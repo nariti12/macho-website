@@ -4,7 +4,7 @@ import { HighProteinPage } from "@/components/high-protein-page";
 import { buildUrl } from "@/lib/seo";
 
 const DESCRIPTION =
-  "高たんぱく質な食材をカテゴリ別に検索・比較できるデータベース。タンパク質量やカロリー、脂質で絞り込みながら効率的に食材を選べます。";
+  "セブンイレブンや外食チェーン、スーパーで買いやすい高たんぱく食品を紹介する一覧ページです。";
 const pageUrl = buildUrl("/high-protein");
 
 export const metadata: Metadata = {

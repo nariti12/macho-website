@@ -45,6 +45,11 @@ const nextConfig: NextConfig = {
         hostname: "fitnessshop.jp",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "img-afd.7api-01.dp1.sej.co.jp",
+        pathname: "/**",
+      },
     ],
   },
   async redirects() {
