@@ -10,14 +10,14 @@ const heroImageUrl = buildUrl("/picture/man.png");
 export const metadata: Metadata = {
   title: "１日摂取カロリー/たんぱく質 計算機｜マチョ田の部屋",
   description:
-    "年齢・身長・体重・活動量から男性・女性別に1日の推定摂取カロリーとタンパク質目安を算出する無料計算機。",
+    "年齢・身長・体重・活動量から、1日の摂取カロリーとたんぱく質の目安を計算できる無料ツール。",
   alternates: {
     canonical: pageUrl,
   },
   openGraph: {
     title: "１日摂取カロリー/たんぱく質 計算機｜マチョ田の部屋",
     description:
-      "年齢・身長・体重・活動量を入力すると、男性・女性別の1日の摂取カロリーとタンパク質目安を計算します。",
+      "年齢・身長・体重・活動量を入力すると、1日の摂取カロリーとたんぱく質の目安を計算します。",
     url: pageUrl,
     type: "website",
     images: [
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "１日摂取カロリー/たんぱく質 計算機｜マチョ田の部屋",
     description:
-      "年齢・身長・体重・活動量から男性・女性別に1日の推定摂取カロリーとタンパク質目安を算出する無料計算機。",
+      "年齢・身長・体重・活動量から、1日の摂取カロリーとたんぱく質の目安を計算できる無料ツール。",
   },
 };
 

@@ -72,6 +72,10 @@ const clampNumber = (value: number, min: number, max: number) => {
 
 const formatNumber = (value: number) => value.toLocaleString("ja-JP");
 
+const formatWeightInput = (value: number) => {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+};
+
 const getProteinMultiplier = (gender: Gender, activity: ActivityOption) => {
   return gender === "male" ? activity.proteinMale : activity.proteinFemale;
 };
@@ -154,7 +158,7 @@ export function IntakeCalculator() {
                 １日摂取カロリー/たんぱく質 計算機
               </h1>
               <p className="text-sm leading-relaxed text-slate-600 sm:text-base">
-                年齢・身長・体重・活動量から、1日に必要なおおよそのカロリーとタンパク質目安を算出します。
+                年齢・身長・体重・活動量から、1日の摂取カロリーとたんぱく質の目安を計算します。
               </p>
             </div>
 
@@ -194,13 +198,14 @@ export function IntakeCalculator() {
                 <input
                   id="weight"
                   type="number"
-                  inputMode="numeric"
+                  inputMode="decimal"
                   value={weightInput}
                   min={WEIGHT_MIN}
                   max={WEIGHT_MAX}
+                  step="0.1"
                   onChange={(event) => {
                     const value = event.target.value;
-                    if (value === "" || /^\d*$/.test(value)) {
+                    if (value === "" || /^\d*\.?\d?$/.test(value)) {
                       setWeightInput(value);
                     }
                   }}
@@ -210,11 +215,11 @@ export function IntakeCalculator() {
                       WEIGHT_MIN,
                       WEIGHT_MAX
                     );
-                    setWeightInput(String(Math.round(numeric)));
+                    setWeightInput(formatWeightInput(Math.round(numeric * 10) / 10));
                   }}
                   className="rounded-xl border border-[#FCD27B] bg-white px-4 py-3 text-sm text-slate-700 shadow-inner placeholder:text-slate-400 focus:border-[#FF8A23] focus:outline-none focus:ring-2 focus:ring-[#FF8A23]/40"
                 />
-                <p className="text-xs text-slate-500">推奨範囲: 30〜200kg</p>
+                <p className="text-xs text-slate-500">入力範囲: 30〜200kg（小数1桁まで）</p>
               </div>
 
               <div className="flex flex-col gap-2">
@@ -244,7 +249,7 @@ export function IntakeCalculator() {
                   }}
                   className="rounded-xl border border-[#FCD27B] bg-white px-4 py-3 text-sm text-slate-700 shadow-inner placeholder:text-slate-400 focus:border-[#FF8A23] focus:outline-none focus:ring-2 focus:ring-[#FF8A23]/40"
                 />
-                <p className="text-xs text-slate-500">推奨範囲: 140〜220cm</p>
+                <p className="text-xs text-slate-500">入力範囲: 140〜220cm</p>
               </div>
 
               <div className="flex flex-col gap-2">
@@ -274,7 +279,7 @@ export function IntakeCalculator() {
                   }}
                   className="rounded-xl border border-[#FCD27B] bg-white px-4 py-3 text-sm text-slate-700 shadow-inner placeholder:text-slate-400 focus:border-[#FF8A23] focus:outline-none focus:ring-2 focus:ring-[#FF8A23]/40"
                 />
-                <p className="text-xs text-slate-500">推奨範囲: 15〜80歳</p>
+                <p className="text-xs text-slate-500">入力範囲: 15〜80歳</p>
               </div>
 
               <div className="flex flex-col gap-2 sm:col-span-2">
@@ -299,12 +304,16 @@ export function IntakeCalculator() {
                   ))}
                 </select>
               </div>
+
+              <p className="text-xs leading-5 text-slate-500 sm:col-span-2">
+                入力範囲外の数値は、入力欄から離れたタイミングで範囲内に調整されます。
+              </p>
             </form>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
             <div className="rounded-3xl border border-white/50 bg-[#FFF7EB]/90 p-8 shadow-xl">
-              <h2 className="text-xl font-semibold text-[#7C2D12]">推定1日の必要カロリー</h2>
+              <h2 className="text-xl font-semibold text-[#7C2D12]">目的別カロリー目安</h2>
               <div className="mt-6 grid gap-4">
                 {[
                   {
@@ -337,7 +346,7 @@ export function IntakeCalculator() {
             </div>
 
             <div className="rounded-3xl border border-white/50 bg-[#FFF7EB]/90 p-8 shadow-xl">
-              <h2 className="text-xl font-semibold text-[#7C2D12]">推定1日の必要たんぱく質</h2>
+              <h2 className="text-xl font-semibold text-[#7C2D12]">1日のたんぱく質目安</h2>
               <p className="mt-4 text-4xl font-bold text-[#C2410C]">
                 {formatNumber(results.proteinTarget)}
                 <span className="ml-1 text-lg font-semibold text-[#A16207]">g</span>
@@ -345,6 +354,9 @@ export function IntakeCalculator() {
               <p className="mt-3 text-sm text-slate-600">
                 3食に分けると1食あたり約{formatNumber(results.proteinPerMeal)}gが目安です。
                 プロテインや高たんぱく食材を組み合わせてバランスよく摂取しましょう。
+              </p>
+              <p className="mt-4 text-xs leading-5 text-slate-500">
+                体調や目的によって適量は変わるため、まずは食事記録の出発点として使ってください。
               </p>
             </div>
           </div>
