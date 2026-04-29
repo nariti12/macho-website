@@ -50,6 +50,16 @@ const nextConfig: NextConfig = {
         hostname: "img-afd.7api-01.dp1.sej.co.jp",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "www.ootoya.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "www.matsuyafoods.co.jp",
+        pathname: "/**",
+      },
     ],
   },
   async redirects() {

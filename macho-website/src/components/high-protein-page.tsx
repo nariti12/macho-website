@@ -11,6 +11,7 @@ const profileImageSrc = "/picture/ore.png";
 const categoryStyles: Record<string, string> = {
   セブンイレブン: "bg-[#16a34a] text-white",
   大戸屋: "bg-[#7C2D12] text-white",
+  松屋: "bg-[#b91c1c] text-white",
   スーパー食材: "bg-[#2563eb] text-white",
 };
 

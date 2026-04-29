@@ -18,4 +18,22 @@ export const highProteinFoods: HighProteinFood[] = [
     fat: 8.8,
     carbs: 23.3,
   },
+  {
+    name: "鰆の西京焼き 菜の花からし和え添え",
+    category: "大戸屋",
+    imageUrl: "https://www.ootoya.com/files/menu_img/1250.jpg?id=3860",
+    protein: 40.5,
+    calories: 699,
+    fat: 17.8,
+    carbs: 94.5,
+  },
+  {
+    name: "鶏そぼろたまご丼",
+    category: "松屋",
+    imageUrl: "https://www.matsuyafoods.co.jp/menu/upload_images/don_soboro_tamago_hp_250930.jpg",
+    protein: 19.6,
+    calories: 430,
+    fat: 9.2,
+    carbs: 63.4,
+  },
 ];
