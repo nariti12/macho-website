@@ -35,7 +35,7 @@ export function HomePage() {
   const loadingTimeoutRef = useRef<number | null>(null);
 
   const menuItems = [
-    { label: "用途別\n最強筋トレメニュー", href: "/menu" },
+    { label: "マチョ田の\n筋トレメニュー", href: "/menu" },
     { label: "１日摂取カロリー/\nたんぱく質 計算機", href: "/intake-calculator" },
     { label: "高たんぱく質一覧", href: "/high-protein" },
     { label: "おすすめプロテイン", href: "/supplements-ranking" },
@@ -145,7 +145,7 @@ export function HomePage() {
       name: "マチョ田の部屋",
       url: buildUrl(""),
       description:
-        "筋トレの悩みを解決する統合プラットフォーム。用途別最強筋トレメニューやおすすめ情報をお届けします。",
+        "筋トレの悩みを解決する統合プラットフォーム。マチョ田の筋トレメニューやおすすめ情報をお届けします。",
     },
     {
       "@context": "https://schema.org",
