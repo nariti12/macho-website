@@ -35,12 +35,18 @@ const formatUpdatedAt = (value: string | null) =>
     : null;
 
 const formatReview = (item: RankingCardItem) => {
-  if (item.product.review_average) {
-    return `${item.product.review_average.toFixed(2)}点/5点（レビュー数${item.product.review_count}件）`;
+  const brandKey = getBrandKey(item);
+  const fallbackReviewAverage = brandKey ? MALE_FIXED_BRAND_CONFIG[brandKey].fallbackReviewAverage ?? null : null;
+  const fallbackReviewCount = brandKey ? MALE_FIXED_BRAND_CONFIG[brandKey].fallbackReviewCount ?? 0 : 0;
+  const reviewAverage = item.product.review_average ?? fallbackReviewAverage;
+  const reviewCount = item.product.review_count > 0 ? item.product.review_count : fallbackReviewCount;
+
+  if (reviewAverage) {
+    return `${reviewAverage.toFixed(2)}点/5点（レビュー数${reviewCount}件）`;
   }
 
-  if (item.product.review_count > 0) {
-    return `レビュー数${item.product.review_count}件`;
+  if (reviewCount > 0) {
+    return `レビュー数${reviewCount}件`;
   }
 
   return "不明";

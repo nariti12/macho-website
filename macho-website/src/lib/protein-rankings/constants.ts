@@ -132,6 +132,8 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     fallbackImagePath: string;
     preferredWeightG: number;
     fallbackPricePerKgYen: number;
+    fallbackReviewAverage?: number;
+    fallbackReviewCount?: number;
     tasteRating: "◎" | "〇" | "△";
     formulaRating: "◎" | "〇" | "△";
   }
@@ -145,6 +147,8 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     fallbackImagePath: "/images/protein/xplosion.svg",
     preferredWeightG: 3000,
     fallbackPricePerKgYen: 3593,
+    fallbackReviewAverage: 4.48,
+    fallbackReviewCount: 2171,
     tasteRating: "〇",
     formulaRating: "〇",
   },
@@ -157,6 +161,8 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     fallbackImagePath: "/images/protein/gold-standard.svg",
     preferredWeightG: 2270,
     fallbackPricePerKgYen: 6599,
+    fallbackReviewAverage: 4.43,
+    fallbackReviewCount: 149,
     tasteRating: "◎",
     formulaRating: "◎",
   },
@@ -169,6 +175,8 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     fallbackImagePath: "/images/protein/be-legend.svg",
     preferredWeightG: 1000,
     fallbackPricePerKgYen: 4999,
+    fallbackReviewAverage: 4.65,
+    fallbackReviewCount: 179,
     tasteRating: "〇",
     formulaRating: "〇",
   },
@@ -181,6 +189,8 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     fallbackImagePath: "/images/protein/myprotein.svg",
     preferredWeightG: 1000,
     fallbackPricePerKgYen: 4390,
+    fallbackReviewAverage: 4.32,
+    fallbackReviewCount: 1380,
     tasteRating: "△",
     formulaRating: "◎",
   },
@@ -193,6 +203,8 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     fallbackImagePath: "/images/protein/winzone.svg",
     preferredWeightG: 1000,
     fallbackPricePerKgYen: 4873,
+    fallbackReviewAverage: 4.73,
+    fallbackReviewCount: 3248,
     tasteRating: "〇",
     formulaRating: "〇",
   },
