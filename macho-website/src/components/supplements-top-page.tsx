@@ -173,7 +173,7 @@ const RankingCard = ({ item }: { item: RankingCardItem }) => (
             href={getAmazonUrl(item) as string}
             target="_blank"
             rel="nofollow sponsored noopener noreferrer"
-            className="rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-black"
+            className="rounded-full bg-[#7C2D12] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#9A3412]"
           >
             Amazonで見る
           </Link>
