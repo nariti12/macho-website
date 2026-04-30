@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 import { SiteHeader } from "@/components/site-header";
-import { buildRakutenAffiliateUrl } from "@/lib/protein-rankings/links";
+import { buildAmazonAffiliateUrl, buildRakutenAffiliateUrl } from "@/lib/protein-rankings/links";
 import { buildUrl } from "@/lib/seo";
 
 const profileImageSrc = "/picture/ore.png";
@@ -15,6 +15,7 @@ type GearItem = {
   comment: string;
   imageUrl: string;
   searchUrl?: string;
+  amazonUrl?: string;
 };
 
 type GearSection = {
@@ -40,6 +41,8 @@ const gearSections: GearSection[] = [
         comment: "ワンランク上のベルト。皮なじみが良く扱いやすいです。",
         searchUrl:
           "https://search.rakuten.co.jp/search/mall/%E3%82%B4%E3%83%BC%E3%83%AB%E3%83%89%E3%82%B8%E3%83%A0+%E3%83%97%E3%83%AD%E3%83%AC%E3%82%B6%E3%83%BC+%E3%83%91%E3%83%AF%E3%83%BC%E3%83%99%E3%83%AB%E3%83%88/",
+        amazonUrl:
+          "https://www.amazon.co.jp/s?k=%E3%82%B4%E3%83%BC%E3%83%AB%E3%83%89%E3%82%B8%E3%83%A0+%E3%83%97%E3%83%AD%E3%83%AC%E3%82%B6%E3%83%BC&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
         imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/goldsgym/cabinet/ggp/imgrc0075354610.jpg",
       },
       {
@@ -48,6 +51,8 @@ const gearSections: GearSection[] = [
         comment: "迷ったらこれ。王道ベルト。コスパ・品質ともに良し。",
         searchUrl:
           "https://search.rakuten.co.jp/search/mall/%E3%82%B4%E3%83%BC%E3%83%AB%E3%83%89%E3%82%B8%E3%83%A0+%E3%83%AC%E3%82%B6%E3%83%BC+%E3%83%91%E3%83%AF%E3%83%BC%E3%83%99%E3%83%AB%E3%83%88/",
+        amazonUrl:
+          "https://www.amazon.co.jp/s?k=%E3%82%B4%E3%83%BC%E3%83%AB%E3%83%89%E3%82%B8%E3%83%A0+%E3%83%88%E3%83%AC%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E3%83%99%E3%83%AB%E3%83%88",
         imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/powerpit/cabinet/04825845/imgrc0092518792.jpg",
       },
       {
@@ -76,6 +81,8 @@ const gearSections: GearSection[] = [
         comment: "上級者マッチョはみんなこれを使ってる印象があります。",
         searchUrl:
           "https://search.rakuten.co.jp/search/mall/versa+gripps+%E3%83%91%E3%83%AF%E3%83%BC%E3%82%B0%E3%83%AA%E3%83%83%E3%83%97/?l-id=pc_header_search_suggest",
+        amazonUrl:
+          "https://www.amazon.co.jp/s?k=versa+gripps+%E3%83%91%E3%83%AF%E3%83%BC%E3%82%B0%E3%83%AA%E3%83%83%E3%83%97",
         imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/tkikaku/cabinet/traininggoods/vgripps/powergripps-aii2.jpg",
       },
       {
@@ -84,6 +91,8 @@ const gearSections: GearSection[] = [
         comment: "流石のゴールドジム。安心感しかない。間違いないです。Versa Grippsを1位にしましたが、機能面とか正直変わらないので、文字面の好みの問題です。",
         searchUrl:
           "https://search.rakuten.co.jp/search/mall/%E3%82%B4%E3%83%BC%E3%83%AB%E3%83%89%E3%82%B8%E3%83%A0+%E3%83%91%E3%83%AF%E3%83%BC%E3%82%B0%E3%83%AA%E3%83%83%E3%83%97/",
+        amazonUrl:
+          "https://www.amazon.co.jp/s?k=%E3%82%B4%E3%83%BC%E3%83%AB%E3%83%89%E3%82%B8%E3%83%A0+%E3%83%91%E3%83%AF%E3%83%BC%E3%82%B0%E3%83%AA%E3%83%83%E3%83%97&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
         imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/goldsgym/cabinet/ggp/3710-2.jpg",
       },
     ],
@@ -117,6 +126,7 @@ const getSections = () =>
     items: section.items.map((item) => ({
       ...item,
       affiliateUrl: item.searchUrl ? buildRakutenAffiliateUrl(item.searchUrl) : null,
+      amazonAffiliateUrl: item.amazonUrl ? buildAmazonAffiliateUrl(item.amazonUrl) : null,
     })),
   }));
 
@@ -176,16 +186,28 @@ export default function TrainingGearPage() {
                         <p className="text-sm leading-6 text-slate-600">{item.comment}</p>
                       </div>
 
-                      {item.affiliateUrl ? (
+                      {item.affiliateUrl || item.amazonAffiliateUrl ? (
                         <div className="flex flex-wrap items-center gap-3">
-                          <Link
-                            href={item.affiliateUrl}
-                            target="_blank"
-                            rel="nofollow sponsored noopener noreferrer"
-                            className="rounded-full bg-[#FF8A23] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#f57200]"
-                          >
-                            楽天で探す
-                          </Link>
+                          {item.amazonAffiliateUrl ? (
+                            <Link
+                              href={item.amazonAffiliateUrl}
+                              target="_blank"
+                              rel="nofollow sponsored noopener noreferrer"
+                              className="rounded-full bg-[#7C2D12] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#9A3412]"
+                            >
+                              Amazonで見る
+                            </Link>
+                          ) : null}
+                          {item.affiliateUrl ? (
+                            <Link
+                              href={item.affiliateUrl}
+                              target="_blank"
+                              rel="nofollow sponsored noopener noreferrer"
+                              className="rounded-full bg-[#FF8A23] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#f57200]"
+                            >
+                              楽天で探す
+                            </Link>
+                          ) : null}
                         </div>
                       ) : null}
                     </div>
