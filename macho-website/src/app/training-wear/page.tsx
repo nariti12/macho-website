@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 import { SiteHeader } from "@/components/site-header";
-import { buildRakutenAffiliateUrl } from "@/lib/protein-rankings/links";
+import { buildAmazonAffiliateUrl, buildRakutenAffiliateUrl } from "@/lib/protein-rankings/links";
 import { buildUrl } from "@/lib/seo";
 
 const profileImageSrc = "/picture/ore.png";
@@ -14,6 +14,7 @@ type ShoeItem = {
   name: string;
   comment: string;
   searchUrl: string;
+  amazonUrl: string;
   imageUrl: string;
 };
 
@@ -24,6 +25,8 @@ const shoeItems: ShoeItem[] = [
     comment: "ただただかっこいい。トレーニングにも最適なシューズで、個人的No.1。",
     searchUrl:
       "https://search.rakuten.co.jp/search/mall/INOV8%E3%80%80%E3%83%88%E3%83%AC%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0/",
+    amazonUrl:
+      "https://www.amazon.co.jp/s?k=INOV8+%E3%83%88%E3%83%AC%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E3%82%B7%E3%83%A5%E3%83%BC%E3%82%BA&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
     imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/store-descente/cabinet/542/nt5ssz93m_1001.jpg",
   },
   {
@@ -32,6 +35,8 @@ const shoeItems: ShoeItem[] = [
     comment: "プロの選手も愛用している方が多いです。イケてるゴリマッチョが履いているイメージです。",
     searchUrl:
       "https://search.rakuten.co.jp/search/mall/%E3%83%93%E3%83%96%E3%83%A9%E3%83%A0+%E3%83%95%E3%82%A1%E3%82%A4%E3%83%96%E3%83%95%E3%82%A3%E3%83%B3%E3%82%AC%E3%83%BC%E3%82%BA/?l-id=pc_header_search_suggest",
+    amazonUrl:
+      "https://www.amazon.co.jp/s?k=vibram+fivefingers&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
     imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/vibramfivefingers/cabinet/fivefingers/imgrc0087708199.jpg",
   },
   {
@@ -40,6 +45,8 @@ const shoeItems: ShoeItem[] = [
     comment: "とにかく安い。荷物もかさばらない。現場用シューズですが、筋トレ用としても使いやすいです。",
     searchUrl:
       "https://search.rakuten.co.jp/search/mall/%E5%AF%85%E3%81%95%E3%82%93%E3%80%80%E3%82%B9%E3%83%AA%E3%83%83%E3%83%9D%E3%83%B3%E3%82%B7%E3%83%A5%E3%83%BC%E3%82%BA/",
+    amazonUrl:
+      "https://www.amazon.co.jp/s?k=%E8%A6%AA%E6%96%B9%E5%AF%85%E3%81%95%E3%82%93+%E3%82%B9%E3%83%AA%E3%83%83%E3%83%9D%E3%83%B3&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
     imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/luce-8/cabinet/1bn863.jpg",
   },
   {
@@ -48,6 +55,8 @@ const shoeItems: ShoeItem[] = [
     comment: "なんだかんだナイキがかっこいい。ナイキ好きなら、まず候補に入れたい一足です。",
     searchUrl:
       "https://search.rakuten.co.jp/search/mall/%E3%83%8A%E3%82%A4%E3%82%AD+%E3%83%A1%E3%83%88%E3%82%B3%E3%83%B3/?l-id=pc_header_search_suggest",
+    amazonUrl:
+      "https://www.amazon.co.jp/s?k=NIKE+Metcon&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
     imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/supersportsxebio/cabinet/1/8250401/8631591_m.jpg",
   },
   {
@@ -56,6 +65,8 @@ const shoeItems: ShoeItem[] = [
     comment: "コスパ最強ベアフットシューズ。まずベアフット系を試したい人にも選びやすいです。",
     searchUrl:
       "https://search.rakuten.co.jp/search/mall/%E3%82%B5%E3%82%B0%E3%82%A2%E3%83%AD+%E3%83%99%E3%82%A2%E3%83%95%E3%83%83%E3%83%88%E3%82%B7%E3%83%A5%E3%83%BC%E3%82%BA/",
+    amazonUrl:
+      "https://www.amazon.co.jp/s?k=saguaro+%E3%83%99%E3%82%A2%E3%83%95%E3%83%83%E3%83%88%E3%82%B7%E3%83%A5%E3%83%BC%E3%82%BA",
     imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/saguaro/cabinet/09107349/09133691/xza32_15.jpg",
   },
 ];
@@ -85,6 +96,7 @@ const getItemsWithImages = async () => {
   return shoeItems.map((item) => ({
     ...item,
     affiliateUrl: buildRakutenAffiliateUrl(item.searchUrl),
+    amazonAffiliateUrl: buildAmazonAffiliateUrl(item.amazonUrl),
   }));
 };
 
@@ -137,6 +149,14 @@ export default async function TrainingWearPage() {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3">
+                      <Link
+                        href={item.amazonAffiliateUrl}
+                        target="_blank"
+                        rel="nofollow sponsored noopener noreferrer"
+                        className="rounded-full bg-[#7C2D12] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#9A3412]"
+                      >
+                        Amazonで見る
+                      </Link>
                       <Link
                         href={item.affiliateUrl}
                         target="_blank"
