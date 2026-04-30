@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { SiteHeader } from "@/components/site-header";
 import { MALE_FIXED_BRAND_CONFIG, MALE_FIXED_BRAND_ORDER, MALE_FIXED_SCORES } from "@/lib/protein-rankings/constants";
-import { buildAmazonAffiliateUrl, buildProductOutboundLink } from "@/lib/protein-rankings/links";
+import { buildAmazonAffiliateUrl, buildProductOutboundLink, buildRakutenAffiliateUrl } from "@/lib/protein-rankings/links";
 import type { CommerceProvider, ProteinRankingPageData, RankingCardItem } from "@/lib/protein-rankings/types";
 
 const profileImageSrc = "/picture/ore.png";
@@ -109,6 +109,19 @@ const getAmazonUrl = (item: RankingCardItem) => {
   return brandKey ? buildAmazonAffiliateUrl(MALE_FIXED_BRAND_CONFIG[brandKey].amazonSearchUrl) : null;
 };
 
+const getRakutenUrl = (item: RankingCardItem) => {
+  const brandKey = getBrandKey(item);
+  if (brandKey) {
+    return buildRakutenAffiliateUrl(MALE_FIXED_BRAND_CONFIG[brandKey].rakutenSearchUrl);
+  }
+
+  return buildProductOutboundLink({
+    provider: item.product.ec_provider,
+    affiliateUrl: item.product.affiliate_url,
+    itemUrl: item.product.item_url ?? "#",
+  });
+};
+
 const MetricChip = ({ label, value }: { label: string; value: string }) => (
   <div className="rounded-2xl bg-[#FFF4E7] px-4 py-3 text-sm text-slate-700 shadow-inner">
     <div className="text-xs font-semibold uppercase tracking-wide text-[#C2410C]">{label}</div>
@@ -179,11 +192,7 @@ const RankingCard = ({ item }: { item: RankingCardItem }) => (
           </Link>
         ) : null}
         <Link
-          href={buildProductOutboundLink({
-            provider: item.product.ec_provider,
-            affiliateUrl: item.product.affiliate_url,
-            itemUrl: item.product.item_url ?? "#",
-          })}
+          href={getRakutenUrl(item)}
           target="_blank"
           rel="nofollow sponsored noopener noreferrer"
           className="rounded-full bg-[#FF8A23] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#f57200]"
