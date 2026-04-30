@@ -130,6 +130,7 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     fallbackTitle: string;
     fallbackSearchTerm: string;
     fallbackImagePath: string;
+    amazonSearchUrl: string;
     preferredWeightG: number;
     fallbackPricePerKgYen: number;
     fallbackReviewAverage?: number;
@@ -145,6 +146,8 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     fallbackTitle: "X-PLOSION ホエイプロテイン",
     fallbackSearchTerm: "X-PLOSION ホエイプロテイン 3kg",
     fallbackImagePath: "/images/protein/xplosion.svg",
+    amazonSearchUrl:
+      "https://www.amazon.co.jp/s?k=xplosion&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
     preferredWeightG: 3000,
     fallbackPricePerKgYen: 3593,
     fallbackReviewAverage: 4.48,
@@ -159,6 +162,8 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     fallbackTitle: "Gold Standard 100% Whey",
     fallbackSearchTerm: "Gold Standard 100% Whey 2.27kg",
     fallbackImagePath: "/images/protein/gold-standard.svg",
+    amazonSearchUrl:
+      "https://www.amazon.co.jp/s?k=Gold+Standard&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
     preferredWeightG: 2270,
     fallbackPricePerKgYen: 6599,
     fallbackReviewAverage: 4.43,
@@ -173,6 +178,8 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     fallbackTitle: "be LEGEND ホエイプロテイン",
     fallbackSearchTerm: "be LEGEND ホエイプロテイン 1kg",
     fallbackImagePath: "/images/protein/be-legend.svg",
+    amazonSearchUrl:
+      "https://www.amazon.co.jp/s?k=be+LEGEND&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
     preferredWeightG: 1000,
     fallbackPricePerKgYen: 4999,
     fallbackReviewAverage: 4.65,
@@ -187,6 +194,8 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     fallbackTitle: "myprotein Impact ホエイプロテイン",
     fallbackSearchTerm: "myprotein Impact ホエイプロテイン 1kg",
     fallbackImagePath: "/images/protein/myprotein.svg",
+    amazonSearchUrl:
+      "https://www.amazon.co.jp/s?k=Myprotein&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
     preferredWeightG: 1000,
     fallbackPricePerKgYen: 4390,
     fallbackReviewAverage: 4.32,
@@ -201,6 +210,8 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     fallbackTitle: "WINZONE ホエイプロテイン",
     fallbackSearchTerm: "WINZONE ホエイプロテイン 1kg",
     fallbackImagePath: "/images/protein/winzone.svg",
+    amazonSearchUrl:
+      "https://www.amazon.co.jp/s?k=WINZONE&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
     preferredWeightG: 1000,
     fallbackPricePerKgYen: 4873,
     fallbackReviewAverage: 4.73,
@@ -220,7 +231,7 @@ export const MALE_FIXED_COMMENTS: Record<(typeof MALE_FIXED_BRAND_ORDER)[number]
   myprotein:
     "成分はかなり優秀なんですが、味ははっきり言ってまずいです。個人の感想ではなく、皆言ってます。",
   winzone:
-    "味がめっちゃ濃いので濃い味好きな人はハマるかも。少し高めです。",
+    "味がめっちゃ濃いので濃い味好きな人はハマるかも。",
 };
 
 export const MALE_FIXED_SCORES: Record<(typeof MALE_FIXED_BRAND_ORDER)[number], number> = {

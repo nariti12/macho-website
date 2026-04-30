@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { SiteHeader } from "@/components/site-header";
 import { MALE_FIXED_BRAND_CONFIG, MALE_FIXED_BRAND_ORDER, MALE_FIXED_SCORES } from "@/lib/protein-rankings/constants";
-import { buildProductOutboundLink } from "@/lib/protein-rankings/links";
+import { buildAmazonAffiliateUrl, buildProductOutboundLink } from "@/lib/protein-rankings/links";
 import type { CommerceProvider, ProteinRankingPageData, RankingCardItem } from "@/lib/protein-rankings/types";
 
 const profileImageSrc = "/picture/ore.png";
@@ -104,6 +104,11 @@ const getDisplayScore = (item: RankingCardItem) => {
   return Math.round(item.score * 100);
 };
 
+const getAmazonUrl = (item: RankingCardItem) => {
+  const brandKey = getBrandKey(item);
+  return brandKey ? buildAmazonAffiliateUrl(MALE_FIXED_BRAND_CONFIG[brandKey].amazonSearchUrl) : null;
+};
+
 const MetricChip = ({ label, value }: { label: string; value: string }) => (
   <div className="rounded-2xl bg-[#FFF4E7] px-4 py-3 text-sm text-slate-700 shadow-inner">
     <div className="text-xs font-semibold uppercase tracking-wide text-[#C2410C]">{label}</div>
@@ -163,6 +168,16 @@ const RankingCard = ({ item }: { item: RankingCardItem }) => (
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
+        {getAmazonUrl(item) ? (
+          <Link
+            href={getAmazonUrl(item) as string}
+            target="_blank"
+            rel="nofollow sponsored noopener noreferrer"
+            className="rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-black"
+          >
+            Amazonで見る
+          </Link>
+        ) : null}
         <Link
           href={buildProductOutboundLink({
             provider: item.product.ec_provider,
@@ -170,7 +185,7 @@ const RankingCard = ({ item }: { item: RankingCardItem }) => (
             itemUrl: item.product.item_url ?? "#",
           })}
           target="_blank"
-          rel="noopener noreferrer"
+          rel="nofollow sponsored noopener noreferrer"
           className="rounded-full bg-[#FF8A23] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#f57200]"
         >
           {getOutboundLabel(item.product.ec_provider)}
