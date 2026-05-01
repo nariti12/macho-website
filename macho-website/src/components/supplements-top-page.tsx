@@ -323,8 +323,8 @@ export function SupplementsTopPage({ data }: { data: ProteinRankingPageData }) {
           <section className="rounded-[32px] bg-white/95 p-6 shadow-2xl sm:p-8">
             <div className="mb-6 flex flex-col gap-3">
               <h2 className="text-2xl font-bold text-[#7C2D12] sm:text-3xl">おすすめクレアチン TOP2</h2>
-              <p className="max-w-3xl text-sm leading-6 text-slate-600">
-                クレアルカリンはコスパがかなり悪いので、あまりおすすめしません。クレアチンは、粉のモノハイドレートがコスパ最強なのでおすすめです。
+              <p className="rounded-2xl bg-[#FFF4E7] px-4 py-3 text-sm leading-7 text-slate-700 sm:text-base">
+                クレアルカリンはコスパがかなり悪いので、あまりおすすめしません。粉のモノハイドレートがコスパ最強なのでおすすめです。
               </p>
             </div>
             <div className="grid gap-5">
