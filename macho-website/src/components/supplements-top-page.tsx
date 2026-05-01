@@ -8,6 +8,15 @@ import type { CommerceProvider, ProteinRankingPageData, RankingCardItem } from "
 
 const profileImageSrc = "/picture/ore.png";
 
+const creatineRecommendation = {
+  rank: 1,
+  name: "INNOCECT クレアチン モノハイドレート",
+  comment:
+    "クレアチンはまずこれでOK。モノハイドレートでシンプルに使いやすく、筋トレのパフォーマンスを支えたい人におすすめです。",
+  amazonUrl:
+    "https://www.amazon.co.jp/%E3%83%A2%E3%83%8E%E3%83%8F%E3%82%A4%E3%83%89%E3%83%AC%E3%83%BC%E3%83%88-%E9%AB%98%E7%B4%94%E5%BA%A699-9-%E4%BA%BA%E5%B7%A5%E7%94%98%E5%91%B3%E6%96%99%E4%B8%8D%E4%BD%BF%E7%94%A8-%E3%83%88%E3%83%AC%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0-INNOCECT/dp/B0CH122KZY/ref=sr_1_31?sr=8-31",
+};
+
 const getBrandKey = (item: RankingCardItem) => {
   const sourceExternalId = item.product.source_external_id;
   if (sourceExternalId.startsWith("curated:")) {
@@ -204,6 +213,37 @@ const RankingCard = ({ item }: { item: RankingCardItem }) => (
   </article>
 );
 
+const CreatineCard = () => (
+  <article className="grid gap-5 rounded-3xl border border-[#FCD27B] bg-white/95 p-5 shadow-xl sm:grid-cols-[108px_1fr] sm:p-6">
+    <div className="flex items-start gap-4 sm:block">
+      <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#FF8A23] text-sm font-bold text-white shadow-lg">
+        {creatineRecommendation.rank}
+      </div>
+      <div className="relative mt-0 flex aspect-square w-24 items-center justify-center overflow-hidden rounded-2xl bg-[#FFF4E7] sm:mt-4 sm:w-[108px]">
+        <span className="px-3 text-center text-sm font-bold leading-5 text-[#7C2D12]">Creatine</span>
+      </div>
+    </div>
+
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
+        <h3 className="text-xl font-bold leading-tight text-[#7C2D12]">{creatineRecommendation.name}</h3>
+        <p className="text-sm leading-6 text-slate-600">{creatineRecommendation.comment}</p>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <Link
+          href={buildAmazonAffiliateUrl(creatineRecommendation.amazonUrl)}
+          target="_blank"
+          rel="nofollow sponsored noopener noreferrer"
+          className="rounded-full bg-[#7C2D12] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#9A3412]"
+        >
+          Amazonで見る
+        </Link>
+      </div>
+    </div>
+  </article>
+);
+
 export function SupplementsTopPage({ data }: { data: ProteinRankingPageData }) {
   const updatedAtLabel = formatUpdatedAt(data.updatedAt);
 
@@ -215,11 +255,11 @@ export function SupplementsTopPage({ data }: { data: ProteinRankingPageData }) {
           <section className="rounded-[32px] bg-white/95 p-8 shadow-2xl sm:p-10">
             <div className="flex flex-col gap-4">
               <span className="inline-flex w-fit rounded-full bg-[#FFE7C2] px-4 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#9A3412]">
-                Protein Ranking
+                Protein / Creatine
               </span>
-              <h1 className="text-3xl font-bold text-[#7C2D12] sm:text-4xl">おすすめプロテイン TOP5</h1>
+              <h1 className="text-3xl font-bold text-[#7C2D12] sm:text-4xl">おすすめプロテイン/クレアチン</h1>
               <p className="max-w-3xl text-base leading-7 text-slate-700">
-                総合的に評価して、おすすめしたい最強プロテインTOP5をご紹介します。
+                総合的に評価して、おすすめしたいプロテインとクレアチンをご紹介します。
               </p>
               {updatedAtLabel ? (
                 <p className="text-sm text-slate-500">最終更新: {updatedAtLabel}</p>
@@ -248,6 +288,15 @@ export function SupplementsTopPage({ data }: { data: ProteinRankingPageData }) {
               )}
             </section>
           ))}
+
+          <section className="rounded-[32px] bg-white/95 p-6 shadow-2xl sm:p-8">
+            <div className="mb-6 flex flex-col gap-3">
+              <h2 className="text-2xl font-bold text-[#7C2D12] sm:text-3xl">おすすめクレアチン TOP1</h2>
+            </div>
+            <div className="grid gap-5">
+              <CreatineCard />
+            </div>
+          </section>
         </div>
       </main>
     </div>
