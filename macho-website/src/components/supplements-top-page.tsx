@@ -21,8 +21,7 @@ const creatineRecommendations: CreatineRecommendation[] = [
   {
     rank: 1,
     name: "INNOCECT（イノセクト）",
-    comment:
-      "まず選ぶならこれ。モノハイドレートでシンプルに使いやすく、トレーニングのパフォーマンスを支えたい人におすすめです。",
+    comment: "昔から安くクレアチンを提供しているブランドなので安心感。",
     imageUrl: "https://shop.r10s.jp/innocect/cabinet/amino/creatine/new_creatin.jpg",
     rakutenUrl:
       "https://item.rakuten.co.jp/innocect/cre_1000/?iasid=07rpp_10095___2t-mompqf6d-1a-760651ea-0acb-40b3-88ee-e30aa1bc794a",
@@ -30,8 +29,7 @@ const creatineRecommendations: CreatineRecommendation[] = [
   {
     rank: 2,
     name: "CREVOLT（クレボルト）",
-    comment:
-      "クレアチン専門ブランドとして選びやすい一品。高純度のモノハイドレートを探している人に向いています。",
+    comment: "とにかく安い。Amazonならこれでいい。",
     imageUrl: "https://m.media-amazon.com/images/I/816NuIOc03L._AC_SL1500_.jpg",
     amazonUrl:
       "https://www.amazon.co.jp/%E3%80%90%E3%82%AF%E3%83%AC%E3%82%A2%E3%83%81%E3%83%B3%E5%B0%82%E9%96%80%E5%BA%97%E3%80%91-%E3%83%A2%E3%83%8E%E3%83%8F%E3%82%A4%E3%83%89%E3%83%AC%E3%83%BC%E3%83%88-%E9%AB%98%E7%B4%94%E5%BA%A699-9-monohydrate-CREVOLT/dp/B0G3Z6DMPV/ref=sr_1_2_sspa?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&s=hpc&sr=1-2-spons&sp_csd=d2lkZ2V0TmFtZT1zcF9hdGY&psc=1",
