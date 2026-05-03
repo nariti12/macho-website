@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { Youtube } from "lucide-react";
 
 import { SiteHeader } from "@/components/site-header";
 import { buildUrl, toJsonLd } from "@/lib/seo";
@@ -49,7 +48,7 @@ export default function ProfilePage() {
     jobTitle: "AIエンジニア",
     url: buildUrl("/profile"),
     image: profileImageFullUrl,
-    sameAs: ["https://x.com/machoda_", "https://www.youtube.com/@ganmochan"],
+    sameAs: ["https://x.com/machoda_"],
     knowsAbout: ["筋トレ", "AI", "データ分析"],
   });
 
@@ -86,15 +85,6 @@ export default function ProfilePage() {
                   <span aria-hidden className="text-xl font-semibold leading-none">
                     X
                   </span>
-                </Link>
-                <Link
-                  href="https://www.youtube.com/@ganmochan"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="relative z-20 flex h-12 w-12 items-center justify-center rounded-xl bg-red-600 text-white transition-transform duration-200 hover:scale-105"
-                >
-                  <span className="sr-only">YouTubeチャンネル</span>
-                  <Youtube aria-hidden className="h-6 w-6" />
                 </Link>
               </div>
             </div>
