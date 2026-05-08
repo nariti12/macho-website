@@ -1,10 +1,12 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { SiteHeader } from "@/components/site-header";
 import { highProteinFoods } from "@/data/high-protein-foods";
+import { buildAmazonAffiliateUrl } from "@/lib/protein-rankings/links";
 
 const profileImageSrc = "/picture/ore.png";
 
@@ -13,6 +15,7 @@ const categoryStyles: Record<string, string> = {
   大戸屋: "bg-[#7C2D12] text-white",
   松屋: "bg-[#b91c1c] text-white",
   スーパー食材: "bg-[#2563eb] text-white",
+  Amazon: "bg-[#7C2D12] text-white",
 };
 
 const nutritionItems = [
@@ -153,6 +156,9 @@ export function HighProteinPage() {
 
                       <div className="flex flex-col gap-3">
                         <h2 className="text-xl font-bold leading-tight text-[#7C2D12]">{food.name}</h2>
+                        <div className="w-fit rounded-full bg-[#FFE7C2] px-3 py-1 text-xs font-semibold text-[#9A3412]">
+                          成分表示: {food.nutritionBasis}
+                        </div>
                         <dl className="grid grid-cols-2 gap-3 text-sm text-slate-600">
                           {nutritionItems.map((item) => (
                             <div key={item.key} className="rounded-2xl bg-[#FFF7EB] px-4 py-3">
@@ -164,6 +170,16 @@ export function HighProteinPage() {
                             </div>
                           ))}
                         </dl>
+                        {food.amazonUrl ? (
+                          <Link
+                            href={buildAmazonAffiliateUrl(food.amazonUrl)}
+                            target="_blank"
+                            rel="nofollow sponsored noopener noreferrer"
+                            className="mt-1 rounded-full bg-[#7C2D12] px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-[#9A3412]"
+                          >
+                            Amazonで見る
+                          </Link>
+                        ) : null}
                       </div>
                     </article>
                   ))}
