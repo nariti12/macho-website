@@ -28,11 +28,11 @@ const creatineRecommendations: CreatineRecommendation[] = [
   },
   {
     rank: 2,
-    name: "CREVOLT（クレボルト）",
-    comment: "とにかく安い。Amazonならこれでいい。",
-    imageUrl: "https://m.media-amazon.com/images/I/816NuIOc03L._AC_SL1500_.jpg",
+    name: "Nature In（ネイチャーイン）",
+    comment: "こっちも安い。Amazonで買うなら候補に入れたいクレアチンです。",
+    imageUrl: "https://m.media-amazon.com/images/I/61Jwb0vWWZL._AC_SL1500_.jpg",
     amazonUrl:
-      "https://www.amazon.co.jp/%E3%80%90%E3%82%AF%E3%83%AC%E3%82%A2%E3%83%81%E3%83%B3%E5%B0%82%E9%96%80%E5%BA%97%E3%80%91-%E3%83%A2%E3%83%8E%E3%83%8F%E3%82%A4%E3%83%89%E3%83%AC%E3%83%BC%E3%83%88-%E9%AB%98%E7%B4%94%E5%BA%A699-9-monohydrate-CREVOLT/dp/B0G3Z6DMPV/ref=sr_1_2_sspa?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&s=hpc&sr=1-2-spons&sp_csd=d2lkZ2V0TmFtZT1zcF9hdGY&psc=1",
+      "https://www.amazon.co.jp/Nature-%EF%BC%88%E3%83%8D%E3%82%A4%E3%83%81%E3%83%A3%E3%83%BC%E3%82%A4%E3%83%B3%EF%BC%89-%E3%82%AF%E3%83%AC%E3%82%A2%E3%83%81%E3%83%B3%E3%83%A2%E3%83%8E%E3%83%8F%E3%82%A4%E3%83%89%E3%83%AC%E3%83%BC%E3%83%88-%E3%82%88%E3%81%8F%E9%96%89%E3%81%BE%E3%82%8B%E3%83%81%E3%83%A3%E3%83%83%E3%82%AF-ISO22000%E8%A6%8F%E6%A0%BC/dp/B0FY5PBSM1/ref=sr_1_7?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&sr=8-7",
   },
 ];
 
