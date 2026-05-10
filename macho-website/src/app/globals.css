@@ -270,6 +270,25 @@ main {
   }
 }
 
+@keyframes macho-news {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-120%);
+  }
+}
+
+@keyframes macho-golden {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) rotate(-4deg) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) rotate(5deg) scale(1.12);
+  }
+}
+
 .macho-float {
   animation: macho-float 0.95s ease-out forwards;
 }
@@ -304,4 +323,12 @@ main {
 
 .macho-toast {
   animation: macho-toast 3.2s ease-in-out forwards;
+}
+
+.macho-news {
+  animation: macho-news 18s linear infinite;
+}
+
+.macho-golden {
+  animation: macho-golden 1.1s ease-in-out infinite;
 }

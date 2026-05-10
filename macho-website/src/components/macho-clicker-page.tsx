@@ -63,6 +63,14 @@ type Achievement = {
   isUnlocked: (state: GameState) => boolean;
 };
 
+type PanelTab = "stats" | "upgrades" | "achievements";
+
+type GoldenProtein = {
+  id: number;
+  x: number;
+  y: number;
+};
+
 const upgrades: Upgrade[] = [
   {
     key: "pushUp",
@@ -198,6 +206,30 @@ const achievements: Achievement[] = [
     description: "累計1,000,000筋肉ポイントを達成",
     isUnlocked: (state) => state.totalMuscle >= 1_000_000,
   },
+  {
+    key: "upgrade-10",
+    title: "強化厨",
+    description: "強化メニューを合計10回購入した",
+    isUnlocked: (state) => Object.values(state.upgrades).reduce((total, level) => total + level, 0) >= 10,
+  },
+  {
+    key: "click-master",
+    title: "クリック職人",
+    description: "クリック力が100を超えた",
+    isUnlocked: (state) => getClickPower(state) >= 100,
+  },
+  {
+    key: "factory",
+    title: "筋肉工場",
+    description: "毎秒獲得量が1,000を超えた",
+    isUnlocked: (state) => getPerSecond(state) >= 1000,
+  },
+  {
+    key: "macho-god",
+    title: "マチョ神",
+    description: "累計10,000,000筋肉ポイントを達成",
+    isUnlocked: (state) => state.totalMuscle >= 10_000_000,
+  },
 ];
 
 const initialState: GameState = {
@@ -247,6 +279,23 @@ const getNextTitleGoal = (totalMuscle: number) => {
     { title: "マチョ神", value: 10_000_000 },
   ];
   return goals.find((goal) => totalMuscle < goal.value) ?? goals[goals.length - 1];
+};
+
+const getNews = (state: GameState, title: string, perSecond: number) => {
+  const lines = [
+    "ジムの片隅で謎のクリック音が鳴り響いています。",
+    "マチョ田、今日も腹筋ローラーを抱えて登場。",
+    `${title} が街で少しずつ噂になっています。`,
+    `現在の自動筋トレ効率は毎秒 ${formatNumber(perSecond)} 筋肉です。`,
+  ];
+
+  if (state.totalMuscle >= 50_000) lines.push("近所のジムで『あの人、仕上がってない？』という声が増えています。");
+  if (state.totalMuscle >= 1_000_000) lines.push("マチョ田級の肉体が完成しつつあります。もはや歩くパワーラックです。");
+  if (Object.values(state.upgrades).reduce((total, level) => total + level, 0) >= 10) {
+    lines.push("強化メニューの購入履歴が完全に筋トレ沼です。");
+  }
+
+  return lines[Math.floor(state.totalMuscle / 250 + Date.now() / 7000) % lines.length];
 };
 
 const normalizeSavedUpgrades = (value?: Partial<Record<UpgradeKey, number>>) => ({
@@ -302,6 +351,8 @@ export function MachoClickerPage() {
   const [clickBurst, setClickBurst] = useState(false);
   const [purchaseFlash, setPurchaseFlash] = useState<string | null>(null);
   const [achievementToast, setAchievementToast] = useState<Achievement | null>(null);
+  const [activePanel, setActivePanel] = useState<PanelTab>("stats");
+  const [goldenProtein, setGoldenProtein] = useState<GoldenProtein | null>(null);
   const effectIdRef = useRef(0);
   const clickPower = useMemo(() => getClickPower(state), [state]);
   const perSecond = useMemo(() => getPerSecond(state), [state]);
@@ -309,6 +360,8 @@ export function MachoClickerPage() {
   const nextGoal = getNextTitleGoal(state.totalMuscle);
   const titleProgress = Math.min(100, Math.max(0, (state.totalMuscle / nextGoal.value) * 100));
   const ownedUpgradeCount = Object.values(state.upgrades).reduce((total, level) => total + level, 0);
+  const unlockedAchievementCount = state.unlockedAchievements.length;
+  const news = getNews(state, title, perSecond);
 
   useEffect(() => {
     setState(readSavedState());
@@ -348,6 +401,25 @@ export function MachoClickerPage() {
     };
 
     loadRankings();
+  }, []);
+
+  useEffect(() => {
+    const spawn = () => {
+      setGoldenProtein({
+        id: Date.now(),
+        x: 12 + Math.random() * 76,
+        y: 14 + Math.random() * 62,
+      });
+      window.setTimeout(() => setGoldenProtein(null), 8500);
+    };
+
+    const initialTimer = window.setTimeout(spawn, 8000);
+    const interval = window.setInterval(spawn, 26000);
+
+    return () => {
+      window.clearTimeout(initialTimer);
+      window.clearInterval(interval);
+    };
   }, []);
 
   useEffect(() => {
@@ -432,6 +504,21 @@ export function MachoClickerPage() {
     });
   };
 
+  const collectGoldenProtein = () => {
+    if (!goldenProtein) return;
+    const bonus = Math.max(777, Math.floor(clickPower * 77 + perSecond * 20));
+    spawnClickEffects(bonus);
+    setState((current) => ({
+      ...current,
+      muscle: clampScore(current.muscle + bonus),
+      totalMuscle: clampScore(current.totalMuscle + bonus),
+      lastSavedAt: Date.now(),
+    }));
+    setPurchaseFlash(`ゴールデンプロテイン +${formatNumber(bonus)}`);
+    setGoldenProtein(null);
+    window.setTimeout(() => setPurchaseFlash(null), 1400);
+  };
+
   const resetGame = () => {
     if (!window.confirm("マチョクリッカーの進行状況をリセットしますか？")) return;
     const nextState = { ...initialState, upgrades: { ...emptyUpgrades }, lastSavedAt: Date.now() };
@@ -503,6 +590,15 @@ export function MachoClickerPage() {
             </div>
           </section>
 
+          <section className="overflow-hidden rounded-[26px] border border-white/35 bg-[#2A140B]/90 px-5 py-3 text-white shadow-2xl">
+            <div className="flex items-center gap-4">
+              <span className="shrink-0 rounded-full bg-[#FF8A23] px-3 py-1 text-xs font-black uppercase tracking-[0.18em]">
+                Macho News
+              </span>
+              <div className="macho-news whitespace-nowrap text-sm font-bold text-orange-100">{news}</div>
+            </div>
+          </section>
+
           <section className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)_360px]">
             <aside className="order-2 rounded-[32px] border border-white/40 bg-white/90 p-5 shadow-2xl backdrop-blur xl:order-1">
               <h2 className="text-xl font-black text-[#7C2D12]">現在の肉体</h2>
@@ -528,6 +624,16 @@ export function MachoClickerPage() {
                     <div className="h-full rounded-full bg-[#FF8A23]" style={{ width: `${titleProgress}%` }} />
                   </div>
                   <div className="mt-2 text-xs text-orange-100">次: {nextGoal.title} / {formatNumber(nextGoal.value)}</div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-3xl bg-white px-4 py-3 shadow-inner">
+                    <div className="text-xs font-bold text-[#C2410C]">強化合計</div>
+                    <div className="mt-1 text-xl font-black text-[#7C2D12]">{ownedUpgradeCount}</div>
+                  </div>
+                  <div className="rounded-3xl bg-white px-4 py-3 shadow-inner">
+                    <div className="text-xs font-bold text-[#C2410C]">実績解除</div>
+                    <div className="mt-1 text-xl font-black text-[#7C2D12]">{unlockedAchievementCount}</div>
+                  </div>
                 </div>
                 <div className="rounded-3xl bg-white px-4 py-4 shadow-inner">
                   <div className="text-xs font-bold text-[#C2410C]">実績</div>
@@ -588,6 +694,19 @@ export function MachoClickerPage() {
                   />
                 ))}
 
+                {goldenProtein ? (
+                  <button
+                    type="button"
+                    onClick={collectGoldenProtein}
+                    className="macho-golden absolute z-40 flex h-20 w-20 items-center justify-center rounded-full border-4 border-white bg-gradient-to-br from-yellow-200 via-orange-300 to-yellow-500 text-[10px] font-black leading-tight text-[#7C2D12] shadow-2xl"
+                    style={{ left: `${goldenProtein.x}%`, top: `${goldenProtein.y}%` }}
+                  >
+                    GOLDEN
+                    <br />
+                    PROTEIN
+                  </button>
+                ) : null}
+
                 <button
                   type="button"
                   onClick={handleClick}
@@ -605,6 +724,84 @@ export function MachoClickerPage() {
                     className="relative z-10 h-auto w-48 drop-shadow-2xl transition group-hover:scale-105 sm:w-60"
                   />
                 </button>
+              </div>
+
+              <div className="mt-5 overflow-hidden rounded-[28px] border border-[#FCD27B] bg-white shadow-xl">
+                <div className="grid grid-cols-3 bg-[#7C2D12] text-xs font-black text-white">
+                  {([
+                    ["stats", "Stats"],
+                    ["upgrades", "Upgrades"],
+                    ["achievements", "Achievements"],
+                  ] as const).map(([key, label]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setActivePanel(key)}
+                      className={`px-3 py-3 transition ${activePanel === key ? "bg-[#FF8A23]" : "hover:bg-white/10"}`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <div className="min-h-52 bg-[#FFF7EB] p-5 text-left">
+                  {activePanel === "stats" ? (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-2xl bg-white px-4 py-3 shadow-inner">
+                        <div className="text-xs font-black text-[#C2410C]">累計筋肉</div>
+                        <div className="mt-1 text-xl font-black text-[#7C2D12]">{formatNumber(state.totalMuscle)}</div>
+                      </div>
+                      <div className="rounded-2xl bg-white px-4 py-3 shadow-inner">
+                        <div className="text-xs font-black text-[#C2410C]">現在筋肉</div>
+                        <div className="mt-1 text-xl font-black text-[#7C2D12]">{formatNumber(state.muscle)}</div>
+                      </div>
+                      <div className="rounded-2xl bg-white px-4 py-3 shadow-inner">
+                        <div className="text-xs font-black text-[#C2410C]">クリック力</div>
+                        <div className="mt-1 text-xl font-black text-[#7C2D12]">+{formatNumber(clickPower)}</div>
+                      </div>
+                      <div className="rounded-2xl bg-white px-4 py-3 shadow-inner">
+                        <div className="text-xs font-black text-[#C2410C]">毎秒生産</div>
+                        <div className="mt-1 text-xl font-black text-[#7C2D12]">+{formatNumber(perSecond)}</div>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {activePanel === "upgrades" ? (
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {upgrades.map((upgrade) => (
+                        <div key={upgrade.key} className="rounded-2xl bg-white px-4 py-3 shadow-inner">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="font-black text-[#7C2D12]">{upgrade.name}</div>
+                            <div className="rounded-full bg-[#FFE7C2] px-2 py-1 text-xs font-black text-[#C2410C]">
+                              Lv.{state.upgrades[upgrade.key]}
+                            </div>
+                          </div>
+                          <div className="mt-1 text-xs text-slate-600">
+                            次の価格: {formatNumber(getUpgradeCost(upgrade, state.upgrades[upgrade.key]))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  {activePanel === "achievements" ? (
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {achievements.map((achievement) => {
+                        const unlocked = state.unlockedAchievements.includes(achievement.key);
+                        return (
+                          <div
+                            key={achievement.key}
+                            className={`rounded-2xl px-4 py-3 shadow-inner ${
+                              unlocked ? "bg-white text-[#7C2D12]" : "bg-slate-100 text-slate-400"
+                            }`}
+                          >
+                            <div className="font-black">{unlocked ? achievement.title : "？？？"}</div>
+                            <div className="mt-1 text-xs">{unlocked ? achievement.description : "条件達成で解除"}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </div>
               </div>
             </div>
 
