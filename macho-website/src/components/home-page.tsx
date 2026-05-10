@@ -35,6 +35,7 @@ export function HomePage() {
   const loadingTimeoutRef = useRef<number | null>(null);
 
   const menuItems = [
+    { label: "マチョ\nクリッカー", href: "/macho-clicker" },
     { label: "マチョ田の\n筋トレメニュー", href: "/menu" },
     { label: "１日摂取カロリー/\nたんぱく質 計算機", href: "/intake-calculator" },
     { label: "高たんぱく質一覧", href: "/high-protein" },
