@@ -185,3 +185,123 @@ main {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+@keyframes macho-float {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0) scale(0.85);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -5rem) scale(1.18);
+  }
+}
+
+@keyframes macho-spark {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.25);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.9);
+  }
+}
+
+@keyframes macho-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes macho-shine {
+  0% {
+    transform: translateX(-120%) rotate(20deg);
+  }
+  100% {
+    transform: translateX(120%) rotate(20deg);
+  }
+}
+
+@keyframes macho-orbit {
+  from {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.05);
+  }
+  to {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+@keyframes macho-breathe {
+  0%,
+  100% {
+    box-shadow: 0 45px 100px -35px rgba(42, 20, 11, 0.9), 0 0 0 0 rgba(255, 255, 255, 0.28);
+  }
+  50% {
+    box-shadow: 0 45px 100px -35px rgba(42, 20, 11, 0.9), 0 0 0 18px rgba(255, 255, 255, 0);
+  }
+}
+
+@keyframes macho-toast {
+  0% {
+    opacity: 0;
+    transform: translateY(-0.75rem) scale(0.96);
+  }
+  12%,
+  88% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-0.75rem) scale(0.98);
+  }
+}
+
+.macho-float {
+  animation: macho-float 0.95s ease-out forwards;
+}
+
+.macho-spark {
+  animation: macho-spark 0.76s ease-out forwards;
+}
+
+.macho-pop {
+  animation: macho-pop 0.14s ease-out;
+}
+
+.macho-shine {
+  overflow: hidden;
+}
+
+.macho-shine::after {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.42) 50%, transparent 100%);
+  animation: macho-shine 2.4s ease-in-out infinite;
+}
+
+.macho-orbit {
+  animation: macho-orbit 14s linear infinite;
+}
+
+.macho-breathe {
+  animation: macho-breathe 2.2s ease-in-out infinite;
+}
+
+.macho-toast {
+  animation: macho-toast 3.2s ease-in-out forwards;
+}
