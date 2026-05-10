@@ -97,15 +97,55 @@ export default function ProfilePage() {
             </div>
             <div className="rounded-3xl border border-[#FFE7C2] bg-[#FFF6EB] p-6 text-left shadow-inner">
               <h2 className="text-lg font-semibold text-[#7C2D12]">資格</h2>
-              <ul className="mt-3 list-disc space-y-1 pl-5 text-sm leading-7 text-gray-700">
-                <li>基本/応用情報</li>
-                <li>G検定/E資格</li>
-                <li>統計検定2級</li>
-                <li>Python3 基礎/データ分析</li>
-                <li>AWS SAA</li>
-                <li>CCNA</li>
-                <li>LPIC (LEVEL1)</li>
-                <li>Oracle (Bronze)</li>
+              <ul className="mt-3 grid gap-x-6 gap-y-1 text-sm leading-7 text-gray-700 sm:grid-cols-2">
+                <li className="flex gap-2">
+                  <span className="text-[#FF8A23]">・</span>
+                  <span>基本情報</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#FF8A23]">・</span>
+                  <span>応用情報</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#FF8A23]">・</span>
+                  <span>G検定</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#FF8A23]">・</span>
+                  <span>E資格</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#FF8A23]">・</span>
+                  <span>統計検定2級</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#FF8A23]">・</span>
+                  <span>Python3 基礎</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#FF8A23]">・</span>
+                  <span>Python3 データ分析</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#FF8A23]">・</span>
+                  <span>AWS SAA</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#FF8A23]">・</span>
+                  <span>CCNA</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#FF8A23]">・</span>
+                  <span>LPIC (LEVEL1)</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#FF8A23]">・</span>
+                  <span>Oracle (Bronze)</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#FF8A23]">・</span>
+                  <span>Licensed Scrum Master</span>
+                </li>
               </ul>
             </div>
             <div className="md:col-span-2 rounded-3xl border border-[#FFE7C2] bg-[#FFF6EB] p-6 text-left shadow-inner">
