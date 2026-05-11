@@ -9,6 +9,7 @@ const profileImageSrc = "/picture/ore.png";
 const characterImageSrc = "/picture/man.png";
 const STORAGE_KEY = "machoda:macho-clicker:v3";
 const SAVE_INTERVAL_MS = 1000;
+const NEWS_INTERVAL_MS = 18_000;
 const OFFLINE_LIMIT_SECONDS = 60 * 60 * 8;
 const MAX_SCORE = 999_999_999_999_999;
 
@@ -74,11 +75,11 @@ type GoldenProtein = {
 const upgrades: Upgrade[] = [
   {
     key: "pushUp",
-    name: "補助カーソル",
-    label: "CURSOR",
+    name: "ダンベル",
+    label: "DB",
     icon: "➤",
     spriteSrc: "/game/macho-clicker/dumbbell.png",
-    description: "10秒に1回、代わりにクリックしてくれます。",
+    description: "10秒に1回、ダンベルが筋肉ポイントを生みます。",
     baseCost: 15,
     costRate: 1.15,
     perSecondBonus: 0.1,
@@ -98,11 +99,11 @@ const upgrades: Upgrade[] = [
   },
   {
     key: "dumbbell",
-    name: "ダンベル部隊",
-    label: "DB",
-    icon: "D",
-    spriteSrc: "/game/macho-clicker/dumbbell.png",
-    description: "黙々とダンベルを上げ続ける部隊です。",
+    name: "バーベル部隊",
+    label: "BAR",
+    icon: "B",
+    spriteSrc: "/game/macho-clicker/bench.png",
+    description: "黙々とバーベルを上げ続ける部隊です。",
     baseCost: 1100,
     costRate: 1.15,
     perSecondBonus: 8,
@@ -168,27 +169,6 @@ const upgrades: Upgrade[] = [
     perSecondBonus: 44000,
     accent: "from-[#FFB45D] to-[#7C2D12]",
   },
-];
-
-const equipmentPositions = [
-  { x: 8, y: 22 },
-  { x: 19, y: 38 },
-  { x: 33, y: 25 },
-  { x: 47, y: 43 },
-  { x: 62, y: 24 },
-  { x: 76, y: 39 },
-  { x: 88, y: 21 },
-  { x: 12, y: 64 },
-  { x: 28, y: 78 },
-  { x: 44, y: 64 },
-  { x: 60, y: 80 },
-  { x: 78, y: 63 },
-  { x: 91, y: 78 },
-  { x: 22, y: 18 },
-  { x: 70, y: 16 },
-  { x: 38, y: 82 },
-  { x: 55, y: 60 },
-  { x: 84, y: 52 },
 ];
 
 const emptyUpgrades: Record<UpgradeKey, number> = {
@@ -362,7 +342,7 @@ const getBodyStage = (totalMuscle: number) => {
   };
 };
 
-const getNews = (state: GameState, title: string, perSecond: number) => {
+const getNewsLines = (state: GameState, title: string, perSecond: number) => {
   const lines = [
     "ジムの片隅で謎のクリック音が鳴り響いています。",
     "マチョ田、今日も腹筋ローラーを抱えて登場。",
@@ -376,7 +356,7 @@ const getNews = (state: GameState, title: string, perSecond: number) => {
     lines.push("強化メニューの購入履歴が完全に筋トレ沼です。");
   }
 
-  return lines[Math.floor(state.totalMuscle / 250 + Date.now() / 7000) % lines.length];
+  return lines;
 };
 
 const normalizeSavedUpgrades = (value?: Partial<Record<UpgradeKey, number>>) => ({
@@ -434,6 +414,7 @@ export function MachoClickerPage() {
   const [purchaseFlash, setPurchaseFlash] = useState<string | null>(null);
   const [achievementToast, setAchievementToast] = useState<Achievement | null>(null);
   const [goldenProtein, setGoldenProtein] = useState<GoldenProtein | null>(null);
+  const [newsIndex, setNewsIndex] = useState(0);
   const effectIdRef = useRef(0);
   const clickPower = useMemo(() => getClickPower(), []);
   const perSecond = useMemo(() => getPerSecond(state), [state]);
@@ -441,30 +422,22 @@ export function MachoClickerPage() {
   const nextGoal = getNextTitleGoal(state.totalMuscle);
   const titleProgress = Math.min(100, Math.max(0, (state.totalMuscle / nextGoal.value) * 100));
   const ownedUpgradeCount = Object.values(state.upgrades).reduce((total, level) => total + level, 0);
-  const news = getNews(state, title, perSecond);
+  const newsLines = getNewsLines(state, title, perSecond);
+  const news = newsLines[newsIndex % newsLines.length];
   const bodyStage = getBodyStage(state.totalMuscle);
   const cursorCount = Math.min(36, state.upgrades.pushUp);
-  const equipmentTiles = useMemo(
-    () =>
-      upgrades
-        .filter((upgrade) => upgrade.key !== "pushUp")
-        .flatMap((upgrade, upgradeIndex) =>
-          Array.from({ length: Math.min(18, state.upgrades[upgrade.key]) }, (_, index) => ({
-            id: `${upgrade.key}-${index}`,
-            icon: upgrade.icon,
-            spriteSrc: upgrade.spriteSrc,
-            color: upgrade.accent,
-            x: equipmentPositions[(index + upgradeIndex * 4) % equipmentPositions.length].x,
-            y: equipmentPositions[(index + upgradeIndex * 4) % equipmentPositions.length].y,
-            delay: ((index + upgradeIndex) % 6) * 0.12,
-          }))
-        ),
-    [state.upgrades]
-  );
 
   useEffect(() => {
     setState(readSavedState());
     setIsLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNewsIndex((current) => current + 1);
+    }, NEWS_INTERVAL_MS);
+
+    return () => window.clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -707,7 +680,9 @@ export function MachoClickerPage() {
                 Macho News
               </span>
               <div className="min-w-0 flex-1 overflow-hidden">
-                <div className="macho-news whitespace-nowrap text-sm font-bold text-orange-100">{news}</div>
+                <div key={newsIndex} className="macho-news whitespace-nowrap text-sm font-bold text-orange-100">
+                  {news}
+                </div>
               </div>
             </div>
           </section>
@@ -748,12 +723,17 @@ export function MachoClickerPage() {
                 <button
                   type="button"
                   onClick={collectGoldenProtein}
-                  className="macho-golden absolute z-50 flex h-20 w-20 items-center justify-center rounded-full border-4 border-white bg-gradient-to-br from-yellow-200 via-orange-300 to-yellow-500 text-[10px] font-black leading-tight text-[#7C2D12] shadow-2xl"
+                  className="macho-golden absolute z-50 flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-gradient-to-br from-yellow-100 via-yellow-300 to-orange-500 shadow-2xl"
                   style={{ left: `${goldenProtein.x}%`, top: `${goldenProtein.y}%` }}
+                  aria-label="ゴールデンプロテインを獲得"
                 >
-                  GOLDEN
-                  <br />
-                  PROTEIN
+                  <Image
+                    src="/game/macho-clicker/golden-protein.png"
+                    alt=""
+                    width={86}
+                    height={86}
+                    className="h-20 w-20 object-contain drop-shadow-xl"
+                  />
                 </button>
               ) : null}
 
@@ -817,26 +797,46 @@ export function MachoClickerPage() {
 
               <div className="absolute inset-x-0 bottom-0 h-40 bg-[linear-gradient(180deg,transparent_0%,rgba(124,45,18,0.7)_90%)]" />
               <div className="absolute inset-x-4 bottom-5 top-24 overflow-hidden rounded-[28px] border-4 border-[#7C2D12] bg-[linear-gradient(180deg,rgba(255,247,235,0.92)_0%,rgba(255,237,213,0.76)_62%,rgba(154,52,18,0.72)_100%)] shadow-inner">
-                <div className="absolute inset-x-0 top-1/3 border-t-4 border-[#B45309]/45" />
-                <div className="absolute inset-x-0 top-2/3 border-t-4 border-[#B45309]/45" />
-                {equipmentTiles.length === 0 ? (
-                  <div className="absolute inset-0 flex items-center justify-center px-8 text-center text-lg font-black text-[#9A3412]/55">
+                {ownedUpgradeCount === 0 ? (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center px-8 text-center text-lg font-black text-[#9A3412]/55">
                     ショップで強化を買うと、ここに設備が増えます
                   </div>
                 ) : null}
-                {equipmentTiles.map((tile) => (
-                  <div
-                    key={tile.id}
-                    className="macho-helper absolute flex h-20 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center"
-                    style={{
-                      left: `${tile.x}%`,
-                      top: `${tile.y}%`,
-                      animationDelay: `${tile.delay}s`,
-                    }}
-                  >
-                    <Image src={tile.spriteSrc} alt="" width={80} height={80} className="h-20 w-20 object-contain drop-shadow-xl" />
-                  </div>
-                ))}
+                <div className="grid h-full grid-rows-8 divide-y-2 divide-[#B45309]/35">
+                  {upgrades.map((upgrade) => {
+                    const level = state.upgrades[upgrade.key];
+                    const visibleCount = Math.min(80, level);
+                    return (
+                      <div key={upgrade.key} className="relative flex min-h-0 items-center overflow-hidden px-3">
+                        <div className="absolute left-3 top-1 z-10 rounded-full bg-[#7C2D12]/85 px-2 py-0.5 text-[10px] font-black text-[#FFE7C2]">
+                          {upgrade.name} Lv.{level}
+                        </div>
+                        <div className="flex items-center gap-1 pt-4">
+                          {Array.from({ length: visibleCount }, (_, index) => (
+                            <div
+                              key={`${upgrade.key}-unit-${index}`}
+                              className="macho-helper flex h-12 w-12 shrink-0 items-center justify-center sm:h-14 sm:w-14"
+                              style={{ animationDelay: `${(index % 8) * 0.08}s` }}
+                            >
+                              <Image
+                                src={upgrade.spriteSrc}
+                                alt=""
+                                width={56}
+                                height={56}
+                                className="h-12 w-12 object-contain drop-shadow-xl sm:h-14 sm:w-14"
+                              />
+                            </div>
+                          ))}
+                          {level > visibleCount ? (
+                            <span className="ml-2 rounded-full bg-white/90 px-2 py-1 text-xs font-black text-[#7C2D12]">
+                              +{level - visibleCount}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </section>
 
