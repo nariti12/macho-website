@@ -71,6 +71,27 @@ type GoldenProtein = {
   y: number;
 };
 
+const helperPositions = [
+  { x: 8, y: 16 },
+  { x: 22, y: 10 },
+  { x: 38, y: 13 },
+  { x: 54, y: 9 },
+  { x: 70, y: 14 },
+  { x: 84, y: 20 },
+  { x: 10, y: 42 },
+  { x: 24, y: 34 },
+  { x: 40, y: 38 },
+  { x: 58, y: 35 },
+  { x: 74, y: 42 },
+  { x: 88, y: 48 },
+  { x: 15, y: 68 },
+  { x: 32, y: 76 },
+  { x: 50, y: 70 },
+  { x: 68, y: 78 },
+  { x: 84, y: 70 },
+  { x: 92, y: 34 },
+];
+
 const upgrades: Upgrade[] = [
   {
     key: "pushUp",
@@ -365,8 +386,9 @@ export function MachoClickerPage() {
           id: `${upgrade.key}-${index}`,
           label: upgrade.label,
           color: upgrade.accent,
-          angle: ((index * 31 + upgradeIndex * 47) % 360) - 90,
-          radius: 108 + upgradeIndex * 8 + (index % 3) * 18,
+          x: helperPositions[(index + upgradeIndex * 3) % helperPositions.length].x,
+          y: helperPositions[(index + upgradeIndex * 3) % helperPositions.length].y,
+          delay: ((index + upgradeIndex) % 5) * 0.16,
         }))
       ),
     [state.upgrades]
@@ -584,13 +606,7 @@ export function MachoClickerPage() {
       <main className="relative z-10 px-4 pb-20 pt-20 sm:px-6 md:px-12">
         <div className="mx-auto flex max-w-7xl flex-col gap-6">
           <section className="relative overflow-hidden rounded-[36px] border border-white/40 bg-white/90 p-6 shadow-2xl backdrop-blur sm:p-8">
-            <div className="absolute right-6 top-6 hidden rounded-full bg-[#7C2D12] px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-white sm:block">
-              Click Training
-            </div>
             <div className="flex flex-col gap-4">
-              <span className="inline-flex w-fit rounded-full bg-[#FFE7C2] px-4 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#9A3412]">
-                Macho Clicker
-              </span>
               <h1 className="text-4xl font-black tracking-tight text-[#7C2D12] sm:text-6xl">マチョクリッカー</h1>
               <p className="max-w-3xl text-base leading-7 text-slate-700">
                 クリックで筋肉ポイントを稼ぎ、強化メニューでトレーニング効率を上げていく放置系ミニゲームです。
@@ -673,14 +689,21 @@ export function MachoClickerPage() {
             </aside>
 
             <div className="order-1 rounded-[40px] border border-white/45 bg-white/90 p-5 text-center shadow-2xl backdrop-blur sm:p-8 xl:order-2">
+              <div className="mb-4 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-3xl bg-[#7C2D12] px-5 py-4 text-white shadow-lg">
+                  <div className="text-xs font-black text-orange-200">累計筋肉ポイント</div>
+                  <div className="mt-1 text-3xl font-black">{formatNumber(state.totalMuscle)}</div>
+                </div>
+                <div className="rounded-3xl bg-[#FFF4E7] px-5 py-4 text-[#7C2D12] shadow-inner">
+                  <div className="text-xs font-black text-[#C2410C]">現在の筋肉ポイント</div>
+                  <div className="mt-1 text-3xl font-black">{formatNumber(state.muscle)}</div>
+                </div>
+              </div>
               <div className="relative mx-auto flex min-h-[480px] max-w-2xl flex-col items-center justify-center overflow-hidden rounded-[36px] bg-[radial-gradient(circle_at_center,#FFE7C2_0%,#FFB45D_42%,#7C2D12_100%)] p-6 shadow-inner">
                 <div className="macho-orbit absolute inset-10 rounded-full border border-white/35" />
                 <div className="macho-orbit absolute inset-20 rounded-full border border-white/25 [animation-direction:reverse]" />
                 <div className="absolute left-6 top-6 rounded-full bg-white/80 px-4 py-2 text-sm font-black text-[#7C2D12]">
                   COMBO {combo}
-                </div>
-                <div className="absolute bottom-6 left-6 right-6 rounded-3xl bg-white/80 px-4 py-3 text-sm font-bold text-[#7C2D12] shadow-lg">
-                  累計 {formatNumber(state.totalMuscle)} 筋肉ポイント
                 </div>
 
                 {floatingGains.map((item) => (
@@ -710,9 +733,11 @@ export function MachoClickerPage() {
                 {visualHelpers.map((helper) => (
                   <div
                     key={helper.id}
-                    className={`macho-helper pointer-events-none absolute left-1/2 top-1/2 z-0 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${helper.color} text-[9px] font-black text-white shadow-xl`}
+                    className={`macho-helper pointer-events-none absolute z-0 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${helper.color} text-[9px] font-black text-white shadow-xl`}
                     style={{
-                      transform: `rotate(${helper.angle}deg) translate(${helper.radius}px) rotate(${-helper.angle}deg)`,
+                      left: `${helper.x}%`,
+                      top: `${helper.y}%`,
+                      animationDelay: `${helper.delay}s`,
                     }}
                   >
                     {helper.label}
