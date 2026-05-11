@@ -18,6 +18,7 @@ type Upgrade = {
   key: UpgradeKey;
   name: string;
   label: string;
+  icon: string;
   description: string;
   baseCost: number;
   costRate: number;
@@ -72,24 +73,18 @@ type GoldenProtein = {
 };
 
 const helperPositions = [
-  { x: 8, y: 16 },
-  { x: 22, y: 10 },
-  { x: 38, y: 13 },
-  { x: 54, y: 9 },
-  { x: 70, y: 14 },
-  { x: 84, y: 20 },
-  { x: 10, y: 42 },
-  { x: 24, y: 34 },
-  { x: 40, y: 38 },
-  { x: 58, y: 35 },
-  { x: 74, y: 42 },
-  { x: 88, y: 48 },
-  { x: 15, y: 68 },
-  { x: 32, y: 76 },
-  { x: 50, y: 70 },
-  { x: 68, y: 78 },
-  { x: 84, y: 70 },
-  { x: 92, y: 34 },
+  { x: 8, y: 18 },
+  { x: 20, y: 12 },
+  { x: 80, y: 14 },
+  { x: 92, y: 22 },
+  { x: 9, y: 40 },
+  { x: 21, y: 55 },
+  { x: 78, y: 46 },
+  { x: 91, y: 58 },
+  { x: 12, y: 72 },
+  { x: 27, y: 82 },
+  { x: 73, y: 78 },
+  { x: 88, y: 72 },
 ];
 
 const upgrades: Upgrade[] = [
@@ -97,6 +92,7 @@ const upgrades: Upgrade[] = [
     key: "pushUp",
     name: "補助カーソル",
     label: "CURSOR",
+    icon: "👆",
     description: "10秒に1回、代わりにクリックしてくれます。",
     baseCost: 15,
     costRate: 1.15,
@@ -107,6 +103,7 @@ const upgrades: Upgrade[] = [
     key: "abRoller",
     name: "腹筋ローラー職人",
     label: "ABS",
+    icon: "◎",
     description: "腹筋ローラーを転がし続ける職人です。",
     baseCost: 100,
     costRate: 1.15,
@@ -117,6 +114,7 @@ const upgrades: Upgrade[] = [
     key: "dumbbell",
     name: "ダンベル部隊",
     label: "DB",
+    icon: "DB",
     description: "黙々とダンベルを上げ続ける部隊です。",
     baseCost: 1100,
     costRate: 1.15,
@@ -127,6 +125,7 @@ const upgrades: Upgrade[] = [
     key: "protein",
     name: "プロテイン工房",
     label: "PRO",
+    icon: "P",
     description: "筋肉の材料を大量に作る工房です。",
     baseCost: 12000,
     costRate: 1.15,
@@ -137,6 +136,7 @@ const upgrades: Upgrade[] = [
     key: "chicken",
     name: "高たんぱく食堂",
     label: "MEAL",
+    icon: "肉",
     description: "鶏むね肉を大量提供する食堂です。",
     baseCost: 130000,
     costRate: 1.15,
@@ -147,6 +147,7 @@ const upgrades: Upgrade[] = [
     key: "benchPress",
     name: "ベンチプレス軍団",
     label: "BENCH",
+    icon: "BP",
     description: "胸トレで筋肉ポイントを量産します。",
     baseCost: 1400000,
     costRate: 1.15,
@@ -157,6 +158,7 @@ const upgrades: Upgrade[] = [
     key: "trainer",
     name: "専属トレーナー",
     label: "COACH",
+    icon: "T",
     description: "フォーム改善で筋肉生産を加速します。",
     baseCost: 20000000,
     costRate: 1.15,
@@ -167,6 +169,7 @@ const upgrades: Upgrade[] = [
     key: "gym",
     name: "巨大ジム",
     label: "GYM",
+    icon: "GYM",
     description: "街ごと筋トレ空間に変える巨大施設です。",
     baseCost: 330000000,
     costRate: 1.15,
@@ -297,6 +300,55 @@ const getNextTitleGoal = (totalMuscle: number) => {
   return goals.find((goal) => totalMuscle < goal.value) ?? goals[goals.length - 1];
 };
 
+const getBodyStage = (totalMuscle: number) => {
+  if (totalMuscle >= 1_000_000) {
+    return {
+      label: "完成形マチョ",
+      ring: "border-red-100 bg-[#FF8A23]",
+      image: "w-56 scale-110 saturate-[1.2] contrast-[1.1] sm:w-72",
+      aura: "opacity-90",
+    };
+  }
+  if (totalMuscle >= 250_000) {
+    return {
+      label: "ゴリマッチョ化",
+      ring: "border-orange-100 bg-[#FF9D2E]",
+      image: "w-52 scale-105 saturate-[1.15] sm:w-64",
+      aura: "opacity-75",
+    };
+  }
+  if (totalMuscle >= 50_000) {
+    return {
+      label: "細マッチョ化",
+      ring: "border-white/80 bg-[#FFB45D]",
+      image: "w-48 scale-100 saturate-[1.05] sm:w-64",
+      aura: "opacity-55",
+    };
+  }
+  if (totalMuscle >= 5_000) {
+    return {
+      label: "筋トレ継続中",
+      ring: "border-white/70 bg-[#FFC46F]",
+      image: "w-44 scale-95 saturate-100 sm:w-60",
+      aura: "opacity-40",
+    };
+  }
+  if (totalMuscle >= 500) {
+    return {
+      label: "初心者トレーニー",
+      ring: "border-white/70 bg-[#FFD89A]",
+      image: "w-40 scale-90 saturate-[0.92] sm:w-56",
+      aura: "opacity-25",
+    };
+  }
+  return {
+    label: "ひょろひょろ期",
+    ring: "border-white/60 bg-[#FFE7C2]",
+    image: "w-32 scale-[0.85] saturate-[0.72] opacity-[0.85] sm:w-44",
+    aura: "opacity-10",
+  };
+};
+
 const getNews = (state: GameState, title: string, perSecond: number) => {
   const lines = [
     "ジムの片隅で謎のクリック音が鳴り響いています。",
@@ -379,12 +431,14 @@ export function MachoClickerPage() {
   const ownedUpgradeCount = Object.values(state.upgrades).reduce((total, level) => total + level, 0);
   const unlockedAchievementCount = state.unlockedAchievements.length;
   const news = getNews(state, title, perSecond);
+  const bodyStage = getBodyStage(state.totalMuscle);
   const visualHelpers = useMemo(
     () =>
       upgrades.flatMap((upgrade, upgradeIndex) =>
         Array.from({ length: Math.min(24, state.upgrades[upgrade.key]) }, (_, index) => ({
           id: `${upgrade.key}-${index}`,
           label: upgrade.label,
+          icon: upgrade.icon,
           color: upgrade.accent,
           x: helperPositions[(index + upgradeIndex * 3) % helperPositions.length].x,
           y: helperPositions[(index + upgradeIndex * 3) % helperPositions.length].y,
@@ -615,17 +669,58 @@ export function MachoClickerPage() {
             </div>
           </section>
 
-          <section className="overflow-hidden rounded-[26px] border border-white/35 bg-[#2A140B]/90 px-5 py-3 text-white shadow-2xl">
-            <div className="flex items-center gap-4">
-              <span className="shrink-0 rounded-full bg-[#FF8A23] px-3 py-1 text-xs font-black uppercase tracking-[0.18em]">
+          <section className="relative overflow-hidden rounded-[26px] border border-white/35 bg-[#2A140B]/90 px-5 py-3 text-white shadow-2xl">
+            <span className="absolute left-4 top-1/2 z-10 -translate-y-1/2 rounded-full bg-[#FF8A23] px-3 py-1 text-xs font-black uppercase tracking-[0.18em] shadow-lg">
                 Macho News
-              </span>
+            </span>
+            <div className="ml-32 overflow-hidden">
               <div className="macho-news whitespace-nowrap text-sm font-bold text-orange-100">{news}</div>
             </div>
           </section>
 
+          <section className="rounded-[28px] border border-white/40 bg-white/90 p-4 shadow-2xl backdrop-blur xl:hidden">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-black text-[#7C2D12]">強化メニュー</h2>
+              <div className="text-xs font-bold text-[#C2410C]">横にスクロールして購入</div>
+            </div>
+            <div className="mt-3 flex gap-3 overflow-x-auto pb-2">
+              {upgrades.map((upgrade) => {
+                const level = state.upgrades[upgrade.key];
+                const cost = getUpgradeCost(upgrade, level);
+                const canBuy = state.muscle >= cost;
+
+                return (
+                  <button
+                    key={upgrade.key}
+                    type="button"
+                    onClick={() => buyUpgrade(upgrade)}
+                    disabled={!canBuy}
+                    className={`min-w-[210px] rounded-3xl border p-3 text-left transition ${
+                      canBuy ? "border-[#FF8A23] bg-white shadow-lg active:scale-[0.98]" : "border-[#FCD27B] bg-slate-50 opacity-70"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${upgrade.accent} text-lg font-black text-white shadow-lg`}
+                      >
+                        {upgrade.icon}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate font-black text-[#7C2D12]">{upgrade.name}</span>
+                        <span className="mt-1 block text-xs font-black text-[#C2410C]">Lv.{level}</span>
+                      </span>
+                    </div>
+                    <div className="mt-3 rounded-2xl bg-[#FFF4E7] px-3 py-2 text-xs font-black text-[#9A3412]">
+                      必要: {formatNumber(cost)} 筋肉
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
           <section className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)_360px]">
-            <aside className="order-2 rounded-[32px] border border-white/40 bg-white/90 p-5 shadow-2xl backdrop-blur xl:order-1">
+            <aside className="order-3 rounded-[32px] border border-white/40 bg-white/90 p-5 shadow-2xl backdrop-blur xl:order-1">
               <h2 className="text-xl font-black text-[#7C2D12]">現在の肉体</h2>
               <div className="mt-5 grid gap-3">
                 <div className="rounded-3xl bg-[#FFF4E7] px-4 py-4">
@@ -705,6 +800,9 @@ export function MachoClickerPage() {
                 <div className="absolute left-6 top-6 rounded-full bg-white/80 px-4 py-2 text-sm font-black text-[#7C2D12]">
                   COMBO {combo}
                 </div>
+                <div className="absolute right-6 top-6 rounded-full bg-white/90 px-4 py-2 text-sm font-black text-[#7C2D12] shadow-lg">
+                  {bodyStage.label}
+                </div>
 
                 {floatingGains.map((item) => (
                   <div
@@ -733,14 +831,15 @@ export function MachoClickerPage() {
                 {visualHelpers.map((helper) => (
                   <div
                     key={helper.id}
-                    className={`macho-helper pointer-events-none absolute z-0 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${helper.color} text-[9px] font-black text-white shadow-xl`}
+                    className={`macho-helper pointer-events-none absolute z-20 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-2xl bg-gradient-to-br ${helper.color} text-white shadow-xl ring-2 ring-white/70`}
                     style={{
                       left: `${helper.x}%`,
                       top: `${helper.y}%`,
                       animationDelay: `${helper.delay}s`,
                     }}
                   >
-                    {helper.label}
+                    <span className="text-base leading-none">{helper.icon}</span>
+                    <span className="mt-0.5 text-[8px] font-black leading-none">{helper.label}</span>
                   </div>
                 ))}
 
@@ -760,18 +859,19 @@ export function MachoClickerPage() {
                 <button
                   type="button"
                   onClick={handleClick}
-                  className={`macho-breathe group relative z-10 flex aspect-square w-64 max-w-full items-center justify-center rounded-full border-[12px] border-white/70 bg-[#FF8A23] shadow-[0_45px_100px_-35px_rgba(42,20,11,0.9)] transition hover:scale-[1.03] active:scale-95 sm:w-80 ${
+                  className={`macho-breathe group relative z-30 flex aspect-square w-64 max-w-full items-center justify-center rounded-full border-[12px] shadow-[0_45px_100px_-35px_rgba(42,20,11,0.9)] transition hover:scale-[1.03] active:scale-95 sm:w-80 ${bodyStage.ring} ${
                     clickBurst ? "macho-pop" : ""
                   }`}
                 >
                   <span className="macho-shine absolute inset-0 rounded-full" />
+                  <span className={`absolute inset-[-28px] rounded-full bg-white/40 blur-2xl transition ${bodyStage.aura}`} />
                   <Image
                     src={characterImageSrc}
                     alt="マチョ田をクリック"
                     width={260}
                     height={260}
                     priority
-                    className="relative z-10 h-auto w-48 drop-shadow-2xl transition group-hover:scale-105 sm:w-60"
+                    className={`relative z-10 h-auto drop-shadow-2xl transition duration-300 group-hover:scale-105 ${bodyStage.image}`}
                   />
                 </button>
               </div>
@@ -823,10 +923,19 @@ export function MachoClickerPage() {
                     <div className="grid gap-2 sm:grid-cols-2">
                       {upgrades.map((upgrade) => (
                         <div key={upgrade.key} className="rounded-2xl bg-white px-4 py-3 shadow-inner">
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="font-black text-[#7C2D12]">{upgrade.name}</div>
-                            <div className="rounded-full bg-[#FFE7C2] px-2 py-1 text-xs font-black text-[#C2410C]">
-                              Lv.{state.upgrades[upgrade.key]}
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${upgrade.accent} text-sm font-black text-white`}
+                            >
+                              {upgrade.icon}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="truncate font-black text-[#7C2D12]">{upgrade.name}</div>
+                                <div className="rounded-full bg-[#FFE7C2] px-2 py-1 text-xs font-black text-[#C2410C]">
+                                  Lv.{state.upgrades[upgrade.key]}
+                                </div>
+                              </div>
                             </div>
                           </div>
                           <div className="mt-1 text-xs text-slate-600">
@@ -859,7 +968,7 @@ export function MachoClickerPage() {
               </div>
             </div>
 
-            <aside className="order-3 rounded-[32px] border border-white/40 bg-white/90 p-5 shadow-2xl backdrop-blur">
+            <aside className="order-3 hidden rounded-[32px] border border-white/40 bg-white/90 p-5 shadow-2xl backdrop-blur xl:block">
               <h2 className="text-xl font-black text-[#7C2D12]">強化メニュー</h2>
               <div className="mt-5 flex max-h-[720px] flex-col gap-3 overflow-y-auto pr-1">
                 {upgrades.map((upgrade) => {
@@ -881,9 +990,10 @@ export function MachoClickerPage() {
                     >
                       <div className="flex items-start gap-3">
                         <span
-                          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${upgrade.accent} text-[11px] font-black text-white shadow-lg`}
+                          className={`flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-2xl bg-gradient-to-br ${upgrade.accent} text-white shadow-lg`}
                         >
-                          {upgrade.label}
+                          <span className="text-lg font-black leading-none">{upgrade.icon}</span>
+                          <span className="mt-1 text-[8px] font-black leading-none">{upgrade.label}</span>
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="flex items-start justify-between gap-3">
