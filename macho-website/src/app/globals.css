@@ -294,10 +294,23 @@ main {
   100% {
     opacity: 0.72;
     filter: saturate(1);
+    transform: translate(-50%, -50%) translateY(0);
   }
   50% {
     opacity: 1;
     filter: saturate(1.3);
+    transform: translate(-50%, -50%) translateY(-0.28rem);
+  }
+}
+
+@keyframes macho-cursor {
+  0%,
+  100% {
+    filter: saturate(1);
+  }
+  50% {
+    filter: saturate(1.35);
+    margin-top: -0.25rem;
   }
 }
 
@@ -347,4 +360,8 @@ main {
 
 .macho-helper {
   animation: macho-helper 2.4s ease-in-out infinite;
+}
+
+.macho-cursor {
+  animation: macho-cursor 1.4s ease-in-out infinite;
 }

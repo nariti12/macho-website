@@ -75,12 +75,12 @@ const upgrades: Upgrade[] = [
     key: "pushUp",
     name: "補助カーソル",
     label: "CURSOR",
-    icon: "👆",
+    icon: "➤",
     description: "10秒に1回、代わりにクリックしてくれます。",
     baseCost: 15,
     costRate: 1.15,
     perSecondBonus: 0.1,
-    accent: "from-orange-300 to-orange-500",
+    accent: "from-[#FFE7C2] to-[#F97316]",
   },
   {
     key: "abRoller",
@@ -91,18 +91,18 @@ const upgrades: Upgrade[] = [
     baseCost: 100,
     costRate: 1.15,
     perSecondBonus: 1,
-    accent: "from-amber-300 to-yellow-500",
+    accent: "from-[#FED7AA] to-[#EA580C]",
   },
   {
     key: "dumbbell",
     name: "ダンベル部隊",
     label: "DB",
-    icon: "DB",
+    icon: "D",
     description: "黙々とダンベルを上げ続ける部隊です。",
     baseCost: 1100,
     costRate: 1.15,
     perSecondBonus: 8,
-    accent: "from-stone-300 to-stone-500",
+    accent: "from-[#FDBA74] to-[#C2410C]",
   },
   {
     key: "protein",
@@ -113,7 +113,7 @@ const upgrades: Upgrade[] = [
     baseCost: 12000,
     costRate: 1.15,
     perSecondBonus: 47,
-    accent: "from-sky-300 to-blue-500",
+    accent: "from-[#FFEDD5] to-[#FB923C]",
   },
   {
     key: "chicken",
@@ -124,18 +124,18 @@ const upgrades: Upgrade[] = [
     baseCost: 130000,
     costRate: 1.15,
     perSecondBonus: 260,
-    accent: "from-red-300 to-rose-500",
+    accent: "from-[#FED7AA] to-[#D97706]",
   },
   {
     key: "benchPress",
     name: "ベンチプレス軍団",
     label: "BENCH",
-    icon: "BP",
+    icon: "B",
     description: "胸トレで筋肉ポイントを量産します。",
     baseCost: 1400000,
     costRate: 1.15,
     perSecondBonus: 1400,
-    accent: "from-lime-300 to-green-500",
+    accent: "from-[#FDE68A] to-[#EA580C]",
   },
   {
     key: "trainer",
@@ -146,19 +146,40 @@ const upgrades: Upgrade[] = [
     baseCost: 20000000,
     costRate: 1.15,
     perSecondBonus: 7800,
-    accent: "from-violet-300 to-purple-500",
+    accent: "from-[#FDBA74] to-[#9A3412]",
   },
   {
     key: "gym",
     name: "巨大ジム",
     label: "GYM",
-    icon: "GYM",
+    icon: "G",
     description: "街ごと筋トレ空間に変える巨大施設です。",
     baseCost: 330000000,
     costRate: 1.15,
     perSecondBonus: 44000,
-    accent: "from-orange-400 to-red-600",
+    accent: "from-[#FFB45D] to-[#7C2D12]",
   },
+];
+
+const equipmentPositions = [
+  { x: 8, y: 22 },
+  { x: 19, y: 38 },
+  { x: 33, y: 25 },
+  { x: 47, y: 43 },
+  { x: 62, y: 24 },
+  { x: 76, y: 39 },
+  { x: 88, y: 21 },
+  { x: 12, y: 64 },
+  { x: 28, y: 78 },
+  { x: 44, y: 64 },
+  { x: 60, y: 80 },
+  { x: 78, y: 63 },
+  { x: 91, y: 78 },
+  { x: 22, y: 18 },
+  { x: 70, y: 16 },
+  { x: 38, y: 82 },
+  { x: 55, y: 60 },
+  { x: 84, y: 52 },
 ];
 
 const emptyUpgrades: Record<UpgradeKey, number> = {
@@ -413,6 +434,23 @@ export function MachoClickerPage() {
   const ownedUpgradeCount = Object.values(state.upgrades).reduce((total, level) => total + level, 0);
   const news = getNews(state, title, perSecond);
   const bodyStage = getBodyStage(state.totalMuscle);
+  const cursorCount = Math.min(36, state.upgrades.pushUp);
+  const equipmentTiles = useMemo(
+    () =>
+      upgrades
+        .filter((upgrade) => upgrade.key !== "pushUp")
+        .flatMap((upgrade, upgradeIndex) =>
+          Array.from({ length: Math.min(18, state.upgrades[upgrade.key]) }, (_, index) => ({
+            id: `${upgrade.key}-${index}`,
+            icon: upgrade.icon,
+            color: upgrade.accent,
+            x: equipmentPositions[(index + upgradeIndex * 4) % equipmentPositions.length].x,
+            y: equipmentPositions[(index + upgradeIndex * 4) % equipmentPositions.length].y,
+            delay: ((index + upgradeIndex) % 6) * 0.12,
+          }))
+        ),
+    [state.upgrades]
+  );
 
   useEffect(() => {
     setState(readSavedState());
@@ -605,8 +643,8 @@ export function MachoClickerPage() {
   };
 
   return (
-    <div className="min-h-screen overflow-hidden bg-[#2A140B] text-slate-900">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(255,184,77,0.32),transparent_30%),radial-gradient(circle_at_80%_0%,rgba(255,90,31,0.2),transparent_28%),linear-gradient(180deg,#FCC081_0%,#F79A3E_45%,#2A140B_100%)]" />
+    <div className="min-h-screen overflow-hidden bg-[#FFF3DF] text-slate-900">
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_18%_8%,rgba(255,184,77,0.28),transparent_32%),radial-gradient(circle_at_86%_0%,rgba(251,146,60,0.22),transparent_30%),linear-gradient(180deg,#FFF7EB_0%,#FDBA74_48%,#7C2D12_100%)]" />
       <SiteHeader profileImageSrc={profileImageSrc} />
 
       {achievementToast ? (
@@ -625,13 +663,13 @@ export function MachoClickerPage() {
 
       <main className="relative z-10 px-3 pb-20 pt-20 sm:px-5">
         <div className="mx-auto flex max-w-[1600px] flex-col gap-4">
-          <section className="overflow-hidden rounded-[22px] border border-[#FCD27B]/70 bg-[#2A140B]/95 text-white shadow-2xl">
-            <div className="grid gap-px bg-[#FCD27B]/30 lg:grid-cols-[360px_minmax(0,1fr)_360px]">
-              <div className="bg-[#2A140B] px-5 py-4">
+          <section className="overflow-hidden rounded-[22px] border-4 border-[#7C2D12] bg-[#7C2D12] text-white shadow-2xl">
+            <div className="grid gap-px bg-[#FED7AA] lg:grid-cols-[360px_minmax(0,1fr)_360px]">
+              <div className="bg-[#9A3412] px-5 py-4">
                 <h1 className="text-3xl font-black tracking-tight text-[#FFE7C2]">マチョクリッカー</h1>
                 <div className="mt-1 text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">{bodyStage.label}</div>
               </div>
-              <div className="bg-[#2A140B] px-5 py-4">
+              <div className="bg-[#9A3412] px-5 py-4">
                 <div className="grid grid-cols-3 gap-3 text-center">
                   <div>
                     <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#FFB45D]">Current</div>
@@ -647,14 +685,14 @@ export function MachoClickerPage() {
                   </div>
                 </div>
               </div>
-              <div className="bg-[#2A140B] px-5 py-4">
+              <div className="bg-[#9A3412] px-5 py-4">
                 <div className="text-xs font-black text-[#FFB45D]">次の称号: {nextGoal.title}</div>
                 <div className="mt-2 h-3 overflow-hidden rounded-full bg-white/15">
                   <div className="h-full rounded-full bg-gradient-to-r from-[#FFB45D] to-[#FF5A1F]" style={{ width: `${titleProgress}%` }} />
                 </div>
               </div>
             </div>
-            <div className="relative flex items-center gap-4 overflow-hidden border-t border-[#FCD27B]/30 bg-[#3B1B0D] px-4 py-2">
+            <div className="relative flex items-center gap-4 overflow-hidden border-t border-[#FED7AA] bg-[#7C2D12] px-4 py-2">
               <span className="relative z-10 shrink-0 rounded bg-[#FF8A23] px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] shadow-lg">
                 Macho News
               </span>
@@ -664,12 +702,12 @@ export function MachoClickerPage() {
             </div>
           </section>
 
-          <section className="grid min-h-[740px] overflow-hidden rounded-[28px] border border-[#FCD27B]/70 bg-[#3B1B0D] shadow-2xl xl:grid-cols-[360px_minmax(0,1fr)_390px]">
-            <aside className="relative flex min-h-[560px] flex-col items-center justify-between overflow-hidden border-b border-[#FCD27B]/30 bg-[radial-gradient(circle_at_center,#FFB45D_0%,#9A3412_58%,#2A140B_100%)] p-5 text-center xl:border-b-0 xl:border-r">
-              <div className="relative z-10 w-full rounded-3xl bg-[#2A140B]/70 px-4 py-4 text-white shadow-xl backdrop-blur">
+          <section className="grid min-h-[740px] overflow-hidden rounded-[28px] border-4 border-[#7C2D12] bg-[#7C2D12] shadow-2xl xl:grid-cols-[360px_minmax(0,1fr)_390px]">
+            <aside className="relative flex min-h-[560px] flex-col items-center justify-between overflow-hidden border-b-4 border-[#7C2D12] bg-[radial-gradient(circle_at_center,#FFF0D5_0%,#FDBA74_54%,#B45309_100%)] p-5 text-center xl:border-b-0 xl:border-r-4">
+              <div className="relative z-10 w-full rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB]/95 px-4 py-4 text-[#7C2D12] shadow-xl">
                 <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Muscle Points</div>
                 <div className="mt-1 text-5xl font-black">{formatNumber(state.muscle)}</div>
-                <div className="mt-2 text-sm font-bold text-orange-100">クリック: +{formatNumber(clickPower)} / COMBO {combo}</div>
+                <div className="mt-2 text-sm font-bold text-[#9A3412]">クリック: +{formatNumber(clickPower)} / COMBO {combo}</div>
               </div>
 
               {floatingGains.map((item) => (
@@ -716,6 +754,21 @@ export function MachoClickerPage() {
                   clickBurst ? "macho-pop" : ""
                 }`}
               >
+                {Array.from({ length: cursorCount }, (_, index) => {
+                  const angle = (360 / Math.max(1, cursorCount)) * index - 90;
+                  return (
+                    <span
+                      key={`cursor-${index}`}
+                      className="macho-cursor pointer-events-none absolute left-1/2 top-1/2 z-30 flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-[#FF8A23] text-lg font-black text-white shadow-lg"
+                      style={{
+                        transform: `rotate(${angle}deg) translate(168px) rotate(${-angle}deg)`,
+                        animationDelay: `${(index % 8) * 0.08}s`,
+                      }}
+                    >
+                      ➤
+                    </span>
+                  );
+                })}
                 <span className="macho-shine absolute inset-0 rounded-full" />
                 <span className={`absolute inset-[-32px] rounded-full bg-white/40 blur-2xl transition ${bodyStage.aura}`} />
                 <Image
@@ -729,68 +782,61 @@ export function MachoClickerPage() {
               </button>
 
               <div className="relative z-10 grid w-full grid-cols-2 gap-3 text-left">
-                <div className="rounded-3xl bg-white/90 px-4 py-3 text-[#7C2D12] shadow-lg">
+                <div className="rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB]/95 px-4 py-3 text-[#7C2D12] shadow-lg">
                   <div className="text-xs font-black text-[#C2410C]">称号</div>
                   <div className="mt-1 text-xl font-black">{title}</div>
                 </div>
-                <div className="rounded-3xl bg-white/90 px-4 py-3 text-[#7C2D12] shadow-lg">
+                <div className="rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB]/95 px-4 py-3 text-[#7C2D12] shadow-lg">
                   <div className="text-xs font-black text-[#C2410C]">クリック数</div>
                   <div className="mt-1 text-xl font-black">{formatNumber(state.clickCount)}</div>
                 </div>
               </div>
             </aside>
 
-            <section className="relative min-h-[560px] overflow-hidden border-b border-[#FCD27B]/30 bg-[linear-gradient(180deg,#6B2B12_0%,#2A140B_100%)] xl:border-b-0 xl:border-r">
-              <div className="absolute inset-x-0 top-0 z-10 bg-[#2A140B]/80 px-5 py-3 text-white backdrop-blur">
+            <section className="relative min-h-[560px] overflow-hidden border-b-4 border-[#7C2D12] bg-[linear-gradient(180deg,#FFF0D5_0%,#FDBA74_48%,#C2410C_100%)] xl:border-b-0 xl:border-r-4">
+              <div className="absolute inset-x-0 top-0 z-10 border-b-4 border-[#7C2D12] bg-[#FFF7EB]/95 px-5 py-3 text-[#7C2D12] shadow-lg">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Machoda Gym</div>
-                    <div className="text-xl font-black">購入した強化がジムに増えていきます</div>
+                    <div className="text-xs font-black uppercase tracking-[0.18em] text-[#C2410C]">Machoda Gym</div>
+                    <div className="text-xl font-black">ジム設備</div>
                   </div>
-                  <div className="rounded-full bg-[#FF8A23] px-4 py-2 text-sm font-black">強化合計 {ownedUpgradeCount}</div>
+                  <div className="rounded-full bg-[#FF8A23] px-4 py-2 text-sm font-black text-white">強化合計 {ownedUpgradeCount}</div>
                 </div>
               </div>
 
-              <div className="absolute inset-x-0 bottom-0 h-40 bg-[linear-gradient(180deg,transparent_0%,rgba(42,20,11,0.92)_78%)]" />
-              <div className="absolute bottom-0 left-0 right-0 grid h-[78%] grid-rows-4 gap-2 p-4 pt-24">
-                {upgrades.map((upgrade) => {
-                  const level = state.upgrades[upgrade.key];
-                  return (
-                    <div key={upgrade.key} className="relative overflow-hidden rounded-3xl border border-[#FCD27B]/25 bg-black/15">
-                      <div className="absolute left-3 top-3 z-10 rounded-full bg-[#2A140B]/80 px-3 py-1 text-xs font-black text-[#FFE7C2]">
-                        {upgrade.name} Lv.{level}
-                      </div>
-                      <div className="absolute inset-0 flex items-center gap-3 overflow-hidden px-4 pt-8">
-                        {Array.from({ length: Math.min(18, level) }, (_, index) => (
-                          <div
-                            key={`${upgrade.key}-lane-${index}`}
-                            className={`macho-helper flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-2xl bg-gradient-to-br ${upgrade.accent} text-white shadow-xl ring-2 ring-white/60`}
-                            style={{ animationDelay: `${(index % 6) * 0.12}s` }}
-                          >
-                            <span className="text-base font-black leading-none">{upgrade.icon}</span>
-                            <span className="mt-0.5 text-[8px] font-black leading-none">{upgrade.label}</span>
-                          </div>
-                        ))}
-                        {level === 0 ? (
-                          <div className="text-sm font-bold text-orange-100/60">まだ未購入</div>
-                        ) : level > 18 ? (
-                          <div className="rounded-full bg-white/90 px-3 py-1 text-xs font-black text-[#7C2D12]">+{level - 18}</div>
-                        ) : null}
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="absolute inset-x-0 bottom-0 h-40 bg-[linear-gradient(180deg,transparent_0%,rgba(124,45,18,0.7)_90%)]" />
+              <div className="absolute inset-x-4 bottom-5 top-24 overflow-hidden rounded-[28px] border-4 border-[#7C2D12] bg-[linear-gradient(180deg,rgba(255,247,235,0.92)_0%,rgba(255,237,213,0.76)_62%,rgba(154,52,18,0.72)_100%)] shadow-inner">
+                <div className="absolute inset-x-0 top-1/3 border-t-4 border-[#B45309]/45" />
+                <div className="absolute inset-x-0 top-2/3 border-t-4 border-[#B45309]/45" />
+                {equipmentTiles.length === 0 ? (
+                  <div className="absolute inset-0 flex items-center justify-center px-8 text-center text-lg font-black text-[#9A3412]/55">
+                    ショップで強化を買うと、ここに設備が増えます
+                  </div>
+                ) : null}
+                {equipmentTiles.map((tile) => (
+                  <div
+                    key={tile.id}
+                    className={`macho-helper absolute flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl border-2 border-white bg-gradient-to-br ${tile.color} text-2xl font-black text-white shadow-xl`}
+                    style={{
+                      left: `${tile.x}%`,
+                      top: `${tile.y}%`,
+                      animationDelay: `${tile.delay}s`,
+                    }}
+                  >
+                    {tile.icon}
+                  </div>
+                ))}
               </div>
             </section>
 
-            <aside className="bg-[#2A140B] text-white">
+            <aside className="bg-[#FFF7EB] text-[#7C2D12]">
               <div className="sticky top-20 max-h-[calc(100vh-5rem)] overflow-y-auto p-4">
                 <div className="mb-4 flex items-center justify-between gap-3">
-                  <h2 className="text-2xl font-black text-[#FFE7C2]">ショップ</h2>
+                  <h2 className="text-2xl font-black text-[#7C2D12]">ショップ</h2>
                   <button
                     type="button"
                     onClick={resetGame}
-                    className="rounded-full border border-[#FCD27B]/60 px-3 py-1 text-xs font-bold text-[#FFE7C2] transition hover:bg-white/10"
+                    className="rounded-full border-2 border-[#FDBA74] px-3 py-1 text-xs font-bold text-[#9A3412] transition hover:bg-[#FFE7C2]"
                   >
                     リセット
                   </button>
@@ -809,23 +855,21 @@ export function MachoClickerPage() {
                         disabled={!canBuy}
                         className={`group rounded-2xl border p-3 text-left transition ${
                           canBuy
-                            ? "border-[#FF8A23] bg-[#FFF4E7] text-[#2A140B] hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(255,138,35,0.25)]"
-                            : "border-[#FCD27B]/25 bg-white/10 text-white/55"
+                            ? "border-[#C2410C] bg-white text-[#7C2D12] hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(255,138,35,0.25)]"
+                            : "border-[#FED7AA] bg-[#FFF4E7] text-[#9A3412]/45"
                         }`}
                       >
                         <div className="flex items-start gap-3">
                           <span
-                            className={`flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl bg-gradient-to-br ${upgrade.accent} text-white shadow-lg`}
+                            className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border-2 border-white bg-gradient-to-br ${upgrade.accent} text-white shadow-lg`}
                           >
-                            <span className="text-xl font-black leading-none">{upgrade.icon}</span>
-                            <span className="mt-1 text-[8px] font-black leading-none">{upgrade.label}</span>
+                            <span className="text-2xl font-black leading-none">{upgrade.icon}</span>
                           </span>
                           <span className="min-w-0 flex-1">
                             <span className="flex items-start justify-between gap-2">
                               <span className="font-black">{upgrade.name}</span>
                               <span className="rounded-full bg-[#7C2D12] px-2 py-1 text-xs font-black text-white">Lv.{level}</span>
                             </span>
-                            <span className="mt-1 block text-xs leading-5 opacity-80">{upgrade.description}</span>
                             <span className="mt-3 block rounded-xl bg-[#7C2D12] px-3 py-2 text-sm font-black text-white">
                               必要: {formatNumber(cost)} 筋肉
                             </span>
