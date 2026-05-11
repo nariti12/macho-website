@@ -1,10 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { SiteHeader } from "@/components/site-header";
 
 const profileImageSrc = "/picture/ore.png";
+const characterImageSrc = "/picture/man.png";
 const STORAGE_KEY = "machoda:macho-clicker:v3";
 const SAVE_INTERVAL_MS = 1000;
 const OFFLINE_LIMIT_SECONDS = 60 * 60 * 8;
@@ -17,6 +19,7 @@ type Upgrade = {
   name: string;
   label: string;
   icon: string;
+  spriteSrc: string;
   description: string;
   baseCost: number;
   costRate: number;
@@ -74,6 +77,7 @@ const upgrades: Upgrade[] = [
     name: "補助カーソル",
     label: "CURSOR",
     icon: "➤",
+    spriteSrc: "/game/macho-clicker/cursor.png",
     description: "10秒に1回、代わりにクリックしてくれます。",
     baseCost: 15,
     costRate: 1.15,
@@ -85,6 +89,7 @@ const upgrades: Upgrade[] = [
     name: "腹筋ローラー職人",
     label: "ABS",
     icon: "◎",
+    spriteSrc: "/game/macho-clicker/ab-roller.png",
     description: "腹筋ローラーを転がし続ける職人です。",
     baseCost: 100,
     costRate: 1.15,
@@ -96,6 +101,7 @@ const upgrades: Upgrade[] = [
     name: "ダンベル部隊",
     label: "DB",
     icon: "D",
+    spriteSrc: "/game/macho-clicker/dumbbell.png",
     description: "黙々とダンベルを上げ続ける部隊です。",
     baseCost: 1100,
     costRate: 1.15,
@@ -107,6 +113,7 @@ const upgrades: Upgrade[] = [
     name: "プロテイン工房",
     label: "PRO",
     icon: "P",
+    spriteSrc: "/game/macho-clicker/protein.png",
     description: "筋肉の材料を大量に作る工房です。",
     baseCost: 12000,
     costRate: 1.15,
@@ -118,6 +125,7 @@ const upgrades: Upgrade[] = [
     name: "高たんぱく食堂",
     label: "MEAL",
     icon: "肉",
+    spriteSrc: "/game/macho-clicker/meal.png",
     description: "鶏むね肉を大量提供する食堂です。",
     baseCost: 130000,
     costRate: 1.15,
@@ -129,6 +137,7 @@ const upgrades: Upgrade[] = [
     name: "ベンチプレス軍団",
     label: "BENCH",
     icon: "B",
+    spriteSrc: "/game/macho-clicker/bench.png",
     description: "胸トレで筋肉ポイントを量産します。",
     baseCost: 1400000,
     costRate: 1.15,
@@ -140,6 +149,7 @@ const upgrades: Upgrade[] = [
     name: "専属トレーナー",
     label: "COACH",
     icon: "T",
+    spriteSrc: "/game/macho-clicker/trainer.png",
     description: "フォーム改善で筋肉生産を加速します。",
     baseCost: 20000000,
     costRate: 1.15,
@@ -151,6 +161,7 @@ const upgrades: Upgrade[] = [
     name: "巨大ジム",
     label: "GYM",
     icon: "G",
+    spriteSrc: "/game/macho-clicker/gym.png",
     description: "街ごと筋トレ空間に変える巨大施設です。",
     baseCost: 330000000,
     costRate: 1.15,
@@ -441,6 +452,7 @@ export function MachoClickerPage() {
           Array.from({ length: Math.min(18, state.upgrades[upgrade.key]) }, (_, index) => ({
             id: `${upgrade.key}-${index}`,
             icon: upgrade.icon,
+            spriteSrc: upgrade.spriteSrc,
             color: upgrade.accent,
             x: equipmentPositions[(index + upgradeIndex * 4) % equipmentPositions.length].x,
             y: equipmentPositions[(index + upgradeIndex * 4) % equipmentPositions.length].y,
@@ -757,24 +769,27 @@ export function MachoClickerPage() {
                   return (
                     <span
                       key={`cursor-${index}`}
-                      className="macho-cursor pointer-events-none absolute left-1/2 top-1/2 z-30 flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-[#FF8A23] text-lg font-black text-white shadow-lg"
+                      className="macho-cursor pointer-events-none absolute left-1/2 top-1/2 z-30 flex h-12 w-12 items-center justify-center"
                       style={{
                         transform: `rotate(${angle}deg) translate(168px) rotate(${-angle}deg)`,
                         animationDelay: `${(index % 8) * 0.08}s`,
                       }}
                     >
-                      ➤
+                      <Image src="/game/macho-clicker/cursor.png" alt="" width={48} height={48} className="h-12 w-12 object-contain" />
                     </span>
                   );
                 })}
                 <span className="macho-shine absolute inset-0 rounded-full" />
                 <span className={`absolute inset-[-32px] rounded-full bg-white/40 blur-2xl transition ${bodyStage.aura}`} />
-                <span
-                  className="relative z-10 block transition duration-300 group-hover:scale-105"
+                <Image
+                  src={characterImageSrc}
+                  alt="マチョ田をクリック"
+                  width={260}
+                  height={260}
+                  priority
+                  className="relative z-10 h-auto w-48 drop-shadow-2xl transition duration-300 group-hover:scale-105 sm:w-60"
                   style={{ transform: `scale(${bodyStage.scale})` }}
-                >
-                  <span aria-label="マチョ田をクリック" className="pixel-machoda" />
-                </span>
+                />
               </button>
 
               <div className="relative z-10 grid w-full grid-cols-2 gap-3 text-left">
@@ -812,14 +827,14 @@ export function MachoClickerPage() {
                 {equipmentTiles.map((tile) => (
                   <div
                     key={tile.id}
-                    className={`macho-helper absolute flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl border-2 border-white bg-gradient-to-br ${tile.color} text-2xl font-black text-white shadow-xl`}
+                    className="macho-helper absolute flex h-20 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center"
                     style={{
                       left: `${tile.x}%`,
                       top: `${tile.y}%`,
                       animationDelay: `${tile.delay}s`,
                     }}
                   >
-                    {tile.icon}
+                    <Image src={tile.spriteSrc} alt="" width={80} height={80} className="h-20 w-20 object-contain drop-shadow-xl" />
                   </div>
                 ))}
               </div>
@@ -857,9 +872,9 @@ export function MachoClickerPage() {
                       >
                         <div className="flex items-start gap-3">
                           <span
-                            className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border-2 border-white bg-gradient-to-br ${upgrade.accent} text-white shadow-lg`}
+                            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border-2 border-[#FED7AA] bg-[#FFF4E7] shadow-inner"
                           >
-                            <span className="text-2xl font-black leading-none">{upgrade.icon}</span>
+                            <Image src={upgrade.spriteSrc} alt="" width={58} height={58} className="h-14 w-14 object-contain" />
                           </span>
                           <span className="min-w-0 flex-1">
                             <span className="flex items-start justify-between gap-2">

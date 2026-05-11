@@ -314,15 +314,6 @@ main {
   }
 }
 
-@keyframes pixel-idle {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-0.25rem);
-  }
-}
 
 .macho-float {
   animation: macho-float 0.95s ease-out forwards;
@@ -374,67 +365,4 @@ main {
 
 .macho-cursor {
   animation: macho-cursor 1.4s ease-in-out infinite;
-}
-
-.pixel-machoda {
-  width: 10rem;
-  height: 12rem;
-  image-rendering: pixelated;
-  filter: drop-shadow(0 1.25rem 0.75rem rgba(42, 20, 11, 0.38));
-  animation: pixel-idle 1.6s steps(2, end) infinite;
-}
-
-.pixel-machoda,
-.pixel-machoda::before,
-.pixel-machoda::after {
-  display: block;
-  position: relative;
-}
-
-.pixel-machoda::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 0;
-  width: 2.5rem;
-  height: 2.5rem;
-  transform: translateX(-50%);
-  background: #f1a66a;
-  box-shadow:
-    -0.5rem 0 #7c2d12,
-    0.5rem 0 #7c2d12,
-    -1rem 0.5rem #7c2d12,
-    1rem 0.5rem #7c2d12,
-    -0.5rem 1rem #f1a66a,
-    0.5rem 1rem #f1a66a,
-    -0.5rem 1.5rem #2a140b,
-    0.5rem 1.5rem #2a140b;
-}
-
-.pixel-machoda::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 3rem;
-  width: 4rem;
-  height: 4.5rem;
-  transform: translateX(-50%);
-  background: #f97316;
-  box-shadow:
-    -1rem 0 #f97316,
-    1rem 0 #f97316,
-    -2rem 0.5rem #f1a66a,
-    2rem 0.5rem #f1a66a,
-    -2.5rem 1rem #f1a66a,
-    2.5rem 1rem #f1a66a,
-    -3rem 1.5rem #7c2d12,
-    3rem 1.5rem #7c2d12,
-    -1.5rem 4rem #2a140b,
-    1.5rem 4rem #2a140b,
-    -1.5rem 5rem #2a140b,
-    1.5rem 5rem #2a140b,
-    -1.5rem 6rem #f97316,
-    1.5rem 6rem #f97316,
-    -1.5rem 7rem #7c2d12,
-    1.5rem 7rem #7c2d12;
 }
