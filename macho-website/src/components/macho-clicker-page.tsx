@@ -1,12 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { SiteHeader } from "@/components/site-header";
 
 const profileImageSrc = "/picture/ore.png";
-const characterImageSrc = "/picture/man.png";
 const STORAGE_KEY = "machoda:macho-clicker:v3";
 const SAVE_INTERVAL_MS = 1000;
 const OFFLINE_LIMIT_SECONDS = 60 * 60 * 8;
@@ -309,7 +307,7 @@ const getBodyStage = (totalMuscle: number) => {
     return {
       label: "完成形マチョ",
       ring: "border-red-100 bg-[#FF8A23]",
-      image: "w-56 scale-110 saturate-[1.2] contrast-[1.1] sm:w-72",
+      scale: 1.18,
       aura: "opacity-90",
     };
   }
@@ -317,7 +315,7 @@ const getBodyStage = (totalMuscle: number) => {
     return {
       label: "ゴリマッチョ化",
       ring: "border-orange-100 bg-[#FF9D2E]",
-      image: "w-52 scale-105 saturate-[1.15] sm:w-64",
+      scale: 1.1,
       aura: "opacity-75",
     };
   }
@@ -325,7 +323,7 @@ const getBodyStage = (totalMuscle: number) => {
     return {
       label: "細マッチョ化",
       ring: "border-white/80 bg-[#FFB45D]",
-      image: "w-48 scale-100 saturate-[1.05] sm:w-64",
+      scale: 1,
       aura: "opacity-55",
     };
   }
@@ -333,7 +331,7 @@ const getBodyStage = (totalMuscle: number) => {
     return {
       label: "筋トレ継続中",
       ring: "border-white/70 bg-[#FFC46F]",
-      image: "w-44 scale-95 saturate-100 sm:w-60",
+      scale: 0.95,
       aura: "opacity-40",
     };
   }
@@ -341,14 +339,14 @@ const getBodyStage = (totalMuscle: number) => {
     return {
       label: "初心者トレーニー",
       ring: "border-white/70 bg-[#FFD89A]",
-      image: "w-40 scale-90 saturate-[0.92] sm:w-56",
+      scale: 0.9,
       aura: "opacity-25",
     };
   }
   return {
     label: "ひょろひょろ期",
     ring: "border-white/60 bg-[#FFE7C2]",
-    image: "w-32 scale-[0.85] saturate-[0.72] opacity-[0.85] sm:w-44",
+    scale: 0.75,
     aura: "opacity-10",
   };
 };
@@ -771,14 +769,12 @@ export function MachoClickerPage() {
                 })}
                 <span className="macho-shine absolute inset-0 rounded-full" />
                 <span className={`absolute inset-[-32px] rounded-full bg-white/40 blur-2xl transition ${bodyStage.aura}`} />
-                <Image
-                  src={characterImageSrc}
-                  alt="マチョ田をクリック"
-                  width={260}
-                  height={260}
-                  priority
-                  className={`relative z-10 h-auto drop-shadow-2xl transition duration-300 group-hover:scale-105 ${bodyStage.image}`}
-                />
+                <span
+                  className="relative z-10 block transition duration-300 group-hover:scale-105"
+                  style={{ transform: `scale(${bodyStage.scale})` }}
+                >
+                  <span aria-label="マチョ田をクリック" className="pixel-machoda" />
+                </span>
               </button>
 
               <div className="relative z-10 grid w-full grid-cols-2 gap-3 text-left">
