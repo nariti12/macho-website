@@ -77,7 +77,7 @@ const upgrades: Upgrade[] = [
     name: "補助カーソル",
     label: "CURSOR",
     icon: "➤",
-    spriteSrc: "/game/macho-clicker/cursor.png",
+    spriteSrc: "/game/macho-clicker/dumbbell.png",
     description: "10秒に1回、代わりにクリックしてくれます。",
     baseCost: 15,
     costRate: 1.15,
@@ -775,7 +775,7 @@ export function MachoClickerPage() {
                         animationDelay: `${(index % 8) * 0.08}s`,
                       }}
                     >
-                      <Image src="/game/macho-clicker/cursor.png" alt="" width={48} height={48} className="h-12 w-12 object-contain" />
+                      <Image src="/game/macho-clicker/dumbbell.png" alt="" width={48} height={48} className="h-12 w-12 object-contain" />
                     </span>
                   );
                 })}
