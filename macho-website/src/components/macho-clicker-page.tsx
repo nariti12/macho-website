@@ -7,7 +7,7 @@ import { SiteHeader } from "@/components/site-header";
 
 const profileImageSrc = "/picture/ore.png";
 const characterImageSrc = "/picture/man.png";
-const STORAGE_KEY = "machoda:macho-clicker:v2";
+const STORAGE_KEY = "machoda:macho-clicker:v3";
 const SAVE_INTERVAL_MS = 1000;
 const OFFLINE_LIMIT_SECONDS = 60 * 60 * 8;
 const MAX_SCORE = 999_999_999_999_999;
@@ -21,7 +21,6 @@ type Upgrade = {
   description: string;
   baseCost: number;
   costRate: number;
-  clickBonus?: number;
   perSecondBonus?: number;
   accent: string;
 };
@@ -29,6 +28,7 @@ type Upgrade = {
 type GameState = {
   muscle: number;
   totalMuscle: number;
+  clickCount: number;
   upgrades: Record<UpgradeKey, number>;
   lastSavedAt: number;
   unlockedAchievements: string[];
@@ -74,86 +74,82 @@ type GoldenProtein = {
 const upgrades: Upgrade[] = [
   {
     key: "pushUp",
-    name: "腕立て伏せ",
-    label: "PUSH",
-    description: "クリック1回の筋肉ポイントが増えます。",
-    baseCost: 20,
-    costRate: 1.17,
-    clickBonus: 1,
+    name: "補助カーソル",
+    label: "CURSOR",
+    description: "10秒に1回、代わりにクリックしてくれます。",
+    baseCost: 15,
+    costRate: 1.15,
+    perSecondBonus: 0.1,
     accent: "from-orange-300 to-orange-500",
   },
   {
     key: "abRoller",
-    name: "腹筋ローラー",
+    name: "腹筋ローラー職人",
     label: "ABS",
-    description: "マチョ田の魂。クリック力が大きく伸びます。",
-    baseCost: 90,
-    costRate: 1.2,
-    clickBonus: 4,
+    description: "腹筋ローラーを転がし続ける職人です。",
+    baseCost: 100,
+    costRate: 1.15,
+    perSecondBonus: 1,
     accent: "from-amber-300 to-yellow-500",
   },
   {
     key: "dumbbell",
-    name: "ダンベル購入",
+    name: "ダンベル部隊",
     label: "DB",
-    description: "クリック力と自動筋トレが少し伸びます。",
-    baseCost: 220,
-    costRate: 1.22,
-    clickBonus: 8,
-    perSecondBonus: 1,
+    description: "黙々とダンベルを上げ続ける部隊です。",
+    baseCost: 1100,
+    costRate: 1.15,
+    perSecondBonus: 8,
     accent: "from-stone-300 to-stone-500",
   },
   {
     key: "protein",
-    name: "プロテイン補給",
+    name: "プロテイン工房",
     label: "PRO",
-    description: "放置中も筋肉ポイントを稼ぎます。",
-    baseCost: 520,
-    costRate: 1.24,
-    perSecondBonus: 6,
+    description: "筋肉の材料を大量に作る工房です。",
+    baseCost: 12000,
+    costRate: 1.15,
+    perSecondBonus: 47,
     accent: "from-sky-300 to-blue-500",
   },
   {
     key: "chicken",
-    name: "高たんぱく飯",
+    name: "高たんぱく食堂",
     label: "MEAL",
-    description: "筋肉の材料を増やして自動獲得を底上げします。",
-    baseCost: 1200,
-    costRate: 1.25,
-    perSecondBonus: 16,
+    description: "鶏むね肉を大量提供する食堂です。",
+    baseCost: 130000,
+    costRate: 1.15,
+    perSecondBonus: 260,
     accent: "from-red-300 to-rose-500",
   },
   {
     key: "benchPress",
-    name: "ベンチプレス",
+    name: "ベンチプレス軍団",
     label: "BENCH",
-    description: "胸トレの王道。クリック力が一気に伸びます。",
-    baseCost: 3500,
-    costRate: 1.27,
-    clickBonus: 55,
-    perSecondBonus: 22,
+    description: "胸トレで筋肉ポイントを量産します。",
+    baseCost: 1400000,
+    costRate: 1.15,
+    perSecondBonus: 1400,
     accent: "from-lime-300 to-green-500",
   },
   {
     key: "trainer",
     name: "専属トレーナー",
     label: "COACH",
-    description: "フォーム改善で全体効率が上がります。",
-    baseCost: 12000,
-    costRate: 1.29,
-    clickBonus: 180,
-    perSecondBonus: 90,
+    description: "フォーム改善で筋肉生産を加速します。",
+    baseCost: 20000000,
+    costRate: 1.15,
+    perSecondBonus: 7800,
     accent: "from-violet-300 to-purple-500",
   },
   {
     key: "gym",
-    name: "ジム買収",
+    name: "巨大ジム",
     label: "GYM",
-    description: "本格的に自動筋トレが加速します。",
-    baseCost: 45000,
-    costRate: 1.31,
-    clickBonus: 650,
-    perSecondBonus: 550,
+    description: "街ごと筋トレ空間に変える巨大施設です。",
+    baseCost: 330000000,
+    costRate: 1.15,
+    perSecondBonus: 44000,
     accent: "from-orange-400 to-red-600",
   },
 ];
@@ -215,8 +211,8 @@ const achievements: Achievement[] = [
   {
     key: "click-master",
     title: "クリック職人",
-    description: "クリック力が100を超えた",
-    isUnlocked: (state) => getClickPower(state) >= 100,
+    description: "クリック回数が1,000回を超えた",
+    isUnlocked: (state) => state.clickCount >= 1000,
   },
   {
     key: "factory",
@@ -235,12 +231,13 @@ const achievements: Achievement[] = [
 const initialState: GameState = {
   muscle: 0,
   totalMuscle: 0,
+  clickCount: 0,
   upgrades: emptyUpgrades,
   lastSavedAt: Date.now(),
   unlockedAchievements: [],
 };
 
-const clampScore = (value: number) => Math.min(MAX_SCORE, Math.max(0, Math.floor(value)));
+const clampScore = (value: number) => Math.min(MAX_SCORE, Math.max(0, value));
 
 const formatNumber = (value: number) => {
   const rounded = Math.floor(value);
@@ -250,11 +247,9 @@ const formatNumber = (value: number) => {
   return rounded.toLocaleString("ja-JP");
 };
 
-const getUpgradeCost = (upgrade: Upgrade, level: number) => Math.floor(upgrade.baseCost * upgrade.costRate ** level);
+const getUpgradeCost = (upgrade: Upgrade, level: number) => Math.ceil(upgrade.baseCost * upgrade.costRate ** level);
 
-const getClickPower = (state: GameState) =>
-  1 +
-  upgrades.reduce((total, upgrade) => total + (upgrade.clickBonus ?? 0) * state.upgrades[upgrade.key], 0);
+const getClickPower = () => 1;
 
 const getPerSecond = (state: GameState) =>
   upgrades.reduce((total, upgrade) => total + (upgrade.perSecondBonus ?? 0) * state.upgrades[upgrade.key], 0);
@@ -309,13 +304,14 @@ const readSavedState = (): GameState => {
   if (typeof window === "undefined") return initialState;
 
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY) ?? window.localStorage.getItem("machoda:macho-clicker:v1");
+    const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return { ...initialState, lastSavedAt: Date.now() };
 
     const saved = JSON.parse(raw) as Partial<GameState>;
     const normalized: GameState = {
       muscle: typeof saved.muscle === "number" ? clampScore(saved.muscle) : 0,
       totalMuscle: typeof saved.totalMuscle === "number" ? clampScore(saved.totalMuscle) : 0,
+      clickCount: typeof saved.clickCount === "number" ? Math.max(0, Math.floor(saved.clickCount)) : 0,
       upgrades: normalizeSavedUpgrades(saved.upgrades),
       lastSavedAt: typeof saved.lastSavedAt === "number" ? saved.lastSavedAt : Date.now(),
       unlockedAchievements: Array.isArray(saved.unlockedAchievements) ? saved.unlockedAchievements : [],
@@ -354,7 +350,7 @@ export function MachoClickerPage() {
   const [activePanel, setActivePanel] = useState<PanelTab>("stats");
   const [goldenProtein, setGoldenProtein] = useState<GoldenProtein | null>(null);
   const effectIdRef = useRef(0);
-  const clickPower = useMemo(() => getClickPower(state), [state]);
+  const clickPower = useMemo(() => getClickPower(), []);
   const perSecond = useMemo(() => getPerSecond(state), [state]);
   const title = getTitle(state.totalMuscle);
   const nextGoal = getNextTitleGoal(state.totalMuscle);
@@ -362,6 +358,19 @@ export function MachoClickerPage() {
   const ownedUpgradeCount = Object.values(state.upgrades).reduce((total, level) => total + level, 0);
   const unlockedAchievementCount = state.unlockedAchievements.length;
   const news = getNews(state, title, perSecond);
+  const visualHelpers = useMemo(
+    () =>
+      upgrades.flatMap((upgrade, upgradeIndex) =>
+        Array.from({ length: Math.min(24, state.upgrades[upgrade.key]) }, (_, index) => ({
+          id: `${upgrade.key}-${index}`,
+          label: upgrade.label,
+          color: upgrade.accent,
+          angle: ((index * 31 + upgradeIndex * 47) % 360) - 90,
+          radius: 108 + upgradeIndex * 8 + (index % 3) * 18,
+        }))
+      ),
+    [state.upgrades]
+  );
 
   useEffect(() => {
     setState(readSavedState());
@@ -413,8 +422,8 @@ export function MachoClickerPage() {
       window.setTimeout(() => setGoldenProtein(null), 8500);
     };
 
-    const initialTimer = window.setTimeout(spawn, 8000);
-    const interval = window.setInterval(spawn, 26000);
+    const initialTimer = window.setTimeout(spawn, 45000);
+    const interval = window.setInterval(spawn, 90000);
 
     return () => {
       window.clearTimeout(initialTimer);
@@ -466,8 +475,7 @@ export function MachoClickerPage() {
   const handleClick = () => {
     const now = Date.now();
     const nextCombo = now - lastClickAt < 800 ? Math.min(99, combo + 1) : 1;
-    const comboBonus = nextCombo >= 10 ? Math.floor(clickPower * 0.1) : 0;
-    const gain = clickPower + comboBonus;
+    const gain = clickPower;
 
     setCombo(nextCombo);
     setLastClickAt(now);
@@ -479,6 +487,7 @@ export function MachoClickerPage() {
       ...current,
       muscle: clampScore(current.muscle + gain),
       totalMuscle: clampScore(current.totalMuscle + gain),
+      clickCount: current.clickCount + 1,
       lastSavedAt: Date.now(),
     }));
   };
@@ -506,7 +515,7 @@ export function MachoClickerPage() {
 
   const collectGoldenProtein = () => {
     if (!goldenProtein) return;
-    const bonus = Math.max(777, Math.floor(clickPower * 77 + perSecond * 20));
+    const bonus = Math.max(15, Math.floor(clickPower * 10 + perSecond * 60));
     spawnClickEffects(bonus);
     setState((current) => ({
       ...current,
@@ -609,13 +618,17 @@ export function MachoClickerPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="rounded-3xl bg-white px-4 py-3 shadow-inner">
-                    <div className="text-xs font-bold text-[#C2410C]">クリック</div>
+                    <div className="text-xs font-bold text-[#C2410C]">1クリック</div>
                     <div className="mt-1 text-xl font-black text-[#7C2D12]">+{formatNumber(clickPower)}</div>
                   </div>
                   <div className="rounded-3xl bg-white px-4 py-3 shadow-inner">
                     <div className="text-xs font-bold text-[#C2410C]">毎秒</div>
                     <div className="mt-1 text-xl font-black text-[#7C2D12]">+{formatNumber(perSecond)}</div>
                   </div>
+                </div>
+                <div className="rounded-3xl bg-white px-4 py-3 shadow-inner">
+                  <div className="text-xs font-bold text-[#C2410C]">クリック回数</div>
+                  <div className="mt-1 text-2xl font-black text-[#7C2D12]">{formatNumber(state.clickCount)}</div>
                 </div>
                 <div className="rounded-3xl bg-[#7C2D12] px-4 py-4 text-white">
                   <div className="text-xs font-bold text-orange-200">称号</div>
@@ -694,6 +707,18 @@ export function MachoClickerPage() {
                   />
                 ))}
 
+                {visualHelpers.map((helper) => (
+                  <div
+                    key={helper.id}
+                    className={`macho-helper pointer-events-none absolute left-1/2 top-1/2 z-0 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${helper.color} text-[9px] font-black text-white shadow-xl`}
+                    style={{
+                      transform: `rotate(${helper.angle}deg) translate(${helper.radius}px) rotate(${-helper.angle}deg)`,
+                    }}
+                  >
+                    {helper.label}
+                  </div>
+                ))}
+
                 {goldenProtein ? (
                   <button
                     type="button"
@@ -757,6 +782,10 @@ export function MachoClickerPage() {
                       <div className="rounded-2xl bg-white px-4 py-3 shadow-inner">
                         <div className="text-xs font-black text-[#C2410C]">クリック力</div>
                         <div className="mt-1 text-xl font-black text-[#7C2D12]">+{formatNumber(clickPower)}</div>
+                      </div>
+                      <div className="rounded-2xl bg-white px-4 py-3 shadow-inner">
+                        <div className="text-xs font-black text-[#C2410C]">クリック回数</div>
+                        <div className="mt-1 text-xl font-black text-[#7C2D12]">{formatNumber(state.clickCount)}</div>
                       </div>
                       <div className="rounded-2xl bg-white px-4 py-3 shadow-inner">
                         <div className="text-xs font-black text-[#C2410C]">毎秒生産</div>
