@@ -64,28 +64,11 @@ type Achievement = {
   isUnlocked: (state: GameState) => boolean;
 };
 
-type PanelTab = "stats" | "upgrades" | "achievements";
-
 type GoldenProtein = {
   id: number;
   x: number;
   y: number;
 };
-
-const helperPositions = [
-  { x: 8, y: 18 },
-  { x: 20, y: 12 },
-  { x: 80, y: 14 },
-  { x: 92, y: 22 },
-  { x: 9, y: 40 },
-  { x: 21, y: 55 },
-  { x: 78, y: 46 },
-  { x: 91, y: 58 },
-  { x: 12, y: 72 },
-  { x: 27, y: 82 },
-  { x: 73, y: 78 },
-  { x: 88, y: 72 },
-];
 
 const upgrades: Upgrade[] = [
   {
@@ -420,7 +403,6 @@ export function MachoClickerPage() {
   const [clickBurst, setClickBurst] = useState(false);
   const [purchaseFlash, setPurchaseFlash] = useState<string | null>(null);
   const [achievementToast, setAchievementToast] = useState<Achievement | null>(null);
-  const [activePanel, setActivePanel] = useState<PanelTab>("stats");
   const [goldenProtein, setGoldenProtein] = useState<GoldenProtein | null>(null);
   const effectIdRef = useRef(0);
   const clickPower = useMemo(() => getClickPower(), []);
@@ -429,24 +411,8 @@ export function MachoClickerPage() {
   const nextGoal = getNextTitleGoal(state.totalMuscle);
   const titleProgress = Math.min(100, Math.max(0, (state.totalMuscle / nextGoal.value) * 100));
   const ownedUpgradeCount = Object.values(state.upgrades).reduce((total, level) => total + level, 0);
-  const unlockedAchievementCount = state.unlockedAchievements.length;
   const news = getNews(state, title, perSecond);
   const bodyStage = getBodyStage(state.totalMuscle);
-  const visualHelpers = useMemo(
-    () =>
-      upgrades.flatMap((upgrade, upgradeIndex) =>
-        Array.from({ length: Math.min(24, state.upgrades[upgrade.key]) }, (_, index) => ({
-          id: `${upgrade.key}-${index}`,
-          label: upgrade.label,
-          icon: upgrade.icon,
-          color: upgrade.accent,
-          x: helperPositions[(index + upgradeIndex * 3) % helperPositions.length].x,
-          y: helperPositions[(index + upgradeIndex * 3) % helperPositions.length].y,
-          delay: ((index + upgradeIndex) % 5) * 0.16,
-        }))
-      ),
-    [state.upgrades]
-  );
 
   useEffect(() => {
     setState(readSavedState());
@@ -657,370 +623,249 @@ export function MachoClickerPage() {
         </div>
       ) : null}
 
-      <main className="relative z-10 px-4 pb-20 pt-20 sm:px-6 md:px-12">
-        <div className="mx-auto flex max-w-7xl flex-col gap-6">
-          <section className="relative overflow-hidden rounded-[36px] border border-white/40 bg-white/90 p-6 shadow-2xl backdrop-blur sm:p-8">
-            <div className="flex flex-col gap-4">
-              <h1 className="text-4xl font-black tracking-tight text-[#7C2D12] sm:text-6xl">マチョクリッカー</h1>
-              <p className="max-w-3xl text-base leading-7 text-slate-700">
-                クリックで筋肉ポイントを稼ぎ、強化メニューでトレーニング効率を上げていく放置系ミニゲームです。
-                進行状況はこの端末に自動保存されます。
-              </p>
+      <main className="relative z-10 px-3 pb-20 pt-20 sm:px-5">
+        <div className="mx-auto flex max-w-[1600px] flex-col gap-4">
+          <section className="overflow-hidden rounded-[22px] border border-[#FCD27B]/70 bg-[#2A140B]/95 text-white shadow-2xl">
+            <div className="grid gap-px bg-[#FCD27B]/30 lg:grid-cols-[360px_minmax(0,1fr)_360px]">
+              <div className="bg-[#2A140B] px-5 py-4">
+                <h1 className="text-3xl font-black tracking-tight text-[#FFE7C2]">マチョクリッカー</h1>
+                <div className="mt-1 text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">{bodyStage.label}</div>
+              </div>
+              <div className="bg-[#2A140B] px-5 py-4">
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#FFB45D]">Current</div>
+                    <div className="mt-1 text-2xl font-black text-white">{formatNumber(state.muscle)}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#FFB45D]">Per Second</div>
+                    <div className="mt-1 text-2xl font-black text-white">+{formatNumber(perSecond)}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#FFB45D]">Total</div>
+                    <div className="mt-1 text-2xl font-black text-white">{formatNumber(state.totalMuscle)}</div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-[#2A140B] px-5 py-4">
+                <div className="text-xs font-black text-[#FFB45D]">次の称号: {nextGoal.title}</div>
+                <div className="mt-2 h-3 overflow-hidden rounded-full bg-white/15">
+                  <div className="h-full rounded-full bg-gradient-to-r from-[#FFB45D] to-[#FF5A1F]" style={{ width: `${titleProgress}%` }} />
+                </div>
+              </div>
             </div>
-          </section>
-
-          <section className="relative overflow-hidden rounded-[26px] border border-white/35 bg-[#2A140B]/90 px-5 py-3 text-white shadow-2xl">
-            <span className="absolute left-4 top-1/2 z-10 -translate-y-1/2 rounded-full bg-[#FF8A23] px-3 py-1 text-xs font-black uppercase tracking-[0.18em] shadow-lg">
+            <div className="relative flex items-center gap-4 overflow-hidden border-t border-[#FCD27B]/30 bg-[#3B1B0D] px-4 py-2">
+              <span className="relative z-10 shrink-0 rounded bg-[#FF8A23] px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] shadow-lg">
                 Macho News
-            </span>
-            <div className="ml-32 overflow-hidden">
-              <div className="macho-news whitespace-nowrap text-sm font-bold text-orange-100">{news}</div>
+              </span>
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <div className="macho-news whitespace-nowrap text-sm font-bold text-orange-100">{news}</div>
+              </div>
             </div>
           </section>
 
-          <section className="rounded-[28px] border border-white/40 bg-white/90 p-4 shadow-2xl backdrop-blur xl:hidden">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-lg font-black text-[#7C2D12]">強化メニュー</h2>
-              <div className="text-xs font-bold text-[#C2410C]">横にスクロールして購入</div>
-            </div>
-            <div className="mt-3 flex gap-3 overflow-x-auto pb-2">
-              {upgrades.map((upgrade) => {
-                const level = state.upgrades[upgrade.key];
-                const cost = getUpgradeCost(upgrade, level);
-                const canBuy = state.muscle >= cost;
+          <section className="grid min-h-[740px] overflow-hidden rounded-[28px] border border-[#FCD27B]/70 bg-[#3B1B0D] shadow-2xl xl:grid-cols-[360px_minmax(0,1fr)_390px]">
+            <aside className="relative flex min-h-[560px] flex-col items-center justify-between overflow-hidden border-b border-[#FCD27B]/30 bg-[radial-gradient(circle_at_center,#FFB45D_0%,#9A3412_58%,#2A140B_100%)] p-5 text-center xl:border-b-0 xl:border-r">
+              <div className="relative z-10 w-full rounded-3xl bg-[#2A140B]/70 px-4 py-4 text-white shadow-xl backdrop-blur">
+                <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Muscle Points</div>
+                <div className="mt-1 text-5xl font-black">{formatNumber(state.muscle)}</div>
+                <div className="mt-2 text-sm font-bold text-orange-100">クリック: +{formatNumber(clickPower)} / COMBO {combo}</div>
+              </div>
 
-                return (
-                  <button
-                    key={upgrade.key}
-                    type="button"
-                    onClick={() => buyUpgrade(upgrade)}
-                    disabled={!canBuy}
-                    className={`min-w-[210px] rounded-3xl border p-3 text-left transition ${
-                      canBuy ? "border-[#FF8A23] bg-white shadow-lg active:scale-[0.98]" : "border-[#FCD27B] bg-slate-50 opacity-70"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span
-                        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${upgrade.accent} text-lg font-black text-white shadow-lg`}
-                      >
-                        {upgrade.icon}
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block truncate font-black text-[#7C2D12]">{upgrade.name}</span>
-                        <span className="mt-1 block text-xs font-black text-[#C2410C]">Lv.{level}</span>
-                      </span>
-                    </div>
-                    <div className="mt-3 rounded-2xl bg-[#FFF4E7] px-3 py-2 text-xs font-black text-[#9A3412]">
-                      必要: {formatNumber(cost)} 筋肉
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
+              {floatingGains.map((item) => (
+                <div
+                  key={item.id}
+                  className="macho-float pointer-events-none absolute z-40 text-4xl font-black text-white drop-shadow-[0_4px_0_rgba(124,45,18,0.85)]"
+                  style={{ left: `${item.x}%`, top: `${item.y}%` }}
+                >
+                  +{formatNumber(item.value)}
+                </div>
+              ))}
 
-          <section className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)_360px]">
-            <aside className="order-3 rounded-[32px] border border-white/40 bg-white/90 p-5 shadow-2xl backdrop-blur xl:order-1">
-              <h2 className="text-xl font-black text-[#7C2D12]">現在の肉体</h2>
-              <div className="mt-5 grid gap-3">
-                <div className="rounded-3xl bg-[#FFF4E7] px-4 py-4">
-                  <div className="text-xs font-bold text-[#C2410C]">筋肉ポイント</div>
-                  <div className="mt-1 text-3xl font-black text-[#7C2D12]">{formatNumber(state.muscle)}</div>
+              {sparks.map((spark) => (
+                <div
+                  key={spark.id}
+                  className="macho-spark pointer-events-none absolute z-30 rounded-full bg-white/90 shadow-[0_0_18px_rgba(255,255,255,0.85)]"
+                  style={{
+                    left: `${spark.x}%`,
+                    top: `${spark.y}%`,
+                    width: spark.size,
+                    height: spark.size,
+                    transform: `rotate(${spark.rotate}deg)`,
+                  }}
+                />
+              ))}
+
+              {goldenProtein ? (
+                <button
+                  type="button"
+                  onClick={collectGoldenProtein}
+                  className="macho-golden absolute z-50 flex h-20 w-20 items-center justify-center rounded-full border-4 border-white bg-gradient-to-br from-yellow-200 via-orange-300 to-yellow-500 text-[10px] font-black leading-tight text-[#7C2D12] shadow-2xl"
+                  style={{ left: `${goldenProtein.x}%`, top: `${goldenProtein.y}%` }}
+                >
+                  GOLDEN
+                  <br />
+                  PROTEIN
+                </button>
+              ) : null}
+
+              <button
+                type="button"
+                onClick={handleClick}
+                className={`macho-breathe group relative z-20 my-8 flex aspect-square w-64 max-w-full items-center justify-center rounded-full border-[12px] shadow-[0_55px_110px_-35px_rgba(42,20,11,0.95)] transition hover:scale-[1.04] active:scale-95 sm:w-80 ${bodyStage.ring} ${
+                  clickBurst ? "macho-pop" : ""
+                }`}
+              >
+                <span className="macho-shine absolute inset-0 rounded-full" />
+                <span className={`absolute inset-[-32px] rounded-full bg-white/40 blur-2xl transition ${bodyStage.aura}`} />
+                <Image
+                  src={characterImageSrc}
+                  alt="マチョ田をクリック"
+                  width={260}
+                  height={260}
+                  priority
+                  className={`relative z-10 h-auto drop-shadow-2xl transition duration-300 group-hover:scale-105 ${bodyStage.image}`}
+                />
+              </button>
+
+              <div className="relative z-10 grid w-full grid-cols-2 gap-3 text-left">
+                <div className="rounded-3xl bg-white/90 px-4 py-3 text-[#7C2D12] shadow-lg">
+                  <div className="text-xs font-black text-[#C2410C]">称号</div>
+                  <div className="mt-1 text-xl font-black">{title}</div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-3xl bg-white px-4 py-3 shadow-inner">
-                    <div className="text-xs font-bold text-[#C2410C]">1クリック</div>
-                    <div className="mt-1 text-xl font-black text-[#7C2D12]">+{formatNumber(clickPower)}</div>
-                  </div>
-                  <div className="rounded-3xl bg-white px-4 py-3 shadow-inner">
-                    <div className="text-xs font-bold text-[#C2410C]">毎秒</div>
-                    <div className="mt-1 text-xl font-black text-[#7C2D12]">+{formatNumber(perSecond)}</div>
-                  </div>
-                </div>
-                <div className="rounded-3xl bg-white px-4 py-3 shadow-inner">
-                  <div className="text-xs font-bold text-[#C2410C]">クリック回数</div>
-                  <div className="mt-1 text-2xl font-black text-[#7C2D12]">{formatNumber(state.clickCount)}</div>
-                </div>
-                <div className="rounded-3xl bg-[#7C2D12] px-4 py-4 text-white">
-                  <div className="text-xs font-bold text-orange-200">称号</div>
-                  <div className="mt-1 text-2xl font-black">{title}</div>
-                  <div className="mt-3 h-3 overflow-hidden rounded-full bg-white/20">
-                    <div className="h-full rounded-full bg-[#FF8A23]" style={{ width: `${titleProgress}%` }} />
-                  </div>
-                  <div className="mt-2 text-xs text-orange-100">次: {nextGoal.title} / {formatNumber(nextGoal.value)}</div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-3xl bg-white px-4 py-3 shadow-inner">
-                    <div className="text-xs font-bold text-[#C2410C]">強化合計</div>
-                    <div className="mt-1 text-xl font-black text-[#7C2D12]">{ownedUpgradeCount}</div>
-                  </div>
-                  <div className="rounded-3xl bg-white px-4 py-3 shadow-inner">
-                    <div className="text-xs font-bold text-[#C2410C]">実績解除</div>
-                    <div className="mt-1 text-xl font-black text-[#7C2D12]">{unlockedAchievementCount}</div>
-                  </div>
-                </div>
-                <div className="rounded-3xl bg-white px-4 py-4 shadow-inner">
-                  <div className="text-xs font-bold text-[#C2410C]">実績</div>
-                  <div className="mt-2 text-2xl font-black text-[#7C2D12]">
-                    {state.unlockedAchievements.length}/{achievements.length}
-                  </div>
-                  <div className="mt-3 grid gap-2">
-                    {achievements.map((achievement) => {
-                      const unlocked = state.unlockedAchievements.includes(achievement.key);
-                      return (
-                        <div
-                          key={achievement.key}
-                          className={`rounded-2xl px-3 py-2 text-xs ${
-                            unlocked ? "bg-[#FFE7C2] font-bold text-[#9A3412]" : "bg-slate-100 text-slate-400"
-                          }`}
-                        >
-                          {achievement.title}
-                        </div>
-                      );
-                    })}
-                  </div>
+                <div className="rounded-3xl bg-white/90 px-4 py-3 text-[#7C2D12] shadow-lg">
+                  <div className="text-xs font-black text-[#C2410C]">クリック数</div>
+                  <div className="mt-1 text-xl font-black">{formatNumber(state.clickCount)}</div>
                 </div>
               </div>
             </aside>
 
-            <div className="order-1 rounded-[40px] border border-white/45 bg-white/90 p-5 text-center shadow-2xl backdrop-blur sm:p-8 xl:order-2">
-              <div className="mb-4 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-3xl bg-[#7C2D12] px-5 py-4 text-white shadow-lg">
-                  <div className="text-xs font-black text-orange-200">累計筋肉ポイント</div>
-                  <div className="mt-1 text-3xl font-black">{formatNumber(state.totalMuscle)}</div>
-                </div>
-                <div className="rounded-3xl bg-[#FFF4E7] px-5 py-4 text-[#7C2D12] shadow-inner">
-                  <div className="text-xs font-black text-[#C2410C]">現在の筋肉ポイント</div>
-                  <div className="mt-1 text-3xl font-black">{formatNumber(state.muscle)}</div>
-                </div>
-              </div>
-              <div className="relative mx-auto flex min-h-[480px] max-w-2xl flex-col items-center justify-center overflow-hidden rounded-[36px] bg-[radial-gradient(circle_at_center,#FFE7C2_0%,#FFB45D_42%,#7C2D12_100%)] p-6 shadow-inner">
-                <div className="macho-orbit absolute inset-10 rounded-full border border-white/35" />
-                <div className="macho-orbit absolute inset-20 rounded-full border border-white/25 [animation-direction:reverse]" />
-                <div className="absolute left-6 top-6 rounded-full bg-white/80 px-4 py-2 text-sm font-black text-[#7C2D12]">
-                  COMBO {combo}
-                </div>
-                <div className="absolute right-6 top-6 rounded-full bg-white/90 px-4 py-2 text-sm font-black text-[#7C2D12] shadow-lg">
-                  {bodyStage.label}
-                </div>
-
-                {floatingGains.map((item) => (
-                  <div
-                    key={item.id}
-                    className="macho-float pointer-events-none absolute z-30 text-3xl font-black text-white drop-shadow-[0_3px_0_rgba(124,45,18,0.7)]"
-                    style={{ left: `${item.x}%`, top: `${item.y}%` }}
-                  >
-                    +{formatNumber(item.value)}
+            <section className="relative min-h-[560px] overflow-hidden border-b border-[#FCD27B]/30 bg-[linear-gradient(180deg,#6B2B12_0%,#2A140B_100%)] xl:border-b-0 xl:border-r">
+              <div className="absolute inset-x-0 top-0 z-10 bg-[#2A140B]/80 px-5 py-3 text-white backdrop-blur">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Machoda Gym</div>
+                    <div className="text-xl font-black">購入した強化がジムに増えていきます</div>
                   </div>
-                ))}
-
-                {sparks.map((spark) => (
-                  <div
-                    key={spark.id}
-                    className="macho-spark pointer-events-none absolute z-20 rounded-full bg-white/90 shadow-[0_0_18px_rgba(255,255,255,0.85)]"
-                    style={{
-                      left: `${spark.x}%`,
-                      top: `${spark.y}%`,
-                      width: spark.size,
-                      height: spark.size,
-                      transform: `rotate(${spark.rotate}deg)`,
-                    }}
-                  />
-                ))}
-
-                {visualHelpers.map((helper) => (
-                  <div
-                    key={helper.id}
-                    className={`macho-helper pointer-events-none absolute z-20 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-2xl bg-gradient-to-br ${helper.color} text-white shadow-xl ring-2 ring-white/70`}
-                    style={{
-                      left: `${helper.x}%`,
-                      top: `${helper.y}%`,
-                      animationDelay: `${helper.delay}s`,
-                    }}
-                  >
-                    <span className="text-base leading-none">{helper.icon}</span>
-                    <span className="mt-0.5 text-[8px] font-black leading-none">{helper.label}</span>
-                  </div>
-                ))}
-
-                {goldenProtein ? (
-                  <button
-                    type="button"
-                    onClick={collectGoldenProtein}
-                    className="macho-golden absolute z-40 flex h-20 w-20 items-center justify-center rounded-full border-4 border-white bg-gradient-to-br from-yellow-200 via-orange-300 to-yellow-500 text-[10px] font-black leading-tight text-[#7C2D12] shadow-2xl"
-                    style={{ left: `${goldenProtein.x}%`, top: `${goldenProtein.y}%` }}
-                  >
-                    GOLDEN
-                    <br />
-                    PROTEIN
-                  </button>
-                ) : null}
-
-                <button
-                  type="button"
-                  onClick={handleClick}
-                  className={`macho-breathe group relative z-30 flex aspect-square w-64 max-w-full items-center justify-center rounded-full border-[12px] shadow-[0_45px_100px_-35px_rgba(42,20,11,0.9)] transition hover:scale-[1.03] active:scale-95 sm:w-80 ${bodyStage.ring} ${
-                    clickBurst ? "macho-pop" : ""
-                  }`}
-                >
-                  <span className="macho-shine absolute inset-0 rounded-full" />
-                  <span className={`absolute inset-[-28px] rounded-full bg-white/40 blur-2xl transition ${bodyStage.aura}`} />
-                  <Image
-                    src={characterImageSrc}
-                    alt="マチョ田をクリック"
-                    width={260}
-                    height={260}
-                    priority
-                    className={`relative z-10 h-auto drop-shadow-2xl transition duration-300 group-hover:scale-105 ${bodyStage.image}`}
-                  />
-                </button>
-              </div>
-
-              <div className="mt-5 overflow-hidden rounded-[28px] border border-[#FCD27B] bg-white shadow-xl">
-                <div className="grid grid-cols-3 bg-[#7C2D12] text-xs font-black text-white">
-                  {([
-                    ["stats", "Stats"],
-                    ["upgrades", "Upgrades"],
-                    ["achievements", "Achievements"],
-                  ] as const).map(([key, label]) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setActivePanel(key)}
-                      className={`px-3 py-3 transition ${activePanel === key ? "bg-[#FF8A23]" : "hover:bg-white/10"}`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-                <div className="min-h-52 bg-[#FFF7EB] p-5 text-left">
-                  {activePanel === "stats" ? (
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="rounded-2xl bg-white px-4 py-3 shadow-inner">
-                        <div className="text-xs font-black text-[#C2410C]">累計筋肉</div>
-                        <div className="mt-1 text-xl font-black text-[#7C2D12]">{formatNumber(state.totalMuscle)}</div>
-                      </div>
-                      <div className="rounded-2xl bg-white px-4 py-3 shadow-inner">
-                        <div className="text-xs font-black text-[#C2410C]">現在筋肉</div>
-                        <div className="mt-1 text-xl font-black text-[#7C2D12]">{formatNumber(state.muscle)}</div>
-                      </div>
-                      <div className="rounded-2xl bg-white px-4 py-3 shadow-inner">
-                        <div className="text-xs font-black text-[#C2410C]">クリック力</div>
-                        <div className="mt-1 text-xl font-black text-[#7C2D12]">+{formatNumber(clickPower)}</div>
-                      </div>
-                      <div className="rounded-2xl bg-white px-4 py-3 shadow-inner">
-                        <div className="text-xs font-black text-[#C2410C]">クリック回数</div>
-                        <div className="mt-1 text-xl font-black text-[#7C2D12]">{formatNumber(state.clickCount)}</div>
-                      </div>
-                      <div className="rounded-2xl bg-white px-4 py-3 shadow-inner">
-                        <div className="text-xs font-black text-[#C2410C]">毎秒生産</div>
-                        <div className="mt-1 text-xl font-black text-[#7C2D12]">+{formatNumber(perSecond)}</div>
-                      </div>
-                    </div>
-                  ) : null}
-
-                  {activePanel === "upgrades" ? (
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {upgrades.map((upgrade) => (
-                        <div key={upgrade.key} className="rounded-2xl bg-white px-4 py-3 shadow-inner">
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${upgrade.accent} text-sm font-black text-white`}
-                            >
-                              {upgrade.icon}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center justify-between gap-3">
-                                <div className="truncate font-black text-[#7C2D12]">{upgrade.name}</div>
-                                <div className="rounded-full bg-[#FFE7C2] px-2 py-1 text-xs font-black text-[#C2410C]">
-                                  Lv.{state.upgrades[upgrade.key]}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="mt-1 text-xs text-slate-600">
-                            次の価格: {formatNumber(getUpgradeCost(upgrade, state.upgrades[upgrade.key]))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
-
-                  {activePanel === "achievements" ? (
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {achievements.map((achievement) => {
-                        const unlocked = state.unlockedAchievements.includes(achievement.key);
-                        return (
-                          <div
-                            key={achievement.key}
-                            className={`rounded-2xl px-4 py-3 shadow-inner ${
-                              unlocked ? "bg-white text-[#7C2D12]" : "bg-slate-100 text-slate-400"
-                            }`}
-                          >
-                            <div className="font-black">{unlocked ? achievement.title : "？？？"}</div>
-                            <div className="mt-1 text-xs">{unlocked ? achievement.description : "条件達成で解除"}</div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : null}
+                  <div className="rounded-full bg-[#FF8A23] px-4 py-2 text-sm font-black">強化合計 {ownedUpgradeCount}</div>
                 </div>
               </div>
-            </div>
 
-            <aside className="order-3 hidden rounded-[32px] border border-white/40 bg-white/90 p-5 shadow-2xl backdrop-blur xl:block">
-              <h2 className="text-xl font-black text-[#7C2D12]">強化メニュー</h2>
-              <div className="mt-5 flex max-h-[720px] flex-col gap-3 overflow-y-auto pr-1">
+              <div className="absolute inset-x-0 bottom-0 h-40 bg-[linear-gradient(180deg,transparent_0%,rgba(42,20,11,0.92)_78%)]" />
+              <div className="absolute bottom-0 left-0 right-0 grid h-[78%] grid-rows-4 gap-2 p-4 pt-24">
                 {upgrades.map((upgrade) => {
                   const level = state.upgrades[upgrade.key];
-                  const cost = getUpgradeCost(upgrade, level);
-                  const canBuy = state.muscle >= cost;
-
                   return (
-                    <button
-                      key={upgrade.key}
-                      type="button"
-                      onClick={() => buyUpgrade(upgrade)}
-                      disabled={!canBuy}
-                      className={`group rounded-3xl border p-4 text-left transition ${
-                        canBuy
-                          ? "border-[#FF8A23] bg-white hover:-translate-y-0.5 hover:shadow-xl"
-                          : "border-[#FCD27B] bg-slate-50 opacity-70"
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <span
-                          className={`flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-2xl bg-gradient-to-br ${upgrade.accent} text-white shadow-lg`}
-                        >
-                          <span className="text-lg font-black leading-none">{upgrade.icon}</span>
-                          <span className="mt-1 text-[8px] font-black leading-none">{upgrade.label}</span>
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="flex items-start justify-between gap-3">
-                            <span className="font-black text-[#7C2D12]">{upgrade.name}</span>
-                            <span className="rounded-full bg-[#FFE7C2] px-3 py-1 text-xs font-black text-[#C2410C]">
-                              Lv.{level}
-                            </span>
-                          </span>
-                          <span className="mt-1 block text-xs leading-5 text-slate-600">{upgrade.description}</span>
-                          <span className="mt-3 block text-sm font-black text-[#9A3412]">必要: {formatNumber(cost)} 筋肉</span>
-                        </span>
+                    <div key={upgrade.key} className="relative overflow-hidden rounded-3xl border border-[#FCD27B]/25 bg-black/15">
+                      <div className="absolute left-3 top-3 z-10 rounded-full bg-[#2A140B]/80 px-3 py-1 text-xs font-black text-[#FFE7C2]">
+                        {upgrade.name} Lv.{level}
                       </div>
-                    </button>
+                      <div className="absolute inset-0 flex items-center gap-3 overflow-hidden px-4 pt-8">
+                        {Array.from({ length: Math.min(18, level) }, (_, index) => (
+                          <div
+                            key={`${upgrade.key}-lane-${index}`}
+                            className={`macho-helper flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-2xl bg-gradient-to-br ${upgrade.accent} text-white shadow-xl ring-2 ring-white/60`}
+                            style={{ animationDelay: `${(index % 6) * 0.12}s` }}
+                          >
+                            <span className="text-base font-black leading-none">{upgrade.icon}</span>
+                            <span className="mt-0.5 text-[8px] font-black leading-none">{upgrade.label}</span>
+                          </div>
+                        ))}
+                        {level === 0 ? (
+                          <div className="text-sm font-bold text-orange-100/60">まだ未購入</div>
+                        ) : level > 18 ? (
+                          <div className="rounded-full bg-white/90 px-3 py-1 text-xs font-black text-[#7C2D12]">+{level - 18}</div>
+                        ) : null}
+                      </div>
+                    </div>
                   );
                 })}
               </div>
-              <div className="mt-5 rounded-3xl bg-[#FFF4E7] px-4 py-3 text-sm text-[#7C2D12]">
-                強化合計: <span className="font-black">{ownedUpgradeCount}</span>
+            </section>
+
+            <aside className="bg-[#2A140B] text-white">
+              <div className="sticky top-20 max-h-[calc(100vh-5rem)] overflow-y-auto p-4">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <h2 className="text-2xl font-black text-[#FFE7C2]">ショップ</h2>
+                  <button
+                    type="button"
+                    onClick={resetGame}
+                    className="rounded-full border border-[#FCD27B]/60 px-3 py-1 text-xs font-bold text-[#FFE7C2] transition hover:bg-white/10"
+                  >
+                    リセット
+                  </button>
+                </div>
+                <div className="grid gap-3">
+                  {upgrades.map((upgrade) => {
+                    const level = state.upgrades[upgrade.key];
+                    const cost = getUpgradeCost(upgrade, level);
+                    const canBuy = state.muscle >= cost;
+
+                    return (
+                      <button
+                        key={upgrade.key}
+                        type="button"
+                        onClick={() => buyUpgrade(upgrade)}
+                        disabled={!canBuy}
+                        className={`group rounded-2xl border p-3 text-left transition ${
+                          canBuy
+                            ? "border-[#FF8A23] bg-[#FFF4E7] text-[#2A140B] hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(255,138,35,0.25)]"
+                            : "border-[#FCD27B]/25 bg-white/10 text-white/55"
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <span
+                            className={`flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl bg-gradient-to-br ${upgrade.accent} text-white shadow-lg`}
+                          >
+                            <span className="text-xl font-black leading-none">{upgrade.icon}</span>
+                            <span className="mt-1 text-[8px] font-black leading-none">{upgrade.label}</span>
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="flex items-start justify-between gap-2">
+                              <span className="font-black">{upgrade.name}</span>
+                              <span className="rounded-full bg-[#7C2D12] px-2 py-1 text-xs font-black text-white">Lv.{level}</span>
+                            </span>
+                            <span className="mt-1 block text-xs leading-5 opacity-80">{upgrade.description}</span>
+                            <span className="mt-3 block rounded-xl bg-[#7C2D12] px-3 py-2 text-sm font-black text-white">
+                              必要: {formatNumber(cost)} 筋肉
+                            </span>
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={resetGame}
-                className="mt-4 w-full rounded-2xl border border-[#FCD27B] px-4 py-3 text-sm font-semibold text-[#9A3412] transition hover:bg-[#FFF4E7]"
-              >
-                進行状況をリセット
-              </button>
             </aside>
+          </section>
+
+          <section className="grid gap-4 rounded-[28px] border border-[#FCD27B]/60 bg-[#2A140B]/90 p-4 text-white shadow-2xl md:grid-cols-3">
+            <div className="rounded-2xl bg-white/10 px-4 py-3">
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Achievements</div>
+              <div className="mt-1 text-2xl font-black">{state.unlockedAchievements.length}/{achievements.length}</div>
+            </div>
+            <div className="rounded-2xl bg-white/10 px-4 py-3">
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Upgrades</div>
+              <div className="mt-1 text-2xl font-black">{ownedUpgradeCount}</div>
+            </div>
+            <div className="rounded-2xl bg-white/10 px-4 py-3">
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Unlocked</div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {achievements.slice(0, 6).map((achievement) => {
+                  const unlocked = state.unlockedAchievements.includes(achievement.key);
+                  return (
+                    <span
+                      key={achievement.key}
+                      className={`rounded-full px-3 py-1 text-xs font-black ${
+                        unlocked ? "bg-[#FF8A23] text-white" : "bg-white/10 text-white/35"
+                      }`}
+                    >
+                      {unlocked ? achievement.title : "？？？"}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
           </section>
 
           <section className="grid gap-6 rounded-[36px] border border-white/40 bg-white/90 p-6 shadow-2xl backdrop-blur lg:grid-cols-[360px_1fr] sm:p-8">
