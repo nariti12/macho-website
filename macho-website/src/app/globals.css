@@ -314,6 +314,18 @@ main {
   }
 }
 
+@keyframes macho-unit {
+  0%,
+  100% {
+    filter: saturate(1);
+    transform: translateY(0);
+  }
+  50% {
+    filter: saturate(1.25);
+    transform: translateY(-0.12rem);
+  }
+}
+
 
 .macho-float {
   animation: macho-float 0.95s ease-out forwards;
@@ -365,4 +377,8 @@ main {
 
 .macho-cursor {
   animation: macho-cursor 1.4s ease-in-out infinite;
+}
+
+.macho-unit {
+  animation: macho-unit 2.4s ease-in-out infinite;
 }

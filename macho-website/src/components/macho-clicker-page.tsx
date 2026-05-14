@@ -264,7 +264,11 @@ const formatNumber = (value: number) => {
   return rounded.toLocaleString("ja-JP");
 };
 
+const formatFullNumber = (value: number) => Math.floor(value).toLocaleString("ja-JP");
+
 const getUpgradeCost = (upgrade: Upgrade, level: number) => Math.ceil(upgrade.baseCost * upgrade.costRate ** level);
+
+const getUpgradeVisibleCount = (level: number) => Math.min(180, level);
 
 const getClickPower = () => 1;
 
@@ -656,7 +660,7 @@ export function MachoClickerPage() {
                 <div className="grid grid-cols-3 gap-3 text-center">
                   <div>
                     <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#FFB45D]">Current</div>
-                    <div className="mt-1 text-2xl font-black text-white">{formatNumber(state.muscle)}</div>
+                    <div className="mt-1 text-2xl font-black text-white">{formatFullNumber(state.muscle)}</div>
                   </div>
                   <div>
                     <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#FFB45D]">Per Second</div>
@@ -664,7 +668,7 @@ export function MachoClickerPage() {
                   </div>
                   <div>
                     <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#FFB45D]">Total</div>
-                    <div className="mt-1 text-2xl font-black text-white">{formatNumber(state.totalMuscle)}</div>
+                    <div className="mt-1 text-2xl font-black text-white">{formatFullNumber(state.totalMuscle)}</div>
                   </div>
                 </div>
               </div>
@@ -691,7 +695,7 @@ export function MachoClickerPage() {
             <aside className="relative flex min-h-[560px] flex-col items-center justify-between overflow-hidden border-b-4 border-[#7C2D12] bg-[radial-gradient(circle_at_center,#FFF0D5_0%,#FDBA74_54%,#B45309_100%)] p-5 text-center xl:border-b-0 xl:border-r-4">
               <div className="relative z-10 w-full rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB]/95 px-4 py-4 text-[#7C2D12] shadow-xl">
                 <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Muscle Points</div>
-                <div className="mt-1 text-5xl font-black">{formatNumber(state.muscle)}</div>
+                <div className="mt-1 break-all text-4xl font-black sm:text-5xl">{formatFullNumber(state.muscle)}</div>
                 <div className="mt-2 text-sm font-bold text-[#9A3412]">クリック: +{formatNumber(clickPower)} / COMBO {combo}</div>
               </div>
 
@@ -779,7 +783,7 @@ export function MachoClickerPage() {
                 </div>
                 <div className="rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB]/95 px-4 py-3 text-[#7C2D12] shadow-lg">
                   <div className="text-xs font-black text-[#C2410C]">クリック数</div>
-                  <div className="mt-1 text-xl font-black">{formatNumber(state.clickCount)}</div>
+                  <div className="mt-1 text-xl font-black">{formatFullNumber(state.clickCount)}</div>
                 </div>
               </div>
             </aside>
@@ -805,30 +809,47 @@ export function MachoClickerPage() {
                 <div className="grid h-full grid-rows-8 divide-y-2 divide-[#B45309]/35">
                   {upgrades.map((upgrade) => {
                     const level = state.upgrades[upgrade.key];
-                    const visibleCount = Math.min(80, level);
+                    const visibleCount = getUpgradeVisibleCount(level);
+                    const cost = getUpgradeCost(upgrade, level);
                     return (
-                      <div key={upgrade.key} className="relative flex min-h-0 items-center overflow-hidden px-3">
+                      <div key={upgrade.key} className="group relative flex min-h-0 items-center overflow-hidden px-3">
                         <div className="absolute left-3 top-1 z-10 rounded-full bg-[#7C2D12]/85 px-2 py-0.5 text-[10px] font-black text-[#FFE7C2]">
                           {upgrade.name} Lv.{level}
                         </div>
-                        <div className="flex items-center gap-1 pt-4">
+                        <div className="grid max-w-full grid-flow-col grid-rows-3 gap-x-1 gap-y-0.5 overflow-hidden pt-5 [grid-auto-columns:1.7rem] sm:[grid-auto-columns:2rem]">
                           {Array.from({ length: visibleCount }, (_, index) => (
                             <div
                               key={`${upgrade.key}-unit-${index}`}
-                              className="macho-helper flex h-12 w-12 shrink-0 items-center justify-center sm:h-14 sm:w-14"
+                              className="macho-unit flex h-6 w-6 items-center justify-center sm:h-7 sm:w-7"
                               style={{ animationDelay: `${(index % 8) * 0.08}s` }}
                             >
                               <Image
                                 src={upgrade.spriteSrc}
                                 alt=""
-                                width={56}
-                                height={56}
-                                className="h-12 w-12 object-contain drop-shadow-xl sm:h-14 sm:w-14"
+                                width={32}
+                                height={32}
+                                className="h-6 w-6 object-contain drop-shadow-xl sm:h-7 sm:w-7"
                               />
                             </div>
                           ))}
+                        </div>
+                        <div className="pointer-events-none absolute left-4 top-11 z-30 hidden w-72 rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB] p-4 text-left text-[#7C2D12] shadow-2xl group-hover:block">
+                          <div className="flex items-center gap-3">
+                            <Image src={upgrade.spriteSrc} alt="" width={48} height={48} className="h-12 w-12 object-contain" />
+                            <div>
+                              <div className="text-base font-black">{upgrade.name}</div>
+                              <div className="text-xs font-bold text-[#C2410C]">所有数 {formatFullNumber(level)}</div>
+                            </div>
+                          </div>
+                          <div className="mt-3 text-sm font-semibold leading-6">{upgrade.description}</div>
+                          <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-black">
+                            <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">次の価格<br />{formatFullNumber(cost)}</div>
+                            <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">毎秒<br />+{formatNumber(upgrade.perSecondBonus ?? 0)}</div>
+                          </div>
+                        </div>
+                        <div className="ml-2 shrink-0">
                           {level > visibleCount ? (
-                            <span className="ml-2 rounded-full bg-white/90 px-2 py-1 text-xs font-black text-[#7C2D12]">
+                            <span className="rounded-full bg-white/90 px-2 py-1 text-xs font-black text-[#7C2D12]">
                               +{level - visibleCount}
                             </span>
                           ) : null}
@@ -864,7 +885,7 @@ export function MachoClickerPage() {
                         type="button"
                         onClick={() => buyUpgrade(upgrade)}
                         disabled={!canBuy}
-                        className={`group rounded-2xl border p-3 text-left transition ${
+                        className={`group relative rounded-2xl border p-3 text-left transition ${
                           canBuy
                             ? "border-[#C2410C] bg-white text-[#7C2D12] hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(255,138,35,0.25)]"
                             : "border-[#FED7AA] bg-[#FFF4E7] text-[#9A3412]/45"
@@ -882,10 +903,24 @@ export function MachoClickerPage() {
                               <span className="rounded-full bg-[#7C2D12] px-2 py-1 text-xs font-black text-white">Lv.{level}</span>
                             </span>
                             <span className="mt-3 block rounded-xl bg-[#7C2D12] px-3 py-2 text-sm font-black text-white">
-                              必要: {formatNumber(cost)} 筋肉
+                              必要: {formatFullNumber(cost)} 筋肉
                             </span>
                           </span>
                         </div>
+                        <span className="pointer-events-none absolute right-full top-0 z-40 mr-3 hidden w-72 rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB] p-4 text-[#7C2D12] shadow-2xl group-hover:block">
+                          <span className="flex items-center gap-3">
+                            <Image src={upgrade.spriteSrc} alt="" width={48} height={48} className="h-12 w-12 object-contain" />
+                            <span>
+                              <span className="block text-base font-black">{upgrade.name}</span>
+                              <span className="block text-xs font-bold text-[#C2410C]">所有数 {formatFullNumber(level)}</span>
+                            </span>
+                          </span>
+                          <span className="mt-3 block text-sm font-semibold leading-6">{upgrade.description}</span>
+                          <span className="mt-3 grid grid-cols-2 gap-2 text-xs font-black">
+                            <span className="rounded-xl bg-[#FFE7C2] px-3 py-2">次の価格<br />{formatFullNumber(cost)}</span>
+                            <span className="rounded-xl bg-[#FFE7C2] px-3 py-2">毎秒<br />+{formatNumber(upgrade.perSecondBonus ?? 0)}</span>
+                          </span>
+                        </span>
                       </button>
                     );
                   })}
