@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { SiteHeader } from "@/components/site-header";
-import { MALE_FIXED_BRAND_CONFIG, MALE_FIXED_BRAND_ORDER, MALE_FIXED_SCORES } from "@/lib/protein-rankings/constants";
+import { MALE_FIXED_BRAND_CONFIG, MALE_FIXED_BRAND_ORDER } from "@/lib/protein-rankings/constants";
 import { buildAmazonAffiliateUrl, buildProductOutboundLink, buildRakutenAffiliateUrl } from "@/lib/protein-rankings/links";
 import type { CommerceProvider, ProteinRankingPageData, RankingCardItem } from "@/lib/protein-rankings/types";
 
@@ -21,7 +21,7 @@ const creatineRecommendations: CreatineRecommendation[] = [
   {
     rank: 1,
     name: "INNOCECT（イノセクト）",
-    comment: "昔から安くクレアチンを提供しているブランドなので安心感。",
+    comment: "イノセクトは昔からコスパ最強のクレアチンのブランド。",
     imageUrl: "https://shop.r10s.jp/innocect/cabinet/amino/creatine/new_creatin.jpg",
     rakutenUrl:
       "https://item.rakuten.co.jp/innocect/cre_1000/?iasid=07rpp_10095___2t-mompqf6d-1a-760651ea-0acb-40b3-88ee-e30aa1bc794a",
@@ -29,7 +29,7 @@ const creatineRecommendations: CreatineRecommendation[] = [
   {
     rank: 2,
     name: "Nature In（ネイチャーイン）",
-    comment: "こっちも安い。Amazonで買うなら候補に入れたいクレアチンです。",
+    comment: "Amazonで買うならネイチャーインが一番コスパがいいのでこれを購入してください。",
     imageUrl: "https://m.media-amazon.com/images/I/61Jwb0vWWZL._AC_SL1500_.jpg",
     amazonUrl:
       "https://www.amazon.co.jp/Nature-%EF%BC%88%E3%83%8D%E3%82%A4%E3%83%81%E3%83%A3%E3%83%BC%E3%82%A4%E3%83%B3%EF%BC%89-%E3%82%AF%E3%83%AC%E3%82%A2%E3%83%81%E3%83%B3%E3%83%A2%E3%83%8E%E3%83%8F%E3%82%A4%E3%83%89%E3%83%AC%E3%83%BC%E3%83%88-%E3%82%88%E3%81%8F%E9%96%89%E3%81%BE%E3%82%8B%E3%83%81%E3%83%A3%E3%83%83%E3%82%AF-ISO22000%E8%A6%8F%E6%A0%BC/dp/B0FY5PBSM1/ref=sr_1_7?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&sr=8-7",
@@ -124,14 +124,6 @@ const getDisplayTitle = (item: RankingCardItem) => {
   return brandKey ? MALE_FIXED_BRAND_CONFIG[brandKey].displayName : item.product.title;
 };
 
-const getDisplayScore = (item: RankingCardItem) => {
-  const brandKey = getBrandKey(item);
-  if (brandKey) {
-    return MALE_FIXED_SCORES[brandKey];
-  }
-  return Math.round(item.score * 100);
-};
-
 const getAmazonUrl = (item: RankingCardItem) => {
   const brandKey = getBrandKey(item);
   return brandKey ? buildAmazonAffiliateUrl(MALE_FIXED_BRAND_CONFIG[brandKey].amazonSearchUrl) : null;
@@ -195,11 +187,6 @@ const RankingCard = ({ item }: { item: RankingCardItem }) => (
 
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-[#FFE7C2] px-3 py-1 text-xs font-semibold text-[#9A3412]">
-            SCORE {getDisplayScore(item)}
-          </span>
-        </div>
         <h3 className="text-xl font-bold leading-tight text-[#7C2D12]">{getDisplayTitle(item)}</h3>
         <p className="text-sm leading-6 text-slate-600">{item.comment}</p>
       </div>
@@ -277,6 +264,13 @@ const CreatineCard = ({ item }: { item: CreatineRecommendation }) => (
 
 export function SupplementsTopPage({ data }: { data: ProteinRankingPageData }) {
   const updatedAtLabel = formatUpdatedAt(data.updatedAt);
+  const filteredSections = data.sections.map((section) => ({
+    ...section,
+    items: section.items.filter((item) => {
+      const brandKey = getBrandKey(item);
+      return brandKey === "x-plosion" || brandKey === "gold standard";
+    }),
+  }));
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#FCC081" }}>
@@ -295,12 +289,12 @@ export function SupplementsTopPage({ data }: { data: ProteinRankingPageData }) {
               {updatedAtLabel ? (
                 <p className="text-sm text-slate-500">最終更新: {updatedAtLabel}</p>
               ) : (
-                <p className="text-sm text-slate-500">ランキングを準備中です。更新が完了すると、ここにおすすめの5商品が表示されます。</p>
+                <p className="text-sm text-slate-500">ランキングを準備中です。更新が完了すると、ここにおすすめの商品が表示されます。</p>
               )}
             </div>
           </section>
 
-          {data.sections.map((section) => (
+          {filteredSections.map((section) => (
             <section key={section.key} className="rounded-[32px] bg-white/95 p-6 shadow-2xl sm:p-8">
               <div className="mb-6 flex flex-col gap-3">
                 <h2 className="text-2xl font-bold text-[#7C2D12] sm:text-3xl">{section.title}</h2>
@@ -308,7 +302,7 @@ export function SupplementsTopPage({ data }: { data: ProteinRankingPageData }) {
 
               {section.items.length === 0 ? (
                 <div className="rounded-3xl border border-dashed border-[#FCD27B] bg-[#FFF8EE] p-8 text-sm text-slate-600">
-                  まだおすすめを表示できていません。更新が反映されると、ここにTOP5が並びます。
+                  まだおすすめを表示できていません。更新が反映されると、ここにおすすめ商品が並びます。
                 </div>
               ) : (
                 <div className="grid gap-5">
