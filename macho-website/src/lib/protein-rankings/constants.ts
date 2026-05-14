@@ -276,7 +276,7 @@ export const TITLE_NOISE_PATTERNS = [
 ] as const;
 
 export const RANKING_LABELS: Record<RankingKey, string> = {
-  male: "おすすめプロテイン TOP5",
+  male: "おすすめプロテイン TOP2",
   female: "女性向け最強プロテイン TOP5",
 };
 
