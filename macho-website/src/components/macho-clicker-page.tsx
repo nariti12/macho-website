@@ -28,11 +28,26 @@ type Upgrade = {
   accent: string;
 };
 
+type PowerUpgrade = {
+  id: string;
+  name: string;
+  description: string;
+  cost: number;
+  spriteSrc: string;
+  effectLabel: string;
+  target?: UpgradeKey;
+  buildingMultiplier?: number;
+  clickBonus?: number;
+  goldenMultiplier?: number;
+  unlock: (state: GameState) => boolean;
+};
+
 type GameState = {
   muscle: number;
   totalMuscle: number;
   clickCount: number;
   upgrades: Record<UpgradeKey, number>;
+  purchasedPowerUps: string[];
   lastSavedAt: number;
   unlockedAchievements: string[];
 };
@@ -182,6 +197,73 @@ const emptyUpgrades: Record<UpgradeKey, number> = {
   gym: 0,
 };
 
+const powerUpgrades: PowerUpgrade[] = [
+  {
+    id: "grip-gloves",
+    name: "握力強化グローブ",
+    description: "クリック時の筋肉ポイントが +1 されます。",
+    cost: 100,
+    spriteSrc: "/game/macho-clicker/dumbbell.png",
+    effectLabel: "クリック +1",
+    clickBonus: 1,
+    unlock: (state) => state.totalMuscle >= 50,
+  },
+  {
+    id: "roller-core",
+    name: "腹筋ローラー改",
+    description: "腹筋ローラー職人の毎秒生産が2倍になります。",
+    cost: 1_000,
+    spriteSrc: "/game/macho-clicker/ab-roller.png",
+    effectLabel: "腹筋ローラー x2",
+    target: "abRoller",
+    buildingMultiplier: 2,
+    unlock: (state) => state.upgrades.abRoller >= 1,
+  },
+  {
+    id: "barbell-plates",
+    name: "高重量プレート",
+    description: "バーベル部隊の毎秒生産が2倍になります。",
+    cost: 11_000,
+    spriteSrc: "/game/macho-clicker/bench.png",
+    effectLabel: "バーベル x2",
+    target: "dumbbell",
+    buildingMultiplier: 2,
+    unlock: (state) => state.upgrades.dumbbell >= 1,
+  },
+  {
+    id: "protein-blend",
+    name: "黄金プロテイン配合",
+    description: "ゴールデンプロテインの獲得ボーナスが2倍になります。",
+    cost: 50_000,
+    spriteSrc: "/game/macho-clicker/golden-protein.png",
+    effectLabel: "黄金 x2",
+    goldenMultiplier: 2,
+    unlock: (state) => state.totalMuscle >= 10_000,
+  },
+  {
+    id: "factory-line",
+    name: "プロテイン自動ライン",
+    description: "プロテイン工房の毎秒生産が2倍になります。",
+    cost: 120_000,
+    spriteSrc: "/game/macho-clicker/protein.png",
+    effectLabel: "工房 x2",
+    target: "protein",
+    buildingMultiplier: 2,
+    unlock: (state) => state.upgrades.protein >= 1,
+  },
+  {
+    id: "meal-prep",
+    name: "作り置き高たんぱく飯",
+    description: "高たんぱく食堂の毎秒生産が2倍になります。",
+    cost: 1_300_000,
+    spriteSrc: "/game/macho-clicker/meal.png",
+    effectLabel: "食堂 x2",
+    target: "chicken",
+    buildingMultiplier: 2,
+    unlock: (state) => state.upgrades.chicken >= 1,
+  },
+];
+
 const achievements: Achievement[] = [
   {
     key: "first-click",
@@ -250,6 +332,7 @@ const initialState: GameState = {
   totalMuscle: 0,
   clickCount: 0,
   upgrades: emptyUpgrades,
+  purchasedPowerUps: [],
   lastSavedAt: Date.now(),
   unlockedAchievements: [],
 };
@@ -270,10 +353,31 @@ const getUpgradeCost = (upgrade: Upgrade, level: number) => Math.ceil(upgrade.ba
 
 const getUpgradeVisibleCount = (level: number) => Math.min(180, level);
 
-const getClickPower = () => 1;
+const getClickPower = (state: GameState) =>
+  1 +
+  powerUpgrades.reduce(
+    (total, powerUp) => total + (state.purchasedPowerUps.includes(powerUp.id) ? powerUp.clickBonus ?? 0 : 0),
+    0
+  );
+
+const getBuildingMultiplier = (state: GameState, key: UpgradeKey) =>
+  powerUpgrades.reduce((total, powerUp) => {
+    if (powerUp.target !== key || !state.purchasedPowerUps.includes(powerUp.id)) return total;
+    return total * (powerUp.buildingMultiplier ?? 1);
+  }, 1);
+
+const getGoldenMultiplier = (state: GameState) =>
+  powerUpgrades.reduce((total, powerUp) => {
+    if (!state.purchasedPowerUps.includes(powerUp.id)) return total;
+    return total * (powerUp.goldenMultiplier ?? 1);
+  }, 1);
 
 const getPerSecond = (state: GameState) =>
-  upgrades.reduce((total, upgrade) => total + (upgrade.perSecondBonus ?? 0) * state.upgrades[upgrade.key], 0);
+  upgrades.reduce(
+    (total, upgrade) =>
+      total + (upgrade.perSecondBonus ?? 0) * state.upgrades[upgrade.key] * getBuildingMultiplier(state, upgrade.key),
+    0
+  );
 
 const getTitle = (totalMuscle: number) => {
   if (totalMuscle >= 10_000_000) return "マチョ神";
@@ -383,6 +487,9 @@ const readSavedState = (): GameState => {
       totalMuscle: typeof saved.totalMuscle === "number" ? clampScore(saved.totalMuscle) : 0,
       clickCount: typeof saved.clickCount === "number" ? Math.max(0, Math.floor(saved.clickCount)) : 0,
       upgrades: normalizeSavedUpgrades(saved.upgrades),
+      purchasedPowerUps: Array.isArray(saved.purchasedPowerUps)
+        ? saved.purchasedPowerUps.filter((id): id is string => typeof id === "string")
+        : [],
       lastSavedAt: typeof saved.lastSavedAt === "number" ? saved.lastSavedAt : Date.now(),
       unlockedAchievements: Array.isArray(saved.unlockedAchievements) ? saved.unlockedAchievements : [],
     };
@@ -419,8 +526,10 @@ export function MachoClickerPage() {
   const [achievementToast, setAchievementToast] = useState<Achievement | null>(null);
   const [goldenProtein, setGoldenProtein] = useState<GoldenProtein | null>(null);
   const [newsIndex, setNewsIndex] = useState(0);
+  const [hoveredUpgradeKey, setHoveredUpgradeKey] = useState<UpgradeKey | null>(null);
+  const [hoveredPowerUpId, setHoveredPowerUpId] = useState<string | null>(null);
   const effectIdRef = useRef(0);
-  const clickPower = useMemo(() => getClickPower(), []);
+  const clickPower = useMemo(() => getClickPower(state), [state]);
   const perSecond = useMemo(() => getPerSecond(state), [state]);
   const title = getTitle(state.totalMuscle);
   const nextGoal = getNextTitleGoal(state.totalMuscle);
@@ -430,6 +539,11 @@ export function MachoClickerPage() {
   const news = newsLines[newsIndex % newsLines.length];
   const bodyStage = getBodyStage(state.totalMuscle);
   const cursorCount = Math.min(36, state.upgrades.pushUp);
+  const hoveredUpgrade = hoveredUpgradeKey ? upgrades.find((upgrade) => upgrade.key === hoveredUpgradeKey) ?? null : null;
+  const hoveredPowerUp = hoveredPowerUpId ? powerUpgrades.find((powerUp) => powerUp.id === hoveredPowerUpId) ?? null : null;
+  const unlockedPowerUps = powerUpgrades.filter(
+    (powerUp) => powerUp.unlock(state) && !state.purchasedPowerUps.includes(powerUp.id)
+  );
 
   useEffect(() => {
     setState(readSavedState());
@@ -580,9 +694,27 @@ export function MachoClickerPage() {
     });
   };
 
+  const buyPowerUpgrade = (powerUp: PowerUpgrade) => {
+    setState((current) => {
+      if (current.purchasedPowerUps.includes(powerUp.id) || current.muscle < powerUp.cost || !powerUp.unlock(current)) {
+        return current;
+      }
+
+      setPurchaseFlash(powerUp.name);
+      window.setTimeout(() => setPurchaseFlash(null), 1100);
+
+      return {
+        ...current,
+        muscle: clampScore(current.muscle - powerUp.cost),
+        purchasedPowerUps: [...current.purchasedPowerUps, powerUp.id],
+        lastSavedAt: Date.now(),
+      };
+    });
+  };
+
   const collectGoldenProtein = () => {
     if (!goldenProtein) return;
-    const bonus = Math.max(15, Math.floor(clickPower * 10 + perSecond * 60));
+    const bonus = Math.max(15, Math.floor((clickPower * 10 + perSecond * 60) * getGoldenMultiplier(state)));
     spawnClickEffects(bonus);
     setState((current) => ({
       ...current,
@@ -597,7 +729,7 @@ export function MachoClickerPage() {
 
   const resetGame = () => {
     if (!window.confirm("マチョクリッカーの進行状況をリセットしますか？")) return;
-    const nextState = { ...initialState, upgrades: { ...emptyUpgrades }, lastSavedAt: Date.now() };
+    const nextState = { ...initialState, upgrades: { ...emptyUpgrades }, purchasedPowerUps: [], lastSavedAt: Date.now() };
     setState(nextState);
     setCombo(0);
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
@@ -810,9 +942,15 @@ export function MachoClickerPage() {
                   {upgrades.map((upgrade) => {
                     const level = state.upgrades[upgrade.key];
                     const visibleCount = getUpgradeVisibleCount(level);
-                    const cost = getUpgradeCost(upgrade, level);
                     return (
-                      <div key={upgrade.key} className="group relative flex min-h-0 items-center overflow-hidden px-3">
+                      <div
+                        key={upgrade.key}
+                        className="relative flex min-h-0 items-center overflow-hidden px-3"
+                        onMouseEnter={() => setHoveredUpgradeKey(upgrade.key)}
+                        onMouseLeave={() => setHoveredUpgradeKey(null)}
+                        onFocus={() => setHoveredUpgradeKey(upgrade.key)}
+                        onBlur={() => setHoveredUpgradeKey(null)}
+                      >
                         <div className="absolute left-3 top-1 z-10 rounded-full bg-[#7C2D12]/85 px-2 py-0.5 text-[10px] font-black text-[#FFE7C2]">
                           {upgrade.name} Lv.{level}
                         </div>
@@ -833,20 +971,6 @@ export function MachoClickerPage() {
                             </div>
                           ))}
                         </div>
-                        <div className="pointer-events-none absolute left-4 top-11 z-30 hidden w-72 rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB] p-4 text-left text-[#7C2D12] shadow-2xl group-hover:block">
-                          <div className="flex items-center gap-3">
-                            <Image src={upgrade.spriteSrc} alt="" width={48} height={48} className="h-12 w-12 object-contain" />
-                            <div>
-                              <div className="text-base font-black">{upgrade.name}</div>
-                              <div className="text-xs font-bold text-[#C2410C]">所有数 {formatFullNumber(level)}</div>
-                            </div>
-                          </div>
-                          <div className="mt-3 text-sm font-semibold leading-6">{upgrade.description}</div>
-                          <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-black">
-                            <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">次の価格<br />{formatFullNumber(cost)}</div>
-                            <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">毎秒<br />+{formatNumber(upgrade.perSecondBonus ?? 0)}</div>
-                          </div>
-                        </div>
                         <div className="ml-2 shrink-0">
                           {level > visibleCount ? (
                             <span className="rounded-full bg-white/90 px-2 py-1 text-xs font-black text-[#7C2D12]">
@@ -859,6 +983,28 @@ export function MachoClickerPage() {
                   })}
                 </div>
               </div>
+              {hoveredUpgrade ? (
+                <div className="pointer-events-none absolute right-8 top-28 z-40 w-80 rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB] p-4 text-left text-[#7C2D12] shadow-2xl">
+                  <div className="flex items-center gap-3">
+                    <Image src={hoveredUpgrade.spriteSrc} alt="" width={48} height={48} className="h-12 w-12 object-contain" />
+                    <div>
+                      <div className="text-base font-black">{hoveredUpgrade.name}</div>
+                      <div className="text-xs font-bold text-[#C2410C]">
+                        所有数 {formatFullNumber(state.upgrades[hoveredUpgrade.key])}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-3 text-sm font-semibold leading-6">{hoveredUpgrade.description}</div>
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-black">
+                    <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
+                      次の価格<br />{formatFullNumber(getUpgradeCost(hoveredUpgrade, state.upgrades[hoveredUpgrade.key]))}
+                    </div>
+                    <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
+                      毎秒<br />+{formatNumber((hoveredUpgrade.perSecondBonus ?? 0) * getBuildingMultiplier(state, hoveredUpgrade.key))}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
             </section>
 
             <aside className="bg-[#FFF7EB] text-[#7C2D12]">
@@ -873,6 +1019,59 @@ export function MachoClickerPage() {
                     リセット
                   </button>
                 </div>
+                <div className="mb-5 rounded-2xl border-2 border-[#FDBA74] bg-white p-3">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <h3 className="text-base font-black text-[#7C2D12]">アップグレード</h3>
+                    <span className="rounded-full bg-[#FFE7C2] px-2 py-1 text-xs font-black text-[#C2410C]">
+                      {state.purchasedPowerUps.length}/{powerUpgrades.length}
+                    </span>
+                  </div>
+                  {unlockedPowerUps.length === 0 ? (
+                    <div className="rounded-xl bg-[#FFF4E7] px-3 py-3 text-xs font-bold text-[#9A3412]/70">
+                      条件達成でアップグレードが解放されます。
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-4 gap-2">
+                      {unlockedPowerUps.map((powerUp) => {
+                        const canBuyPowerUp = state.muscle >= powerUp.cost;
+                        return (
+                          <button
+                            key={powerUp.id}
+                            type="button"
+                            onClick={() => buyPowerUpgrade(powerUp)}
+                            disabled={!canBuyPowerUp}
+                            onMouseEnter={() => setHoveredPowerUpId(powerUp.id)}
+                            onMouseLeave={() => setHoveredPowerUpId(null)}
+                            onFocus={() => setHoveredPowerUpId(powerUp.id)}
+                            onBlur={() => setHoveredPowerUpId(null)}
+                            className={`relative flex h-16 items-center justify-center rounded-2xl border-2 transition ${
+                              canBuyPowerUp
+                                ? "border-[#C2410C] bg-[#FFF4E7] hover:-translate-y-0.5"
+                                : "border-[#FED7AA] bg-[#FFF4E7] opacity-45"
+                            }`}
+                          >
+                            <Image src={powerUp.spriteSrc} alt="" width={48} height={48} className="h-12 w-12 object-contain" />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {hoveredPowerUp ? (
+                    <div className="mt-3 rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB] p-4 text-[#7C2D12] shadow-xl">
+                      <div className="flex items-center gap-3">
+                        <Image src={hoveredPowerUp.spriteSrc} alt="" width={48} height={48} className="h-12 w-12 object-contain" />
+                        <div>
+                          <div className="text-base font-black">{hoveredPowerUp.name}</div>
+                          <div className="text-xs font-bold text-[#C2410C]">{hoveredPowerUp.effectLabel}</div>
+                        </div>
+                      </div>
+                      <div className="mt-3 text-sm font-semibold leading-6">{hoveredPowerUp.description}</div>
+                      <div className="mt-3 rounded-xl bg-[#FFE7C2] px-3 py-2 text-xs font-black">
+                        必要: {formatFullNumber(hoveredPowerUp.cost)} 筋肉
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
                 <div className="grid gap-3">
                   {upgrades.map((upgrade) => {
                     const level = state.upgrades[upgrade.key];
@@ -885,6 +1084,10 @@ export function MachoClickerPage() {
                         type="button"
                         onClick={() => buyUpgrade(upgrade)}
                         disabled={!canBuy}
+                        onMouseEnter={() => setHoveredUpgradeKey(upgrade.key)}
+                        onMouseLeave={() => setHoveredUpgradeKey(null)}
+                        onFocus={() => setHoveredUpgradeKey(upgrade.key)}
+                        onBlur={() => setHoveredUpgradeKey(null)}
                         className={`group relative rounded-2xl border p-3 text-left transition ${
                           canBuy
                             ? "border-[#C2410C] bg-white text-[#7C2D12] hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(255,138,35,0.25)]"
@@ -907,20 +1110,6 @@ export function MachoClickerPage() {
                             </span>
                           </span>
                         </div>
-                        <span className="pointer-events-none absolute right-full top-0 z-40 mr-3 hidden w-72 rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB] p-4 text-[#7C2D12] shadow-2xl group-hover:block">
-                          <span className="flex items-center gap-3">
-                            <Image src={upgrade.spriteSrc} alt="" width={48} height={48} className="h-12 w-12 object-contain" />
-                            <span>
-                              <span className="block text-base font-black">{upgrade.name}</span>
-                              <span className="block text-xs font-bold text-[#C2410C]">所有数 {formatFullNumber(level)}</span>
-                            </span>
-                          </span>
-                          <span className="mt-3 block text-sm font-semibold leading-6">{upgrade.description}</span>
-                          <span className="mt-3 grid grid-cols-2 gap-2 text-xs font-black">
-                            <span className="rounded-xl bg-[#FFE7C2] px-3 py-2">次の価格<br />{formatFullNumber(cost)}</span>
-                            <span className="rounded-xl bg-[#FFE7C2] px-3 py-2">毎秒<br />+{formatNumber(upgrade.perSecondBonus ?? 0)}</span>
-                          </span>
-                        </span>
                       </button>
                     );
                   })}
