@@ -7,7 +7,7 @@ interface SiteHeaderProps {
 
 export function SiteHeader({ profileImageSrc }: SiteHeaderProps) {
   return (
-    <header className="z-40 flex flex-col items-center justify-center gap-3 bg-transparent px-4 pb-2 pt-3 text-center transition-all sm:px-6 md:sticky md:top-4 md:flex-row md:items-start md:justify-between md:gap-6 md:px-12 md:pb-4 md:text-left">
+    <header className="relative z-40 flex flex-col items-center justify-center gap-3 bg-transparent px-4 pb-2 pt-3 text-center transition-all sm:px-6 md:sticky md:top-4 md:flex-row md:items-start md:justify-between md:gap-6 md:px-12 md:pb-4 md:text-left">
       <Link href="/" className="block transition hover:text-[#FFE7C2]">
         <h1 className="text-2xl font-bold leading-tight tracking-tight text-white sm:text-3xl md:text-6xl">
           マチョ田の部屋
