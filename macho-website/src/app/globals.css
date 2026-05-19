@@ -326,6 +326,26 @@ main {
   }
 }
 
+@keyframes macho-shop-ready {
+  0%,
+  100% {
+    box-shadow: 0 0 0 3px rgba(255, 138, 35, 0.18), 0 10px 24px rgba(194, 65, 12, 0.16);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(255, 138, 35, 0.32), 0 14px 30px rgba(194, 65, 12, 0.24);
+  }
+}
+
+@keyframes macho-shop-sheen {
+  0% {
+    transform: translateX(-140%) skewX(-18deg);
+  }
+  45%,
+  100% {
+    transform: translateX(170%) skewX(-18deg);
+  }
+}
+
 
 .macho-float {
   animation: macho-float 0.95s ease-out forwards;
@@ -381,4 +401,18 @@ main {
 
 .macho-unit {
   animation: macho-unit 2.4s ease-in-out infinite;
+}
+
+.macho-shop-ready {
+  animation: macho-shop-ready 1.8s ease-in-out infinite;
+}
+
+.macho-shop-ready::after {
+  content: "";
+  position: absolute;
+  inset: -40% auto -40% 0;
+  width: 40%;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  animation: macho-shop-sheen 2.4s ease-in-out infinite;
 }

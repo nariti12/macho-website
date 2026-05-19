@@ -370,6 +370,8 @@ const formatRate = (value: number) =>
 
 const getUpgradeCost = (upgrade: Upgrade, level: number) => Math.ceil(upgrade.baseCost * upgrade.costRate ** level);
 
+const getShortage = (muscle: number, cost: number) => Math.max(0, cost - muscle);
+
 const getUpgradeVisibleCount = (level: number) => Math.min(180, level);
 
 const getDumbbellOrbitItems = (count: number) => {
@@ -1212,6 +1214,7 @@ export function MachoClickerPage() {
                     <div className="grid grid-cols-4 gap-2">
                       {unlockedPowerUps.map((powerUp) => {
                         const canBuyPowerUp = state.muscle >= powerUp.cost;
+                        const shortage = getShortage(state.muscle, powerUp.cost);
                         return (
                           <button
                             key={powerUp.id}
@@ -1224,12 +1227,19 @@ export function MachoClickerPage() {
                             onMouseLeave={() => setHoveredPowerUpId(null)}
                             onFocus={() => setHoveredPowerUpId(powerUp.id)}
                             onBlur={() => setHoveredPowerUpId(null)}
-                            className={`relative flex h-16 items-center justify-center rounded-2xl border-2 transition ${
+                            className={`relative flex h-16 items-center justify-center overflow-hidden rounded-2xl border-2 transition ${
                               canBuyPowerUp
-                                ? "border-[#C2410C] bg-[#FFF4E7] hover:-translate-y-0.5"
-                                : "border-[#FED7AA] bg-[#FFF4E7] opacity-45"
+                                ? "macho-shop-ready border-[#C2410C] bg-[#FFF4E7] shadow-[0_0_0_3px_rgba(255,138,35,0.22),0_10px_24px_rgba(194,65,12,0.2)] hover:-translate-y-0.5 hover:shadow-[0_0_0_4px_rgba(255,138,35,0.35),0_16px_30px_rgba(194,65,12,0.28)]"
+                                : "cursor-not-allowed border-[#FED7AA] bg-[#FFF4E7] grayscale opacity-45"
                             }`}
                           >
+                            <span
+                              className={`absolute -right-1 -top-2 rounded-full px-2 py-0.5 text-[10px] font-black ${
+                                canBuyPowerUp ? "bg-[#FF8A23] text-white" : "bg-[#7C2D12]/75 text-[#FFE7C2]"
+                              }`}
+                            >
+                              {canBuyPowerUp ? "購入可" : `あと${formatFullNumber(shortage)}`}
+                            </span>
                             <Image src={powerUp.spriteSrc} alt="" width={48} height={48} className="h-12 w-12 object-contain" />
                           </button>
                         );
@@ -1242,6 +1252,7 @@ export function MachoClickerPage() {
                     const level = state.upgrades[upgrade.key];
                     const cost = getUpgradeCost(upgrade, level);
                     const canBuy = state.muscle >= cost;
+                    const shortage = getShortage(state.muscle, cost);
 
                     return (
                       <button
@@ -1253,12 +1264,19 @@ export function MachoClickerPage() {
                         onMouseLeave={() => setHoveredShopUpgradeKey(null)}
                         onFocus={() => setHoveredShopUpgradeKey(upgrade.key)}
                         onBlur={() => setHoveredShopUpgradeKey(null)}
-                        className={`group relative rounded-2xl border p-3 text-left transition ${
+                        className={`group relative overflow-hidden rounded-2xl border p-3 text-left transition ${
                           canBuy
-                            ? "border-[#C2410C] bg-white text-[#7C2D12] hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(255,138,35,0.25)]"
-                            : "border-[#FED7AA] bg-[#FFF4E7] text-[#9A3412]/45"
+                            ? "macho-shop-ready border-[#C2410C] bg-white text-[#7C2D12] shadow-[0_0_0_3px_rgba(255,138,35,0.18),0_10px_24px_rgba(194,65,12,0.16)] hover:-translate-y-0.5 hover:shadow-[0_0_0_4px_rgba(255,138,35,0.32),0_16px_32px_rgba(194,65,12,0.26)]"
+                            : "cursor-not-allowed border-[#FED7AA] bg-[#FFF4E7] text-[#9A3412]/45 grayscale"
                         }`}
                       >
+                        <span
+                          className={`absolute right-3 top-2 rounded-full px-2 py-1 text-[10px] font-black ${
+                            canBuy ? "bg-[#FF8A23] text-white shadow-lg" : "bg-[#7C2D12]/70 text-[#FFE7C2]"
+                          }`}
+                        >
+                          {canBuy ? "購入可能" : "筋肉不足"}
+                        </span>
                         <div className="flex items-start gap-3">
                           <span
                             className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border-2 border-[#FED7AA] bg-[#FFF4E7] shadow-inner"
@@ -1267,11 +1285,15 @@ export function MachoClickerPage() {
                           </span>
                           <span className="min-w-0 flex-1">
                             <span className="flex items-start justify-between gap-2">
-                              <span className="font-black">{upgrade.name}</span>
+                              <span className="pr-16 font-black">{upgrade.name}</span>
                               <span className="rounded-full bg-[#7C2D12] px-2 py-1 text-xs font-black text-white">Lv.{level}</span>
                             </span>
-                            <span className="mt-3 block rounded-xl bg-[#7C2D12] px-3 py-2 text-sm font-black text-white">
-                              必要: {formatFullNumber(cost)} 筋肉
+                            <span
+                              className={`mt-3 block rounded-xl px-3 py-2 text-sm font-black ${
+                                canBuy ? "bg-[#7C2D12] text-white" : "bg-[#D6A169] text-[#7C2D12]"
+                              }`}
+                            >
+                              {canBuy ? "必要" : "あと"}: {formatFullNumber(canBuy ? cost : shortage)} 筋肉
                             </span>
                           </span>
                         </div>
