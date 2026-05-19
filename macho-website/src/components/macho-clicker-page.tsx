@@ -76,6 +76,10 @@ type Spark = {
   rotate: number;
 };
 
+type MobilePanel = "click" | "gym" | "shop";
+
+type SoundType = "click" | "buy" | "blocked" | "golden";
+
 type Achievement = {
   key: string;
   title: string;
@@ -373,6 +377,19 @@ const getUpgradeCost = (upgrade: Upgrade, level: number) => Math.ceil(upgrade.ba
 const getShortage = (muscle: number, cost: number) => Math.max(0, cost - muscle);
 
 const getUpgradeVisibleCount = (level: number) => Math.min(180, level);
+
+const mobilePanels: { key: MobilePanel; label: string }[] = [
+  { key: "click", label: "クリック" },
+  { key: "shop", label: "ショップ" },
+  { key: "gym", label: "ジム" },
+];
+
+const soundProfiles: Record<SoundType, { frequency: number; endFrequency: number; duration: number; gain: number; wave: OscillatorType }> = {
+  click: { frequency: 220, endFrequency: 150, duration: 0.045, gain: 0.04, wave: "square" },
+  buy: { frequency: 420, endFrequency: 760, duration: 0.12, gain: 0.055, wave: "triangle" },
+  blocked: { frequency: 120, endFrequency: 80, duration: 0.12, gain: 0.04, wave: "sawtooth" },
+  golden: { frequency: 660, endFrequency: 990, duration: 0.18, gain: 0.065, wave: "sine" },
+};
 
 const getDumbbellOrbitItems = (count: number) => {
   const ringCapacities = [18, 28, 40, 54, 72, 96];
@@ -693,8 +710,11 @@ export function MachoClickerPage() {
   const [hoveredShopUpgradeKey, setHoveredShopUpgradeKey] = useState<UpgradeKey | null>(null);
   const [hoveredPowerUpId, setHoveredPowerUpId] = useState<string | null>(null);
   const [hoveredMysteryId, setHoveredMysteryId] = useState<string | null>(null);
+  const [mobilePanel, setMobilePanel] = useState<MobilePanel>("click");
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const effectIdRef = useRef(0);
   const stateRef = useRef<GameState>(initialState);
+  const audioContextRef = useRef<AudioContext | null>(null);
   const clickPower = useMemo(() => getClickPower(state), [state]);
   const perSecond = useMemo(() => getPerSecond(state), [state]);
   const title = getTitle(state.totalMuscle);
@@ -833,6 +853,41 @@ export function MachoClickerPage() {
     window.setTimeout(() => setSparks((current) => current.filter((item) => item.id < baseId || item.id > baseId + 7)), 760);
   };
 
+  const playSound = (type: SoundType) => {
+    if (!soundEnabled || typeof window === "undefined") return;
+
+    try {
+      const AudioContextConstructor =
+        window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioContextConstructor) return;
+
+      const context = audioContextRef.current ?? new AudioContextConstructor();
+      audioContextRef.current = context;
+
+      if (context.state === "suspended") {
+        void context.resume();
+      }
+
+      const profile = soundProfiles[type];
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      const now = context.currentTime;
+
+      oscillator.type = profile.wave;
+      oscillator.frequency.setValueAtTime(profile.frequency, now);
+      oscillator.frequency.exponentialRampToValueAtTime(profile.endFrequency, now + profile.duration);
+      gain.gain.setValueAtTime(profile.gain, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + profile.duration);
+
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start(now);
+      oscillator.stop(now + profile.duration);
+    } catch (error) {
+      console.error("Failed to play macho clicker sound", error);
+    }
+  };
+
   const handleClick = () => {
     const now = Date.now();
     const nextCombo = now - lastClickAt < 800 ? Math.min(99, combo + 1) : 1;
@@ -843,6 +898,7 @@ export function MachoClickerPage() {
     setClickBurst(true);
     window.setTimeout(() => setClickBurst(false), 140);
     spawnClickEffects(gain);
+    playSound("click");
 
     setState((current) => ({
       ...current,
@@ -857,11 +913,15 @@ export function MachoClickerPage() {
     setState((current) => {
       const level = current.upgrades[upgrade.key];
       const cost = getUpgradeCost(upgrade, level);
-      if (current.muscle < cost) return current;
+      if (current.muscle < cost) {
+        playSound("blocked");
+        return current;
+      }
 
       const increase = getBuildingUnitProduction(current, upgrade);
       setPurchaseFlash(`${upgrade.name} +${formatRate(increase)}/秒`);
       window.setTimeout(() => setPurchaseFlash(null), 1100);
+      playSound("buy");
 
       return {
         ...current,
@@ -878,11 +938,13 @@ export function MachoClickerPage() {
   const buyPowerUpgrade = (powerUp: PowerUpgrade) => {
     setState((current) => {
       if (current.purchasedPowerUps.includes(powerUp.id) || current.muscle < powerUp.cost || !powerUp.unlock(current)) {
+        playSound("blocked");
         return current;
       }
 
       setPurchaseFlash(`${powerUp.name}: ${getPowerUpgradeSummary(powerUp, current)}`);
       window.setTimeout(() => setPurchaseFlash(null), 1100);
+      playSound("buy");
 
       return {
         ...current,
@@ -905,6 +967,7 @@ export function MachoClickerPage() {
     }));
     setPurchaseFlash(`ゴールデンプロテイン +${formatNumber(bonus)}`);
     setGoldenProtein(null);
+    playSound("golden");
     window.setTimeout(() => setPurchaseFlash(null), 1400);
   };
 
@@ -986,7 +1049,17 @@ export function MachoClickerPage() {
                 </div>
               </div>
               <div className="bg-[#9A3412] px-5 py-4">
-                <div className="text-xs font-black text-[#FFB45D]">次の称号: {nextGoal.title}</div>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-xs font-black text-[#FFB45D]">次の称号: {nextGoal.title}</div>
+                  <button
+                    type="button"
+                    onClick={() => setSoundEnabled((current) => !current)}
+                    className="rounded-full border border-[#FED7AA]/60 px-3 py-1 text-[11px] font-black text-[#FFE7C2] transition hover:bg-[#7C2D12]"
+                    aria-pressed={soundEnabled}
+                  >
+                    効果音 {soundEnabled ? "ON" : "OFF"}
+                  </button>
+                </div>
                 <div className="mt-2 h-3 overflow-hidden rounded-full bg-white/15">
                   <div className="h-full rounded-full bg-gradient-to-r from-[#FFB45D] to-[#FF5A1F]" style={{ width: `${titleProgress}%` }} />
                 </div>
@@ -1004,8 +1077,29 @@ export function MachoClickerPage() {
             </div>
           </section>
 
+          <nav className="grid grid-cols-3 gap-2 border-x-4 border-[#7C2D12] bg-[#2A140B] p-2 xl:hidden" aria-label="マチョクリッカー画面切り替え">
+            {mobilePanels.map((panel) => (
+              <button
+                key={panel.key}
+                type="button"
+                onClick={() => setMobilePanel(panel.key)}
+                className={`rounded-2xl border-2 px-3 py-3 text-sm font-black transition ${
+                  mobilePanel === panel.key
+                    ? "border-[#FFE7C2] bg-[#FF8A23] text-white shadow-[0_0_0_3px_rgba(255,138,35,0.28)]"
+                    : "border-[#9A3412] bg-[#7C2D12] text-[#FFE7C2]"
+                }`}
+              >
+                {panel.label}
+              </button>
+            ))}
+          </nav>
+
           <section className="grid min-h-[calc(100vh-12rem)] overflow-hidden border-y-4 border-[#7C2D12] bg-[#7C2D12] shadow-2xl xl:grid-cols-[minmax(620px,760px)_minmax(0,1fr)_390px]">
-            <aside className="relative flex min-h-[800px] flex-col items-center justify-between overflow-hidden border-b-4 border-[#7C2D12] bg-[radial-gradient(circle_at_center,#FFF0D5_0%,#FDBA74_54%,#B45309_100%)] p-4 text-center sm:p-5 xl:border-b-0 xl:border-r-4">
+            <aside
+              className={`relative min-h-[calc(100vh-15rem)] flex-col items-center justify-between overflow-hidden border-b-4 border-[#7C2D12] bg-[radial-gradient(circle_at_center,#FFF0D5_0%,#FDBA74_54%,#B45309_100%)] p-4 text-center sm:p-5 xl:flex xl:min-h-[800px] xl:border-b-0 xl:border-r-4 ${
+                mobilePanel === "click" ? "flex" : "hidden"
+              }`}
+            >
               <div className="relative z-10 w-full rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB]/95 px-4 py-4 text-[#7C2D12] shadow-xl">
                 <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Muscle Points</div>
                 <div className="mt-1 break-all text-4xl font-black sm:text-5xl">{formatFullNumber(state.muscle)}</div>
@@ -1112,7 +1206,11 @@ export function MachoClickerPage() {
               </div>
             </aside>
 
-            <section className="relative min-h-[560px] overflow-hidden border-b-4 border-[#7C2D12] bg-[linear-gradient(180deg,#FFF0D5_0%,#FDBA74_48%,#C2410C_100%)] xl:border-b-0 xl:border-r-4">
+            <section
+              className={`relative min-h-[calc(100vh-15rem)] overflow-hidden border-b-4 border-[#7C2D12] bg-[linear-gradient(180deg,#FFF0D5_0%,#FDBA74_48%,#C2410C_100%)] xl:block xl:min-h-[560px] xl:border-b-0 xl:border-r-4 ${
+                mobilePanel === "gym" ? "block" : "hidden"
+              }`}
+            >
               <div className="absolute inset-x-0 top-0 z-10 border-b-4 border-[#7C2D12] bg-[#FFF7EB]/95 px-5 py-3 text-[#7C2D12] shadow-lg">
                 <div className="flex items-center justify-between gap-4">
                   <div>
@@ -1187,8 +1285,8 @@ export function MachoClickerPage() {
               ) : null}
             </section>
 
-            <aside className="bg-[#FFF7EB] text-[#7C2D12]">
-              <div className="sticky top-20 max-h-[calc(100vh-5rem)] overflow-y-auto p-4">
+            <aside className={`${mobilePanel === "shop" ? "block" : "hidden"} bg-[#FFF7EB] text-[#7C2D12] xl:block`}>
+              <div className="max-h-none overflow-y-visible p-4 xl:sticky xl:top-20 xl:max-h-[calc(100vh-5rem)] xl:overflow-y-auto">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <h2 className="text-2xl font-black text-[#7C2D12]">ショップ</h2>
                   <button
