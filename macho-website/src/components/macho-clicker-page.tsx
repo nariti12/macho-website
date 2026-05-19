@@ -825,10 +825,10 @@ export function MachoClickerPage() {
         </div>
       ) : null}
 
-      <main className="relative z-10 px-3 pb-20 pt-20 sm:px-5">
-        <div className="mx-auto flex max-w-[1600px] flex-col gap-4">
+      <main className="relative z-10 px-1 pb-16 pt-18 sm:px-2">
+        <div className="mx-auto flex w-full max-w-[1920px] flex-col gap-3">
           <section className="overflow-hidden rounded-[22px] border-4 border-[#7C2D12] bg-[#7C2D12] text-white shadow-2xl">
-            <div className="grid gap-px bg-[#FED7AA] lg:grid-cols-[360px_minmax(0,1fr)_360px]">
+            <div className="grid gap-px bg-[#FED7AA] lg:grid-cols-[420px_minmax(0,1fr)_390px]">
               <div className="bg-[#9A3412] px-5 py-4">
                 <h1 className="text-3xl font-black tracking-tight text-[#FFE7C2]">マチョクリッカー</h1>
                 <div className="mt-1 text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">{bodyStage.label}</div>
@@ -868,8 +868,8 @@ export function MachoClickerPage() {
             </div>
           </section>
 
-          <section className="grid min-h-[820px] overflow-hidden rounded-[28px] border-4 border-[#7C2D12] bg-[#7C2D12] shadow-2xl xl:grid-cols-[minmax(480px,560px)_minmax(0,1fr)_390px]">
-            <aside className="relative flex min-h-[760px] flex-col items-center justify-between overflow-hidden border-b-4 border-[#7C2D12] bg-[radial-gradient(circle_at_center,#FFF0D5_0%,#FDBA74_54%,#B45309_100%)] p-4 text-center sm:p-5 xl:border-b-0 xl:border-r-4">
+          <section className="grid min-h-[860px] overflow-hidden rounded-[28px] border-4 border-[#7C2D12] bg-[#7C2D12] shadow-2xl xl:grid-cols-[minmax(560px,700px)_minmax(0,1fr)_390px]">
+            <aside className="relative flex min-h-[800px] flex-col items-center justify-between overflow-hidden border-b-4 border-[#7C2D12] bg-[radial-gradient(circle_at_center,#FFF0D5_0%,#FDBA74_54%,#B45309_100%)] p-4 text-center sm:p-5 xl:border-b-0 xl:border-r-4">
               <div className="relative z-10 w-full rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB]/95 px-4 py-4 text-[#7C2D12] shadow-xl">
                 <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Muscle Points</div>
                 <div className="mt-1 break-all text-4xl font-black sm:text-5xl">{formatFullNumber(state.muscle)}</div>
@@ -918,7 +918,7 @@ export function MachoClickerPage() {
                 </button>
               ) : null}
 
-              <div className="relative z-20 my-5 flex aspect-square w-full max-w-[620px] items-center justify-center overflow-visible sm:my-6">
+              <div className="relative z-20 my-4 flex aspect-square w-full max-w-[760px] items-center justify-center overflow-visible sm:my-5">
                 {dumbbellOrbitItems.map((item) => (
                   <span
                     key={`dumbbell-orbit-${item.index}`}
@@ -946,7 +946,7 @@ export function MachoClickerPage() {
                 <button
                   type="button"
                   onClick={handleClick}
-                  className={`macho-breathe group relative z-30 flex aspect-square w-[min(72vw,22rem)] items-center justify-center rounded-full border-[12px] shadow-[0_55px_110px_-35px_rgba(42,20,11,0.95)] transition hover:scale-[1.04] active:scale-95 ${bodyStage.ring} ${
+                  className={`macho-breathe group relative z-30 flex aspect-square w-[min(68vw,25rem)] items-center justify-center rounded-full border-[12px] shadow-[0_55px_110px_-35px_rgba(42,20,11,0.95)] transition hover:scale-[1.04] active:scale-95 ${bodyStage.ring} ${
                     clickBurst ? "macho-pop" : ""
                   }`}
                 >
@@ -958,7 +958,7 @@ export function MachoClickerPage() {
                     width={280}
                     height={280}
                     priority
-                    className="relative z-10 h-auto w-[min(52vw,17rem)] drop-shadow-2xl transition duration-300 group-hover:scale-105"
+                    className="relative z-10 h-auto w-[min(48vw,19rem)] drop-shadow-2xl transition duration-300 group-hover:scale-105"
                     style={{ transform: `scale(${bodyStage.scale})` }}
                   />
                 </button>
