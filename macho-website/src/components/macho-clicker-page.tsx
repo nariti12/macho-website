@@ -1312,7 +1312,6 @@ export function MachoClickerPage() {
                     <div className="grid grid-cols-4 gap-2">
                       {unlockedPowerUps.map((powerUp) => {
                         const canBuyPowerUp = state.muscle >= powerUp.cost;
-                        const shortage = getShortage(state.muscle, powerUp.cost);
                         return (
                           <button
                             key={powerUp.id}
@@ -1331,13 +1330,6 @@ export function MachoClickerPage() {
                                 : "cursor-not-allowed border-[#FED7AA] bg-[#FFF4E7] grayscale opacity-45"
                             }`}
                           >
-                            <span
-                              className={`absolute -right-1 -top-2 rounded-full px-2 py-0.5 text-[10px] font-black ${
-                                canBuyPowerUp ? "bg-[#FF8A23] text-white" : "bg-[#7C2D12]/75 text-[#FFE7C2]"
-                              }`}
-                            >
-                              {canBuyPowerUp ? "購入可" : `あと${formatFullNumber(shortage)}`}
-                            </span>
                             <Image src={powerUp.spriteSrc} alt="" width={48} height={48} className="h-12 w-12 object-contain" />
                           </button>
                         );
@@ -1368,13 +1360,6 @@ export function MachoClickerPage() {
                             : "cursor-not-allowed border-[#FED7AA] bg-[#FFF4E7] text-[#9A3412]/45 grayscale"
                         }`}
                       >
-                        <span
-                          className={`absolute right-3 top-2 rounded-full px-2 py-1 text-[10px] font-black ${
-                            canBuy ? "bg-[#FF8A23] text-white shadow-lg" : "bg-[#7C2D12]/70 text-[#FFE7C2]"
-                          }`}
-                        >
-                          {canBuy ? "購入可能" : "筋肉不足"}
-                        </span>
                         <div className="flex items-start gap-3">
                           <span
                             className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border-2 border-[#FED7AA] bg-[#FFF4E7] shadow-inner"
@@ -1383,7 +1368,7 @@ export function MachoClickerPage() {
                           </span>
                           <span className="min-w-0 flex-1">
                             <span className="flex items-start justify-between gap-2">
-                              <span className="pr-16 font-black">{upgrade.name}</span>
+                              <span className="font-black">{upgrade.name}</span>
                               <span className="rounded-full bg-[#7C2D12] px-2 py-1 text-xs font-black text-white">Lv.{level}</span>
                             </span>
                             <span
