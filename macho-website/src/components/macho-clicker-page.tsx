@@ -388,7 +388,7 @@ const getDumbbellOrbitItems = (count: number) => {
     for (let index = 0; index < ringCount; index += 1) {
       items.push({
         index: indexOffset + index,
-        angle: (360 / ringCount) * index - 90 + ringIndex * 7,
+        angle: (360 / ringCapacities[ringIndex]) * index - 90,
         radius,
         size,
       });
@@ -428,11 +428,6 @@ const getBuildingUnitProduction = (state: GameState, upgrade: Upgrade, pendingPo
 
 const getBuildingTotalProduction = (state: GameState, upgrade: Upgrade, pendingPowerUp?: PowerUpgrade) =>
   getBuildingUnitProduction(state, upgrade, pendingPowerUp) * state.upgrades[upgrade.key];
-
-const getProductionShare = (production: number, perSecond: number) => {
-  if (perSecond <= 0 || production <= 0) return "0.0%";
-  return `${((production / perSecond) * 100).toFixed(1)}%`;
-};
 
 const getGoldenMultiplier = (state: GameState) =>
   powerUpgrades.reduce((total, powerUp) => {
@@ -561,11 +556,9 @@ const getPowerUpgradeSummary = (powerUp: PowerUpgrade, state: GameState) => {
 const BuildingProductionDetails = ({
   state,
   upgrade,
-  perSecond,
 }: {
   state: GameState;
   upgrade: Upgrade;
-  perSecond: number;
 }) => {
   const owned = state.upgrades[upgrade.key];
   const unitProduction = getBuildingUnitProduction(state, upgrade);
@@ -580,11 +573,8 @@ const BuildingProductionDetails = ({
       <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
         1個あたり<br />+{formatRate(unitProduction)}/秒
       </div>
-      <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
+      <div className="col-span-2 rounded-xl bg-[#FFE7C2] px-3 py-2">
         合計生産<br />+{formatRate(totalProduction)}/秒
-      </div>
-      <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
-        全体比率<br />{getProductionShare(totalProduction, perSecond)}
       </div>
       <div className="col-span-2 rounded-xl bg-[#7C2D12] px-3 py-2 text-white">
         次に買うと +{formatRate(unitProduction)}/秒、合計 +{formatRate(nextTotalProduction)}/秒
@@ -1190,7 +1180,7 @@ export function MachoClickerPage() {
                     </div>
                   </div>
                   <div className="mt-3 text-sm font-semibold leading-6">{hoveredGymUpgrade.description}</div>
-                  <BuildingProductionDetails state={state} upgrade={hoveredGymUpgrade} perSecond={perSecond} />
+                  <BuildingProductionDetails state={state} upgrade={hoveredGymUpgrade} />
                 </div>
               ) : null}
             </section>
@@ -1328,7 +1318,7 @@ export function MachoClickerPage() {
                       </div>
                     </div>
                     <div className="mt-3 text-sm font-semibold leading-6">{hoveredShopUpgrade.description}</div>
-                    <BuildingProductionDetails state={state} upgrade={hoveredShopUpgrade} perSecond={perSecond} />
+                    <BuildingProductionDetails state={state} upgrade={hoveredShopUpgrade} />
                   </div>
                 ) : null}
                 {hoveredPowerUp ? (
