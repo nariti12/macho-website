@@ -89,6 +89,13 @@ type GoldenProtein = {
   y: number;
 };
 
+type MysteryShopItem = {
+  id: string;
+  name: string;
+  description: string;
+  unlockHint: string;
+};
+
 const upgrades: Upgrade[] = [
   {
     key: "pushUp",
@@ -268,6 +275,15 @@ const powerUpgrades: PowerUpgrade[] = [
   },
 ];
 
+const mysteryShopItems: MysteryShopItem[] = [
+  {
+    id: "mystery-equipment",
+    name: "？？？",
+    description: "まだ正体不明のジム設備です。さらに筋肉ポイントを稼ぐと、新しい設備を追加できる余地として残しています。",
+    unlockHint: "未解放",
+  },
+];
+
 const achievements: Achievement[] = [
   {
     key: "first-click",
@@ -364,9 +380,9 @@ const getDumbbellOrbitItems = (count: number) => {
 
   for (let ringIndex = 0; ringIndex < ringCapacities.length && remaining > 0; ringIndex += 1) {
     const ringCount = Math.min(ringCapacities[ringIndex], remaining);
-    const maxRadius = 10.7 + ringIndex * 2.3;
-    const viewportRadius = 27 + ringIndex * 5.5;
-    const radius = `clamp(${maxRadius - 2.2}rem, ${viewportRadius}vw, ${maxRadius}rem)`;
+    const maxRadius = 13.8 + ringIndex * 1.8;
+    const viewportRadius = 28 + ringIndex * 4.5;
+    const radius = `clamp(${maxRadius - 1.6}rem, ${viewportRadius}vw, ${maxRadius}rem)`;
     const size = ringIndex < 2 ? 44 : 36;
 
     for (let index = 0; index < ringCount; index += 1) {
@@ -560,6 +576,7 @@ export function MachoClickerPage() {
   const [newsIndex, setNewsIndex] = useState(0);
   const [hoveredUpgradeKey, setHoveredUpgradeKey] = useState<UpgradeKey | null>(null);
   const [hoveredPowerUpId, setHoveredPowerUpId] = useState<string | null>(null);
+  const [hoveredMysteryId, setHoveredMysteryId] = useState<string | null>(null);
   const effectIdRef = useRef(0);
   const stateRef = useRef<GameState>(initialState);
   const clickPower = useMemo(() => getClickPower(state), [state]);
@@ -575,6 +592,7 @@ export function MachoClickerPage() {
   const dumbbellOrbitItems = useMemo(() => getDumbbellOrbitItems(state.upgrades.pushUp), [state.upgrades.pushUp]);
   const hoveredUpgrade = hoveredUpgradeKey ? upgrades.find((upgrade) => upgrade.key === hoveredUpgradeKey) ?? null : null;
   const hoveredPowerUp = hoveredPowerUpId ? powerUpgrades.find((powerUp) => powerUp.id === hoveredPowerUpId) ?? null : null;
+  const hoveredMystery = hoveredMysteryId ? mysteryShopItems.find((item) => item.id === hoveredMysteryId) ?? null : null;
   const unlockedPowerUps = powerUpgrades.filter(
     (powerUp) => powerUp.unlock(state) && !state.purchasedPowerUps.includes(powerUp.id)
   );
@@ -825,9 +843,9 @@ export function MachoClickerPage() {
         </div>
       ) : null}
 
-      <main className="relative z-10 px-1 pb-16 pt-18 sm:px-2">
-        <div className="mx-auto flex w-full max-w-[1920px] flex-col gap-3">
-          <section className="overflow-hidden rounded-[22px] border-4 border-[#7C2D12] bg-[#7C2D12] text-white shadow-2xl">
+      <main className="relative z-10 px-0 pb-12 pt-16">
+        <div className="flex w-full max-w-none flex-col gap-2">
+          <section className="overflow-hidden border-y-4 border-[#7C2D12] bg-[#7C2D12] text-white shadow-2xl">
             <div className="grid gap-px bg-[#FED7AA] lg:grid-cols-[420px_minmax(0,1fr)_390px]">
               <div className="bg-[#9A3412] px-5 py-4">
                 <h1 className="text-3xl font-black tracking-tight text-[#FFE7C2]">マチョクリッカー</h1>
@@ -868,7 +886,7 @@ export function MachoClickerPage() {
             </div>
           </section>
 
-          <section className="grid min-h-[860px] overflow-hidden rounded-[28px] border-4 border-[#7C2D12] bg-[#7C2D12] shadow-2xl xl:grid-cols-[minmax(560px,700px)_minmax(0,1fr)_390px]">
+          <section className="grid min-h-[calc(100vh-12rem)] overflow-hidden border-y-4 border-[#7C2D12] bg-[#7C2D12] shadow-2xl xl:grid-cols-[minmax(620px,760px)_minmax(0,1fr)_390px]">
             <aside className="relative flex min-h-[800px] flex-col items-center justify-between overflow-hidden border-b-4 border-[#7C2D12] bg-[radial-gradient(circle_at_center,#FFF0D5_0%,#FDBA74_54%,#B45309_100%)] p-4 text-center sm:p-5 xl:border-b-0 xl:border-r-4">
               <div className="relative z-10 w-full rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB]/95 px-4 py-4 text-[#7C2D12] shadow-xl">
                 <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Muscle Points</div>
@@ -922,7 +940,7 @@ export function MachoClickerPage() {
                 {dumbbellOrbitItems.map((item) => (
                   <span
                     key={`dumbbell-orbit-${item.index}`}
-                    className="macho-cursor pointer-events-none absolute left-1/2 top-1/2 z-20 flex items-center justify-center"
+                    className="macho-cursor pointer-events-none absolute left-1/2 top-1/2 z-40 flex items-center justify-center"
                     style={
                       {
                         width: item.size,
@@ -989,11 +1007,6 @@ export function MachoClickerPage() {
 
               <div className="absolute inset-x-0 bottom-0 h-40 bg-[linear-gradient(180deg,transparent_0%,rgba(124,45,18,0.7)_90%)]" />
               <div className="absolute inset-x-4 bottom-5 top-24 overflow-hidden rounded-[28px] border-4 border-[#7C2D12] bg-[linear-gradient(180deg,rgba(255,247,235,0.92)_0%,rgba(255,237,213,0.76)_62%,rgba(154,52,18,0.72)_100%)] shadow-inner">
-                {visualOwnedUpgradeCount === 0 ? (
-                  <div className="absolute inset-0 z-10 flex items-center justify-center px-8 text-center text-lg font-black text-[#9A3412]/55">
-                    ダンベル以外の設備を買うと、ここにジム設備が増えます
-                  </div>
-                ) : null}
                 <div className="grid h-full divide-y-2 divide-[#B45309]/35" style={{ gridTemplateRows: `repeat(${visualUpgrades.length}, minmax(0, 1fr))` }}>
                   {visualUpgrades.map((upgrade) => {
                     const level = state.upgrades[upgrade.key];
@@ -1094,8 +1107,10 @@ export function MachoClickerPage() {
                           <button
                             key={powerUp.id}
                             type="button"
-                            onClick={() => buyPowerUpgrade(powerUp)}
-                            disabled={!canBuyPowerUp}
+                            onClick={() => {
+                              if (canBuyPowerUp) buyPowerUpgrade(powerUp);
+                            }}
+                            aria-disabled={!canBuyPowerUp}
                             onMouseEnter={() => setHoveredPowerUpId(powerUp.id)}
                             onMouseLeave={() => setHoveredPowerUpId(null)}
                             onFocus={() => setHoveredPowerUpId(powerUp.id)}
@@ -1139,7 +1154,7 @@ export function MachoClickerPage() {
                         key={upgrade.key}
                         type="button"
                         onClick={() => buyUpgrade(upgrade)}
-                        disabled={!canBuy}
+                        aria-disabled={!canBuy}
                         onMouseEnter={() => setHoveredUpgradeKey(upgrade.key)}
                         onMouseLeave={() => setHoveredUpgradeKey(null)}
                         onFocus={() => setHoveredUpgradeKey(upgrade.key)}
@@ -1169,7 +1184,48 @@ export function MachoClickerPage() {
                       </button>
                     );
                   })}
+                  {mysteryShopItems.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      aria-disabled="true"
+                      onMouseEnter={() => setHoveredMysteryId(item.id)}
+                      onMouseLeave={() => setHoveredMysteryId(null)}
+                      onFocus={() => setHoveredMysteryId(item.id)}
+                      onBlur={() => setHoveredMysteryId(null)}
+                      className="group relative rounded-2xl border border-[#FED7AA] bg-[#3B1D0F] p-3 text-left text-[#FFE7C2]/70 transition"
+                    >
+                      <div className="flex items-start gap-3">
+                        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border-2 border-[#9A3412] bg-[#2A140B] text-3xl font-black shadow-inner">
+                          ?
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-start justify-between gap-2">
+                            <span className="font-black">{item.name}</span>
+                            <span className="rounded-full bg-[#7C2D12] px-2 py-1 text-xs font-black text-white">LOCK</span>
+                          </span>
+                          <span className="mt-3 block rounded-xl bg-[#7C2D12] px-3 py-2 text-sm font-black text-white/70">
+                            必要: ？？？
+                          </span>
+                        </span>
+                      </div>
+                    </button>
+                  ))}
                 </div>
+                {hoveredMystery ? (
+                  <div className="mt-3 rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB] p-4 text-[#7C2D12] shadow-xl">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#2A140B] text-2xl font-black text-[#FFE7C2]">
+                        ?
+                      </div>
+                      <div>
+                        <div className="text-base font-black">{hoveredMystery.name}</div>
+                        <div className="text-xs font-bold text-[#C2410C]">{hoveredMystery.unlockHint}</div>
+                      </div>
+                    </div>
+                    <div className="mt-3 text-sm font-semibold leading-6">{hoveredMystery.description}</div>
+                  </div>
+                ) : null}
               </div>
             </aside>
           </section>
