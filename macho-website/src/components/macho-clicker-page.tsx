@@ -384,11 +384,11 @@ const mobilePanels: { key: MobilePanel; label: string }[] = [
   { key: "gym", label: "ジム" },
 ];
 
-const soundProfiles: Record<SoundType, { frequency: number; endFrequency: number; duration: number; gain: number; wave: OscillatorType }> = {
-  click: { frequency: 360, endFrequency: 180, duration: 0.09, gain: 0.16, wave: "square" },
-  buy: { frequency: 480, endFrequency: 920, duration: 0.16, gain: 0.11, wave: "triangle" },
-  blocked: { frequency: 130, endFrequency: 70, duration: 0.14, gain: 0.08, wave: "sawtooth" },
-  golden: { frequency: 700, endFrequency: 1200, duration: 0.22, gain: 0.12, wave: "sine" },
+const soundFiles: Record<SoundType, string> = {
+  click: "/sounds/macho-clicker/click.wav",
+  buy: "/sounds/macho-clicker/buy.wav",
+  blocked: "/sounds/macho-clicker/blocked.wav",
+  golden: "/sounds/macho-clicker/golden.wav",
 };
 
 const getDumbbellOrbitItems = (count: number) => {
@@ -714,8 +714,7 @@ export function MachoClickerPage() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const effectIdRef = useRef(0);
   const stateRef = useRef<GameState>(initialState);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const audioUnlockedRef = useRef(false);
+  const soundRefs = useRef<Partial<Record<SoundType, HTMLAudioElement>>>({});
   const clickPower = useMemo(() => getClickPower(state), [state]);
   const perSecond = useMemo(() => getPerSecond(state), [state]);
   const title = getTitle(state.totalMuscle);
@@ -743,6 +742,19 @@ export function MachoClickerPage() {
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  useEffect(() => {
+    const sounds = Object.fromEntries(
+      Object.entries(soundFiles).map(([type, src]) => {
+        const audio = new Audio(src);
+        audio.preload = "auto";
+        audio.volume = type === "click" ? 0.8 : 0.72;
+        return [type, audio];
+      })
+    ) as Record<SoundType, HTMLAudioElement>;
+
+    soundRefs.current = sounds;
+  }, []);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -854,80 +866,24 @@ export function MachoClickerPage() {
     window.setTimeout(() => setSparks((current) => current.filter((item) => item.id < baseId || item.id > baseId + 7)), 760);
   };
 
-  const getAudioContext = () => {
-    if (typeof window === "undefined") return null;
-    try {
-      const AudioContextConstructor =
-        window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (!AudioContextConstructor) return null;
-
-      const context = audioContextRef.current ?? new AudioContextConstructor();
-      audioContextRef.current = context;
-      return context;
-    } catch (error) {
-      console.error("Failed to initialize macho clicker sound", error);
-      return null;
-    }
-  };
-
   const unlockAudio = () => {
-    if (!soundEnabled || audioUnlockedRef.current) return;
-
-    const context = getAudioContext();
-    if (!context) return;
-
-    if (context.state === "suspended") {
-      void context.resume().then(() => {
-        audioUnlockedRef.current = true;
-      });
-      return;
-    }
-
-    audioUnlockedRef.current = true;
+    if (!soundEnabled) return;
+    const clickSound = soundRefs.current.click;
+    if (!clickSound) return;
+    clickSound.load();
   };
 
   const playSound = (type: SoundType) => {
     if (!soundEnabled) return;
 
     try {
-      const context = getAudioContext();
-      if (!context) return;
+      const audio = soundRefs.current[type];
+      if (!audio) return;
 
-      const profile = soundProfiles[type];
-      const startSound = () => {
-        const oscillator = context.createOscillator();
-        const oscillatorLayer = context.createOscillator();
-        const gain = context.createGain();
-        const now = context.currentTime + 0.01;
-
-        oscillator.type = profile.wave;
-        oscillatorLayer.type = "triangle";
-        oscillator.frequency.setValueAtTime(profile.frequency, now);
-        oscillator.frequency.exponentialRampToValueAtTime(profile.endFrequency, now + profile.duration);
-        oscillatorLayer.frequency.setValueAtTime(profile.frequency * 1.5, now);
-        oscillatorLayer.frequency.exponentialRampToValueAtTime(profile.endFrequency * 1.25, now + profile.duration);
-        gain.gain.setValueAtTime(profile.gain, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + profile.duration);
-
-        oscillator.connect(gain);
-        oscillatorLayer.connect(gain);
-        gain.connect(context.destination);
-        oscillator.start(now);
-        oscillatorLayer.start(now);
-        oscillator.stop(now + profile.duration);
-        oscillatorLayer.stop(now + profile.duration);
-      };
-
-      if (context.state === "suspended") {
-        void context.resume().then(() => {
-          audioUnlockedRef.current = true;
-          startSound();
-        });
-        return;
-      }
-
-      audioUnlockedRef.current = true;
-      startSound();
+      const sound = audio.cloneNode(true) as HTMLAudioElement;
+      sound.volume = audio.volume;
+      sound.currentTime = 0;
+      void sound.play();
     } catch (error) {
       console.error("Failed to play macho clicker sound", error);
     }
