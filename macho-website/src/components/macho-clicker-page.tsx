@@ -414,6 +414,26 @@ const getBuildingMultiplier = (state: GameState, key: UpgradeKey) =>
     return total * (powerUp.buildingMultiplier ?? 1);
   }, 1);
 
+const getBuildingMultiplierWithPendingPowerUp = (state: GameState, key: UpgradeKey, pendingPowerUp?: PowerUpgrade) => {
+  const currentMultiplier = getBuildingMultiplier(state, key);
+  if (!pendingPowerUp || pendingPowerUp.target !== key || state.purchasedPowerUps.includes(pendingPowerUp.id)) {
+    return currentMultiplier;
+  }
+
+  return currentMultiplier * (pendingPowerUp.buildingMultiplier ?? 1);
+};
+
+const getBuildingUnitProduction = (state: GameState, upgrade: Upgrade, pendingPowerUp?: PowerUpgrade) =>
+  (upgrade.perSecondBonus ?? 0) * getBuildingMultiplierWithPendingPowerUp(state, upgrade.key, pendingPowerUp);
+
+const getBuildingTotalProduction = (state: GameState, upgrade: Upgrade, pendingPowerUp?: PowerUpgrade) =>
+  getBuildingUnitProduction(state, upgrade, pendingPowerUp) * state.upgrades[upgrade.key];
+
+const getProductionShare = (production: number, perSecond: number) => {
+  if (perSecond <= 0 || production <= 0) return "0.0%";
+  return `${((production / perSecond) * 100).toFixed(1)}%`;
+};
+
 const getGoldenMultiplier = (state: GameState) =>
   powerUpgrades.reduce((total, powerUp) => {
     if (!state.purchasedPowerUps.includes(powerUp.id)) return total;
@@ -513,6 +533,109 @@ const getNewsLines = (state: GameState, title: string, perSecond: number) => {
   }
 
   return lines;
+};
+
+const getPowerUpgradeSummary = (powerUp: PowerUpgrade, state: GameState) => {
+  if (powerUp.clickBonus) {
+    return `クリック +${formatNumber(powerUp.clickBonus)}`;
+  }
+
+  if (powerUp.target) {
+    const target = upgrades.find((upgrade) => upgrade.key === powerUp.target);
+    if (!target) return powerUp.effectLabel;
+
+    const before = getBuildingTotalProduction(state, target);
+    const after = getBuildingTotalProduction(state, target, powerUp);
+    const increase = Math.max(0, after - before);
+
+    return `${target.name} +${formatRate(increase)}/秒`;
+  }
+
+  if (powerUp.goldenMultiplier) {
+    return `ゴールデンプロテイン x${powerUp.goldenMultiplier}`;
+  }
+
+  return powerUp.effectLabel;
+};
+
+const BuildingProductionDetails = ({
+  state,
+  upgrade,
+  perSecond,
+}: {
+  state: GameState;
+  upgrade: Upgrade;
+  perSecond: number;
+}) => {
+  const owned = state.upgrades[upgrade.key];
+  const unitProduction = getBuildingUnitProduction(state, upgrade);
+  const totalProduction = getBuildingTotalProduction(state, upgrade);
+  const nextTotalProduction = totalProduction + unitProduction;
+
+  return (
+    <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-black">
+      <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
+        次の価格<br />{formatFullNumber(getUpgradeCost(upgrade, owned))}
+      </div>
+      <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
+        1個あたり<br />+{formatRate(unitProduction)}/秒
+      </div>
+      <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
+        合計生産<br />+{formatRate(totalProduction)}/秒
+      </div>
+      <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
+        全体比率<br />{getProductionShare(totalProduction, perSecond)}
+      </div>
+      <div className="col-span-2 rounded-xl bg-[#7C2D12] px-3 py-2 text-white">
+        次に買うと +{formatRate(unitProduction)}/秒、合計 +{formatRate(nextTotalProduction)}/秒
+      </div>
+    </div>
+  );
+};
+
+const PowerUpgradeDetails = ({ state, powerUp }: { state: GameState; powerUp: PowerUpgrade }) => {
+  if (powerUp.target) {
+    const target = upgrades.find((upgrade) => upgrade.key === powerUp.target);
+    if (target) {
+      const before = getBuildingTotalProduction(state, target);
+      const after = getBuildingTotalProduction(state, target, powerUp);
+      const increase = Math.max(0, after - before);
+
+      return (
+        <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-black">
+          <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
+            現在<br />+{formatRate(before)}/秒
+          </div>
+          <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
+            購入後<br />+{formatRate(after)}/秒
+          </div>
+          <div className="col-span-2 rounded-xl bg-[#7C2D12] px-3 py-2 text-white">
+            このアップグレードで +{formatRate(increase)}/秒
+          </div>
+        </div>
+      );
+    }
+  }
+
+  if (powerUp.clickBonus) {
+    const currentClick = getClickPower(state);
+    return (
+      <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-black">
+        <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
+          現在クリック<br />+{formatNumber(currentClick)}
+        </div>
+        <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
+          購入後<br />+{formatNumber(currentClick + powerUp.clickBonus)}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3 rounded-xl bg-[#FFE7C2] px-3 py-2 text-xs font-black">
+      効果: {powerUp.effectLabel}
+    </div>
+  );
 };
 
 const normalizeSavedUpgrades = (value?: Partial<Record<UpgradeKey, number>>) => ({
@@ -744,7 +867,8 @@ export function MachoClickerPage() {
       const cost = getUpgradeCost(upgrade, level);
       if (current.muscle < cost) return current;
 
-      setPurchaseFlash(upgrade.name);
+      const increase = getBuildingUnitProduction(current, upgrade);
+      setPurchaseFlash(`${upgrade.name} +${formatRate(increase)}/秒`);
       window.setTimeout(() => setPurchaseFlash(null), 1100);
 
       return {
@@ -765,7 +889,7 @@ export function MachoClickerPage() {
         return current;
       }
 
-      setPurchaseFlash(powerUp.name);
+      setPurchaseFlash(`${powerUp.name}: ${getPowerUpgradeSummary(powerUp, current)}`);
       window.setTimeout(() => setPurchaseFlash(null), 1100);
 
       return {
@@ -841,7 +965,7 @@ export function MachoClickerPage() {
 
       {purchaseFlash ? (
         <div className="macho-toast fixed left-1/2 top-28 z-50 -translate-x-1/2 rounded-full bg-[#7C2D12] px-5 py-3 text-sm font-bold text-white shadow-2xl">
-          {purchaseFlash} を強化しました
+          {purchaseFlash}
         </div>
       ) : null}
 
@@ -1066,14 +1190,7 @@ export function MachoClickerPage() {
                     </div>
                   </div>
                   <div className="mt-3 text-sm font-semibold leading-6">{hoveredGymUpgrade.description}</div>
-                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-black">
-                    <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
-                      次の価格<br />{formatFullNumber(getUpgradeCost(hoveredGymUpgrade, state.upgrades[hoveredGymUpgrade.key]))}
-                    </div>
-                    <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
-                      毎秒<br />+{formatRate((hoveredGymUpgrade.perSecondBonus ?? 0) * getBuildingMultiplier(state, hoveredGymUpgrade.key))}
-                    </div>
-                  </div>
+                  <BuildingProductionDetails state={state} upgrade={hoveredGymUpgrade} perSecond={perSecond} />
                 </div>
               ) : null}
             </section>
@@ -1211,14 +1328,7 @@ export function MachoClickerPage() {
                       </div>
                     </div>
                     <div className="mt-3 text-sm font-semibold leading-6">{hoveredShopUpgrade.description}</div>
-                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-black">
-                      <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
-                        次の価格<br />{formatFullNumber(getUpgradeCost(hoveredShopUpgrade, state.upgrades[hoveredShopUpgrade.key]))}
-                      </div>
-                      <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
-                        毎秒<br />+{formatRate((hoveredShopUpgrade.perSecondBonus ?? 0) * getBuildingMultiplier(state, hoveredShopUpgrade.key))}
-                      </div>
-                    </div>
+                    <BuildingProductionDetails state={state} upgrade={hoveredShopUpgrade} perSecond={perSecond} />
                   </div>
                 ) : null}
                 {hoveredPowerUp ? (
@@ -1234,6 +1344,7 @@ export function MachoClickerPage() {
                     <div className="mt-3 rounded-xl bg-[#FFE7C2] px-3 py-2 text-xs font-black">
                       必要: {formatFullNumber(hoveredPowerUp.cost)} 筋肉
                     </div>
+                    <PowerUpgradeDetails state={state} powerUp={hoveredPowerUp} />
                   </div>
                 ) : null}
                 {hoveredMystery ? (
