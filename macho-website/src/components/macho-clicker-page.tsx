@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import type { CSSProperties } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { SiteHeader } from "@/components/site-header";
@@ -9,6 +10,7 @@ const profileImageSrc = "/picture/ore.png";
 const characterImageSrc = "/picture/man.png";
 const STORAGE_KEY = "machoda:macho-clicker:v3";
 const SAVE_INTERVAL_MS = 1000;
+const GAME_TICK_MS = 100;
 const NEWS_INTERVAL_MS = 18_000;
 const OFFLINE_LIMIT_SECONDS = 60 * 60 * 8;
 const MAX_SCORE = 999_999_999_999_999;
@@ -186,6 +188,8 @@ const upgrades: Upgrade[] = [
   },
 ];
 
+const visualUpgrades = upgrades.filter((upgrade) => upgrade.key !== "pushUp");
+
 const emptyUpgrades: Record<UpgradeKey, number> = {
   pushUp: 0,
   abRoller: 0,
@@ -339,19 +343,47 @@ const initialState: GameState = {
 
 const clampScore = (value: number) => Math.min(MAX_SCORE, Math.max(0, value));
 
-const formatNumber = (value: number) => {
-  const rounded = Math.floor(value);
-  if (rounded >= 1_000_000_000_000) return `${(rounded / 1_000_000_000_000).toFixed(2)}兆`;
-  if (rounded >= 100_000_000) return `${(rounded / 100_000_000).toFixed(2)}億`;
-  if (rounded >= 10_000) return `${(rounded / 10_000).toFixed(1)}万`;
-  return rounded.toLocaleString("ja-JP");
-};
+const formatNumber = (value: number) => Math.floor(value).toLocaleString("ja-JP");
 
 const formatFullNumber = (value: number) => Math.floor(value).toLocaleString("ja-JP");
+
+const formatRate = (value: number) =>
+  value < 100 && !Number.isInteger(value)
+    ? value.toLocaleString("ja-JP", { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+    : Math.floor(value).toLocaleString("ja-JP");
 
 const getUpgradeCost = (upgrade: Upgrade, level: number) => Math.ceil(upgrade.baseCost * upgrade.costRate ** level);
 
 const getUpgradeVisibleCount = (level: number) => Math.min(180, level);
+
+const getDumbbellOrbitItems = (count: number) => {
+  const ringCapacities = [18, 28, 40, 54, 72, 96];
+  const items: { index: number; angle: number; radius: string; size: number }[] = [];
+  let remaining = Math.min(308, count);
+  let indexOffset = 0;
+
+  for (let ringIndex = 0; ringIndex < ringCapacities.length && remaining > 0; ringIndex += 1) {
+    const ringCount = Math.min(ringCapacities[ringIndex], remaining);
+    const maxRadius = 10.7 + ringIndex * 2.3;
+    const viewportRadius = 27 + ringIndex * 5.5;
+    const radius = `clamp(${maxRadius - 2.2}rem, ${viewportRadius}vw, ${maxRadius}rem)`;
+    const size = ringIndex < 2 ? 44 : 36;
+
+    for (let index = 0; index < ringCount; index += 1) {
+      items.push({
+        index: indexOffset + index,
+        angle: (360 / ringCount) * index - 90 + ringIndex * 7,
+        radius,
+        size,
+      });
+    }
+
+    indexOffset += ringCount;
+    remaining -= ringCount;
+  }
+
+  return items;
+};
 
 const getClickPower = (state: GameState) =>
   1 +
@@ -455,7 +487,7 @@ const getNewsLines = (state: GameState, title: string, perSecond: number) => {
     "ジムの片隅で謎のクリック音が鳴り響いています。",
     "マチョ田、今日も腹筋ローラーを抱えて登場。",
     `${title} が街で少しずつ噂になっています。`,
-    `現在の自動筋トレ効率は毎秒 ${formatNumber(perSecond)} 筋肉です。`,
+    `現在の自動筋トレ効率は毎秒 ${formatRate(perSecond)} 筋肉です。`,
   ];
 
   if (state.totalMuscle >= 50_000) lines.push("近所のジムで『あの人、仕上がってない？』という声が増えています。");
@@ -529,16 +561,18 @@ export function MachoClickerPage() {
   const [hoveredUpgradeKey, setHoveredUpgradeKey] = useState<UpgradeKey | null>(null);
   const [hoveredPowerUpId, setHoveredPowerUpId] = useState<string | null>(null);
   const effectIdRef = useRef(0);
+  const stateRef = useRef<GameState>(initialState);
   const clickPower = useMemo(() => getClickPower(state), [state]);
   const perSecond = useMemo(() => getPerSecond(state), [state]);
   const title = getTitle(state.totalMuscle);
   const nextGoal = getNextTitleGoal(state.totalMuscle);
   const titleProgress = Math.min(100, Math.max(0, (state.totalMuscle / nextGoal.value) * 100));
   const ownedUpgradeCount = Object.values(state.upgrades).reduce((total, level) => total + level, 0);
+  const visualOwnedUpgradeCount = visualUpgrades.reduce((total, upgrade) => total + state.upgrades[upgrade.key], 0);
   const newsLines = getNewsLines(state, title, perSecond);
   const news = newsLines[newsIndex % newsLines.length];
   const bodyStage = getBodyStage(state.totalMuscle);
-  const cursorCount = Math.min(36, state.upgrades.pushUp);
+  const dumbbellOrbitItems = useMemo(() => getDumbbellOrbitItems(state.upgrades.pushUp), [state.upgrades.pushUp]);
   const hoveredUpgrade = hoveredUpgradeKey ? upgrades.find((upgrade) => upgrade.key === hoveredUpgradeKey) ?? null : null;
   const hoveredPowerUp = hoveredPowerUpId ? powerUpgrades.find((powerUp) => powerUp.id === hoveredPowerUpId) ?? null : null;
   const unlockedPowerUps = powerUpgrades.filter(
@@ -551,29 +585,40 @@ export function MachoClickerPage() {
   }, []);
 
   useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  useEffect(() => {
     const timer = window.setInterval(() => {
       setNewsIndex((current) => current + 1);
     }, NEWS_INTERVAL_MS);
-
     return () => window.clearInterval(timer);
   }, []);
 
   useEffect(() => {
     if (!isLoaded) return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, lastSavedAt: Date.now() }));
-  }, [isLoaded, state]);
+    const timer = window.setInterval(() => {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...stateRef.current, lastSavedAt: Date.now() }));
+    }, SAVE_INTERVAL_MS);
+
+    return () => {
+      window.clearInterval(timer);
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...stateRef.current, lastSavedAt: Date.now() }));
+    };
+  }, [isLoaded]);
 
   useEffect(() => {
     if (!isLoaded || perSecond <= 0) return;
 
     const timer = window.setInterval(() => {
+      const gain = perSecond * (GAME_TICK_MS / 1000);
       setState((current) => ({
         ...current,
-        muscle: clampScore(current.muscle + perSecond),
-        totalMuscle: clampScore(current.totalMuscle + perSecond),
+        muscle: clampScore(current.muscle + gain),
+        totalMuscle: clampScore(current.totalMuscle + gain),
         lastSavedAt: Date.now(),
       }));
-    }, SAVE_INTERVAL_MS);
+    }, GAME_TICK_MS);
 
     return () => window.clearInterval(timer);
   }, [isLoaded, perSecond]);
@@ -796,7 +841,7 @@ export function MachoClickerPage() {
                   </div>
                   <div>
                     <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#FFB45D]">Per Second</div>
-                    <div className="mt-1 text-2xl font-black text-white">+{formatNumber(perSecond)}</div>
+                    <div className="mt-1 text-2xl font-black text-white">+{formatRate(perSecond)}</div>
                   </div>
                   <div>
                     <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#FFB45D]">Total</div>
@@ -823,8 +868,8 @@ export function MachoClickerPage() {
             </div>
           </section>
 
-          <section className="grid min-h-[740px] overflow-hidden rounded-[28px] border-4 border-[#7C2D12] bg-[#7C2D12] shadow-2xl xl:grid-cols-[360px_minmax(0,1fr)_390px]">
-            <aside className="relative flex min-h-[560px] flex-col items-center justify-between overflow-hidden border-b-4 border-[#7C2D12] bg-[radial-gradient(circle_at_center,#FFF0D5_0%,#FDBA74_54%,#B45309_100%)] p-5 text-center xl:border-b-0 xl:border-r-4">
+          <section className="grid min-h-[820px] overflow-hidden rounded-[28px] border-4 border-[#7C2D12] bg-[#7C2D12] shadow-2xl xl:grid-cols-[minmax(480px,560px)_minmax(0,1fr)_390px]">
+            <aside className="relative flex min-h-[760px] flex-col items-center justify-between overflow-hidden border-b-4 border-[#7C2D12] bg-[radial-gradient(circle_at_center,#FFF0D5_0%,#FDBA74_54%,#B45309_100%)] p-4 text-center sm:p-5 xl:border-b-0 xl:border-r-4">
               <div className="relative z-10 w-full rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB]/95 px-4 py-4 text-[#7C2D12] shadow-xl">
                 <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Muscle Points</div>
                 <div className="mt-1 break-all text-4xl font-black sm:text-5xl">{formatFullNumber(state.muscle)}</div>
@@ -873,40 +918,51 @@ export function MachoClickerPage() {
                 </button>
               ) : null}
 
-              <button
-                type="button"
-                onClick={handleClick}
-                className={`macho-breathe group relative z-20 my-8 flex aspect-square w-64 max-w-full items-center justify-center rounded-full border-[12px] shadow-[0_55px_110px_-35px_rgba(42,20,11,0.95)] transition hover:scale-[1.04] active:scale-95 sm:w-80 ${bodyStage.ring} ${
-                  clickBurst ? "macho-pop" : ""
-                }`}
-              >
-                {Array.from({ length: cursorCount }, (_, index) => {
-                  const angle = (360 / Math.max(1, cursorCount)) * index - 90;
-                  return (
-                    <span
-                      key={`cursor-${index}`}
-                      className="macho-cursor pointer-events-none absolute left-1/2 top-1/2 z-30 flex h-12 w-12 items-center justify-center"
-                      style={{
-                        transform: `rotate(${angle}deg) translate(168px) rotate(${-angle}deg)`,
-                        animationDelay: `${(index % 8) * 0.08}s`,
-                      }}
-                    >
-                      <Image src="/game/macho-clicker/dumbbell.png" alt="" width={48} height={48} className="h-12 w-12 object-contain" />
-                    </span>
-                  );
-                })}
-                <span className="macho-shine absolute inset-0 rounded-full" />
-                <span className={`absolute inset-[-32px] rounded-full bg-white/40 blur-2xl transition ${bodyStage.aura}`} />
-                <Image
-                  src={characterImageSrc}
-                  alt="マチョ田をクリック"
-                  width={260}
-                  height={260}
-                  priority
-                  className="relative z-10 h-auto w-48 drop-shadow-2xl transition duration-300 group-hover:scale-105 sm:w-60"
-                  style={{ transform: `scale(${bodyStage.scale})` }}
-                />
-              </button>
+              <div className="relative z-20 my-5 flex aspect-square w-full max-w-[620px] items-center justify-center overflow-visible sm:my-6">
+                {dumbbellOrbitItems.map((item) => (
+                  <span
+                    key={`dumbbell-orbit-${item.index}`}
+                    className="macho-cursor pointer-events-none absolute left-1/2 top-1/2 z-20 flex items-center justify-center"
+                    style={
+                      {
+                        width: item.size,
+                        height: item.size,
+                        "--orbit-radius": item.radius,
+                        transform: `translate(-50%, -50%) rotate(${item.angle}deg) translate(var(--orbit-radius)) rotate(${-item.angle}deg)`,
+                        animationDelay: `${(item.index % 10) * 0.06}s`,
+                      } as CSSProperties
+                    }
+                  >
+                    <Image
+                      src="/game/macho-clicker/dumbbell.png"
+                      alt=""
+                      width={48}
+                      height={48}
+                      className="h-full w-full object-contain drop-shadow-xl"
+                    />
+                  </span>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={handleClick}
+                  className={`macho-breathe group relative z-30 flex aspect-square w-[min(72vw,22rem)] items-center justify-center rounded-full border-[12px] shadow-[0_55px_110px_-35px_rgba(42,20,11,0.95)] transition hover:scale-[1.04] active:scale-95 ${bodyStage.ring} ${
+                    clickBurst ? "macho-pop" : ""
+                  }`}
+                >
+                  <span className="macho-shine absolute inset-0 rounded-full" />
+                  <span className={`absolute inset-[-32px] rounded-full bg-white/40 blur-2xl transition ${bodyStage.aura}`} />
+                  <Image
+                    src={characterImageSrc}
+                    alt="マチョ田をクリック"
+                    width={280}
+                    height={280}
+                    priority
+                    className="relative z-10 h-auto w-[min(52vw,17rem)] drop-shadow-2xl transition duration-300 group-hover:scale-105"
+                    style={{ transform: `scale(${bodyStage.scale})` }}
+                  />
+                </button>
+              </div>
 
               <div className="relative z-10 grid w-full grid-cols-2 gap-3 text-left">
                 <div className="rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB]/95 px-4 py-3 text-[#7C2D12] shadow-lg">
@@ -927,19 +983,19 @@ export function MachoClickerPage() {
                     <div className="text-xs font-black uppercase tracking-[0.18em] text-[#C2410C]">Machoda Gym</div>
                     <div className="text-xl font-black">ジム設備</div>
                   </div>
-                  <div className="rounded-full bg-[#FF8A23] px-4 py-2 text-sm font-black text-white">強化合計 {ownedUpgradeCount}</div>
+                  <div className="rounded-full bg-[#FF8A23] px-4 py-2 text-sm font-black text-white">設備合計 {visualOwnedUpgradeCount}</div>
                 </div>
               </div>
 
               <div className="absolute inset-x-0 bottom-0 h-40 bg-[linear-gradient(180deg,transparent_0%,rgba(124,45,18,0.7)_90%)]" />
               <div className="absolute inset-x-4 bottom-5 top-24 overflow-hidden rounded-[28px] border-4 border-[#7C2D12] bg-[linear-gradient(180deg,rgba(255,247,235,0.92)_0%,rgba(255,237,213,0.76)_62%,rgba(154,52,18,0.72)_100%)] shadow-inner">
-                {ownedUpgradeCount === 0 ? (
+                {visualOwnedUpgradeCount === 0 ? (
                   <div className="absolute inset-0 z-10 flex items-center justify-center px-8 text-center text-lg font-black text-[#9A3412]/55">
-                    ショップで強化を買うと、ここに設備が増えます
+                    ダンベル以外の設備を買うと、ここにジム設備が増えます
                   </div>
                 ) : null}
-                <div className="grid h-full grid-rows-8 divide-y-2 divide-[#B45309]/35">
-                  {upgrades.map((upgrade) => {
+                <div className="grid h-full divide-y-2 divide-[#B45309]/35" style={{ gridTemplateRows: `repeat(${visualUpgrades.length}, minmax(0, 1fr))` }}>
+                  {visualUpgrades.map((upgrade) => {
                     const level = state.upgrades[upgrade.key];
                     const visibleCount = getUpgradeVisibleCount(level);
                     return (
@@ -954,11 +1010,11 @@ export function MachoClickerPage() {
                         <div className="absolute left-3 top-1 z-10 rounded-full bg-[#7C2D12]/85 px-2 py-0.5 text-[10px] font-black text-[#FFE7C2]">
                           {upgrade.name} Lv.{level}
                         </div>
-                        <div className="grid max-w-full grid-flow-col grid-rows-3 gap-x-1 gap-y-0.5 overflow-hidden pt-5 [grid-auto-columns:1.7rem] sm:[grid-auto-columns:2rem]">
+                        <div className="grid max-w-full grid-flow-col grid-rows-3 gap-x-0.5 gap-y-0.5 overflow-hidden pt-5 [grid-auto-columns:1rem] sm:[grid-auto-columns:1.15rem] 2xl:[grid-auto-columns:1.3rem]">
                           {Array.from({ length: visibleCount }, (_, index) => (
                             <div
                               key={`${upgrade.key}-unit-${index}`}
-                              className="macho-unit flex h-6 w-6 items-center justify-center sm:h-7 sm:w-7"
+                              className="macho-unit flex h-4 w-4 items-center justify-center sm:h-5 sm:w-5"
                               style={{ animationDelay: `${(index % 8) * 0.08}s` }}
                             >
                               <Image
@@ -966,7 +1022,7 @@ export function MachoClickerPage() {
                                 alt=""
                                 width={32}
                                 height={32}
-                                className="h-6 w-6 object-contain drop-shadow-xl sm:h-7 sm:w-7"
+                                className="h-4 w-4 object-contain drop-shadow-xl sm:h-5 sm:w-5"
                               />
                             </div>
                           ))}
@@ -1000,7 +1056,7 @@ export function MachoClickerPage() {
                       次の価格<br />{formatFullNumber(getUpgradeCost(hoveredUpgrade, state.upgrades[hoveredUpgrade.key]))}
                     </div>
                     <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
-                      毎秒<br />+{formatNumber((hoveredUpgrade.perSecondBonus ?? 0) * getBuildingMultiplier(state, hoveredUpgrade.key))}
+                      毎秒<br />+{formatRate((hoveredUpgrade.perSecondBonus ?? 0) * getBuildingMultiplier(state, hoveredUpgrade.key))}
                     </div>
                   </div>
                 </div>

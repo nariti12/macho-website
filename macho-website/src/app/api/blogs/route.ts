@@ -111,6 +111,7 @@ export async function GET() {
       const imageUrl =
         item.thumbnail?.url ?? item.eyecatch?.url ?? item.mainvisual?.url ?? FALLBACK_IMAGE;
 
+      const publishedAt = item.publishedAt ?? item.updatedAt ?? null;
       const updatedAt = item.updatedAt ?? item.publishedAt ?? null;
 
       return {
@@ -120,6 +121,7 @@ export async function GET() {
         summary: summaryText || DEFAULT_SUMMARY,
         metaDescription,
         imageUrl,
+        publishedAt,
         updatedAt,
       };
     });

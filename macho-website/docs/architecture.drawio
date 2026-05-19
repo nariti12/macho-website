@@ -1,0 +1,107 @@
+<mxfile host="app.diagrams.net" modified="2026-05-18T00:00:00.000Z" agent="Codex" version="24.7.17">
+  <diagram id="machoda-architecture" name="Architecture">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="マチョ田の部屋 - 全体構成" style="text;html=1;strokeColor=none;fillColor=none;fontSize=26;fontStyle=1;fontColor=#7C2D12;" vertex="1" parent="1">
+          <mxGeometry x="50" y="30" width="480" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="note" value="左から右へ、閲覧 → Vercel/Next.js → アプリ内部 → 外部サービス の流れで整理" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF7EB;strokeColor=#FCD27B;fontSize=13;fontColor=#7C2D12;" vertex="1" parent="1">
+          <mxGeometry x="50" y="85" width="520" height="45" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lane-user" value="User" style="swimlane;html=1;rounded=1;fillColor=#FFF4E7;strokeColor=#FF8A23;fontStyle=1;fontSize=14;startSize=34;" vertex="1" parent="1">
+          <mxGeometry x="40" y="160" width="210" height="780" as="geometry" />
+        </mxCell>
+        <mxCell id="lane-platform" value="Hosting / Runtime" style="swimlane;html=1;rounded=1;fillColor=#FFE7C2;strokeColor=#C2410C;fontStyle=1;fontSize=14;startSize=34;" vertex="1" parent="1">
+          <mxGeometry x="290" y="160" width="260" height="780" as="geometry" />
+        </mxCell>
+        <mxCell id="lane-app" value="Next.js App" style="swimlane;html=1;rounded=1;fillColor=#FFFFFF;strokeColor=#FCD27B;fontStyle=1;fontSize=14;startSize=34;" vertex="1" parent="1">
+          <mxGeometry x="590" y="160" width="430" height="780" as="geometry" />
+        </mxCell>
+        <mxCell id="lane-external" value="External Services" style="swimlane;html=1;rounded=1;fillColor=#F8FAFC;strokeColor=#94A3B8;fontStyle=1;fontSize=14;startSize=34;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="160" width="560" height="780" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user" value="ユーザー&#xa;ブラウザ / スマホ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#FF8A23;fontSize=15;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="70" y="280" width="150" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="vercel" value="Vercel&#xa;machoda.com&#xa;Next.js App Router" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#C2410C;fontSize=15;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="325" y="265" width="190" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="cron" value="Vercel Cron&#xa;現在は停止&#xa;vercel.json = {}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF7EB;strokeColor=#F97316;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="325" y="440" width="190" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="pages" value="Pages&#xa;/&#xa;/blog, /blog/[id]&#xa;/supplements-ranking&#xa;/high-protein&#xa;/training-wear&#xa;/training-gear&#xa;/macho-clicker&#xa;/menu, /profile, /contact" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#FCD27B;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="625" y="220" width="175" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="api" value="Route Handlers&#xa;/api/blogs&#xa;/api/blogs/[id]&#xa;/api/revalidate&#xa;/api/contact&#xa;/api/macho-clicker/rankings&#xa;/api/cron/protein-rankings" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#FCD27B;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="815" y="220" width="175" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="static" value="Static Data / Assets&#xa;src/data/high-protein-foods.ts&#xa;public/picture&#xa;public/game/macho-clicker" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#94A3B8;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="625" y="570" width="365" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="affiliate-utils" value="Affiliate Link Utils&#xa;buildRakutenAffiliateUrl&#xa;buildAmazonAffiliateUrl" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF7EB;strokeColor=#F97316;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="625" y="735" width="365" height="105" as="geometry" />
+        </mxCell>
+
+        <mxCell id="microcms" value="microCMS&#xa;blogs API&#xa;記事一覧 / 詳細 / Webhook" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E0F2FE;strokeColor=#0284C7;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="210" width="220" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="supabase" value="Supabase&#xa;products / product_metrics / rankings&#xa;macho_clicker_scores" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#16A34A;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1360" y="210" width="220" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="resend" value="Resend&#xa;お問い合わせメール送信" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E8FF;strokeColor=#9333EA;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="380" width="220" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="analytics" value="Google Analytics / GTM&#xa;アクセス解析タグ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F1F5F9;strokeColor=#64748B;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1360" y="380" width="220" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="rakuten" value="楽天API / 楽天検索&#xa;商品情報取得&#xa;楽天アフィリエイト" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEE2E2;strokeColor=#DC2626;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="560" width="220" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="amazon" value="Amazon&#xa;アソシエイトリンク&#xa;検索/商品ページへ送客" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1360" y="560" width="220" height="105" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e-user-vercel" value="閲覧" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#7C2D12;fontSize=12;" edge="1" parent="1" source="user" target="vercel">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-vercel-pages" value="render" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#7C2D12;fontSize=12;" edge="1" parent="1" source="vercel" target="pages">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-pages-api" value="fetch / submit" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#7C2D12;fontSize=12;" edge="1" parent="1" source="pages" target="api">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-static-pages" value="静的データ/画像" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748B;fontSize=12;" edge="1" parent="1" source="static" target="pages">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-affiliate-pages" value="リンク生成" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#F97316;fontSize=12;" edge="1" parent="1" source="affiliate-utils" target="pages">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-api-microcms" value="記事取得" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#0284C7;fontSize=12;" edge="1" parent="1" source="api" target="microcms">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-api-supabase" value="DB read/write" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#16A34A;fontSize=12;" edge="1" parent="1" source="api" target="supabase">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-api-resend" value="メール送信" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#9333EA;fontSize=12;" edge="1" parent="1" source="api" target="resend">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-vercel-analytics" value="計測タグ" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748B;fontSize=12;" edge="1" parent="1" source="vercel" target="analytics">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-api-rakuten" value="手動更新時のみ" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#DC2626;fontSize=12;" edge="1" parent="1" source="api" target="rakuten">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-affiliate-rakuten" value="楽天リンク" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#DC2626;fontSize=12;" edge="1" parent="1" source="affiliate-utils" target="rakuten">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-affiliate-amazon" value="Amazonリンク" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#D97706;fontSize=12;" edge="1" parent="1" source="affiliate-utils" target="amazon">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

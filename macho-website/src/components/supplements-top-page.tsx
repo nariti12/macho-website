@@ -289,7 +289,7 @@ export function SupplementsTopPage({ data }: { data: ProteinRankingPageData }) {
               {updatedAtLabel ? (
                 <p className="text-sm text-slate-500">最終更新: {updatedAtLabel}</p>
               ) : (
-                <p className="text-sm text-slate-500">ランキングを準備中です。更新が完了すると、ここにおすすめの商品が表示されます。</p>
+                <p className="text-sm text-slate-500">おすすめ商品の表示を準備中です。</p>
               )}
             </div>
           </section>
@@ -302,7 +302,7 @@ export function SupplementsTopPage({ data }: { data: ProteinRankingPageData }) {
 
               {section.items.length === 0 ? (
                 <div className="rounded-3xl border border-dashed border-[#FCD27B] bg-[#FFF8EE] p-8 text-sm text-slate-600">
-                  まだおすすめを表示できていません。更新が反映されると、ここにおすすめ商品が並びます。
+                  まだおすすめを表示できていません。
                 </div>
               ) : (
                 <div className="grid gap-5">

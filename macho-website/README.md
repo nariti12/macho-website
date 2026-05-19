@@ -1,6 +1,12 @@
 ## Overview
 
-`macho-website` は Next.js App Router ベースのサイトです。`/supplements-ranking` では、「おすすめプロテイン TOP5」を表示します。ページ表示時は Supabase に保存済みのランキングのみを読み込みます。
+`macho-website` は Next.js App Router ベースの筋トレ情報サイトです。トップページから、ブログ、筋トレメニュー、計算機、高たんぱく食品、おすすめ商品、ミニゲームへ遷移します。
+
+仕様把握は以下を入口にしてください。
+
+- 全体仕様: `docs/site-spec.md`
+- プロテイン/クレアチン仕様: `docs/protein-rankings.md`
+- 構成図: `docs/architecture.drawio`
 
 ## Getting Started
 
@@ -20,6 +26,12 @@ npm run dev
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
+- `MICROCMS_API_KEY`
+- `MICROCMS_BASE_URL`
+- `MICROCMS_REVALIDATE_SECRET`
+- `RESEND_API_KEY`
+- `NEXT_PUBLIC_GA_MEASUREMENT_ID`
+- `NEXT_PUBLIC_GTM_ID`
 - `RAKUTEN_APPLICATION_ID`
 - `RAKUTEN_ACCESS_KEY`
 - `RAKUTEN_AFFILIATE_ID`
@@ -46,42 +58,35 @@ supabase db push
 
 `expert_signals` は将来の専門家加点用の拡張ポイントで、初期版では未使用です。
 
-## Ranking Update Flow
+## Ranking Data
 
-表示ページは保存済みランキングだけを読み込みます。外部モールへのアクセスは cron 側に限定しています。
+プロテイン表示は Supabase に保存済みのランキングを読み込みます。現在は日次 Cron を停止しており、必要な場合だけ手動更新します。
 
-1. `/api/cron/protein-rankings` が楽天の商品検索 API から固定5ブランドの商品情報を取得
+1. `/api/cron/protein-rankings` を手動実行すると、楽天の商品検索 API から固定ブランドの商品情報を取得
 2. 内容量を抽出して `1kgあたり` の価格を計算
-3. 固定順のおすすめプロテイン TOP5 を作成
+3. 固定順のおすすめプロテインを作成
 4. Supabase の `products` / `product_metrics` / `rankings` に保存
 5. `/supplements-ranking` は保存済みデータを表示
 
-固定の5ブランドを次の順で表示します。
+固定ブランドは次の順で扱います。
 
 1. `X-PLOSION`
 2. `Gold Standard`
 3. `be LEGEND`
-4. `myprotein`
-5. `WINZONE`
+4. `WINZONE`
+5. `myprotein`
 
-取得できなかったブランドは楽天検索導線で補完し、TOP5が欠けないようにしています。
+現在のページでは `X-PLOSION` と `Gold Standard` を表示対象にしています。
 
-## Vercel Cron
+## Manual Ranking Update
 
-`vercel.json` に日次 cron を追加しています。
+日次 Cron は停止しています。`vercel.json` には Cron 設定を置いていません。
 
 ```json
-{
-  "crons": [
-    {
-      "path": "/api/cron/protein-rankings",
-      "schedule": "0 2 * * *"
-    }
-  ]
-}
+{}
 ```
 
-Vercel では `CRON_SECRET` を設定すると、Cron Job 実行時に `Authorization: Bearer <CRON_SECRET>` が自動付与されます。ローカルで手動実行する場合は次のように叩けます。
+ランキングを手動更新する場合は、`CRON_SECRET` を使って次のように叩きます。
 
 ```bash
 curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/protein-rankings
@@ -96,4 +101,4 @@ npm run lint
 npx tsc --noEmit
 ```
 
-運用前には migration 適用後に cron を一度手動実行し、ランキング表示を確認してください。
+ランキングDBを更新したい場合は、migration 適用後に手動更新APIを一度実行し、表示を確認してください。

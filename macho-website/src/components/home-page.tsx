@@ -13,6 +13,7 @@ type BlogCardData = {
   title: string;
   imageUrl: string;
   summary: string;
+  publishedAt: string | null;
   updatedAt: string | null;
 };
 
@@ -154,7 +155,7 @@ export function HomePage() {
       name: "マチョ田の部屋",
       url: buildUrl(""),
       logo: buildUrl("/picture/ore.png"),
-      sameAs: ["https://x.com/machoda_", "https://www.youtube.com/@ganmochan"],
+      sameAs: ["https://x.com/machoda_"],
       contactPoint: [
         {
           "@type": "ContactPoint",
@@ -254,9 +255,9 @@ export function HomePage() {
                     <h3 className="text-base font-semibold leading-tight text-gray-900 sm:text-lg">
                       {item.title}
                     </h3>
-                    {formatDate(item.updatedAt) && (
+                    {formatDate(item.publishedAt) && (
                       <p className="mt-3 text-xs font-medium uppercase tracking-wide text-gray-500">
-                        更新日: {formatDate(item.updatedAt)}
+                        公開日: {formatDate(item.publishedAt)}
                       </p>
                     )}
                   </div>
