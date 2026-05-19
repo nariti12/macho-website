@@ -574,7 +574,8 @@ export function MachoClickerPage() {
   const [achievementToast, setAchievementToast] = useState<Achievement | null>(null);
   const [goldenProtein, setGoldenProtein] = useState<GoldenProtein | null>(null);
   const [newsIndex, setNewsIndex] = useState(0);
-  const [hoveredUpgradeKey, setHoveredUpgradeKey] = useState<UpgradeKey | null>(null);
+  const [hoveredGymUpgradeKey, setHoveredGymUpgradeKey] = useState<UpgradeKey | null>(null);
+  const [hoveredShopUpgradeKey, setHoveredShopUpgradeKey] = useState<UpgradeKey | null>(null);
   const [hoveredPowerUpId, setHoveredPowerUpId] = useState<string | null>(null);
   const [hoveredMysteryId, setHoveredMysteryId] = useState<string | null>(null);
   const effectIdRef = useRef(0);
@@ -590,7 +591,8 @@ export function MachoClickerPage() {
   const news = newsLines[newsIndex % newsLines.length];
   const bodyStage = getBodyStage(state.totalMuscle);
   const dumbbellOrbitItems = useMemo(() => getDumbbellOrbitItems(state.upgrades.pushUp), [state.upgrades.pushUp]);
-  const hoveredUpgrade = hoveredUpgradeKey ? upgrades.find((upgrade) => upgrade.key === hoveredUpgradeKey) ?? null : null;
+  const hoveredGymUpgrade = hoveredGymUpgradeKey ? upgrades.find((upgrade) => upgrade.key === hoveredGymUpgradeKey) ?? null : null;
+  const hoveredShopUpgrade = hoveredShopUpgradeKey ? upgrades.find((upgrade) => upgrade.key === hoveredShopUpgradeKey) ?? null : null;
   const hoveredPowerUp = hoveredPowerUpId ? powerUpgrades.find((powerUp) => powerUp.id === hoveredPowerUpId) ?? null : null;
   const hoveredMystery = hoveredMysteryId ? mysteryShopItems.find((item) => item.id === hoveredMysteryId) ?? null : null;
   const unlockedPowerUps = powerUpgrades.filter(
@@ -1015,19 +1017,19 @@ export function MachoClickerPage() {
                       <div
                         key={upgrade.key}
                         className="relative flex min-h-0 items-center overflow-hidden px-3"
-                        onMouseEnter={() => setHoveredUpgradeKey(upgrade.key)}
-                        onMouseLeave={() => setHoveredUpgradeKey(null)}
-                        onFocus={() => setHoveredUpgradeKey(upgrade.key)}
-                        onBlur={() => setHoveredUpgradeKey(null)}
+                        onMouseEnter={() => setHoveredGymUpgradeKey(upgrade.key)}
+                        onMouseLeave={() => setHoveredGymUpgradeKey(null)}
+                        onFocus={() => setHoveredGymUpgradeKey(upgrade.key)}
+                        onBlur={() => setHoveredGymUpgradeKey(null)}
                       >
                         <div className="absolute left-3 top-1 z-10 rounded-full bg-[#7C2D12]/85 px-2 py-0.5 text-[10px] font-black text-[#FFE7C2]">
                           {upgrade.name} Lv.{level}
                         </div>
-                        <div className="grid max-w-full grid-flow-col grid-rows-3 gap-x-0.5 gap-y-0.5 overflow-hidden pt-5 [grid-auto-columns:1rem] sm:[grid-auto-columns:1.15rem] 2xl:[grid-auto-columns:1.3rem]">
+                        <div className="grid max-w-full grid-flow-col grid-rows-3 gap-x-1 gap-y-0.5 overflow-hidden pt-5 [grid-auto-columns:1.35rem] sm:[grid-auto-columns:1.55rem] 2xl:[grid-auto-columns:1.75rem]">
                           {Array.from({ length: visibleCount }, (_, index) => (
                             <div
                               key={`${upgrade.key}-unit-${index}`}
-                              className="macho-unit flex h-4 w-4 items-center justify-center sm:h-5 sm:w-5"
+                              className="macho-unit flex h-5 w-5 items-center justify-center sm:h-6 sm:w-6"
                               style={{ animationDelay: `${(index % 8) * 0.08}s` }}
                             >
                               <Image
@@ -1035,7 +1037,7 @@ export function MachoClickerPage() {
                                 alt=""
                                 width={32}
                                 height={32}
-                                className="h-4 w-4 object-contain drop-shadow-xl sm:h-5 sm:w-5"
+                                className="h-5 w-5 object-contain drop-shadow-xl sm:h-6 sm:w-6"
                               />
                             </div>
                           ))}
@@ -1052,24 +1054,24 @@ export function MachoClickerPage() {
                   })}
                 </div>
               </div>
-              {hoveredUpgrade ? (
+              {hoveredGymUpgrade ? (
                 <div className="pointer-events-none absolute right-8 top-28 z-40 w-80 rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB] p-4 text-left text-[#7C2D12] shadow-2xl">
                   <div className="flex items-center gap-3">
-                    <Image src={hoveredUpgrade.spriteSrc} alt="" width={48} height={48} className="h-12 w-12 object-contain" />
+                    <Image src={hoveredGymUpgrade.spriteSrc} alt="" width={48} height={48} className="h-12 w-12 object-contain" />
                     <div>
-                      <div className="text-base font-black">{hoveredUpgrade.name}</div>
+                      <div className="text-base font-black">{hoveredGymUpgrade.name}</div>
                       <div className="text-xs font-bold text-[#C2410C]">
-                        所有数 {formatFullNumber(state.upgrades[hoveredUpgrade.key])}
+                        所有数 {formatFullNumber(state.upgrades[hoveredGymUpgrade.key])}
                       </div>
                     </div>
                   </div>
-                  <div className="mt-3 text-sm font-semibold leading-6">{hoveredUpgrade.description}</div>
+                  <div className="mt-3 text-sm font-semibold leading-6">{hoveredGymUpgrade.description}</div>
                   <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-black">
                     <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
-                      次の価格<br />{formatFullNumber(getUpgradeCost(hoveredUpgrade, state.upgrades[hoveredUpgrade.key]))}
+                      次の価格<br />{formatFullNumber(getUpgradeCost(hoveredGymUpgrade, state.upgrades[hoveredGymUpgrade.key]))}
                     </div>
                     <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
-                      毎秒<br />+{formatRate((hoveredUpgrade.perSecondBonus ?? 0) * getBuildingMultiplier(state, hoveredUpgrade.key))}
+                      毎秒<br />+{formatRate((hoveredGymUpgrade.perSecondBonus ?? 0) * getBuildingMultiplier(state, hoveredGymUpgrade.key))}
                     </div>
                   </div>
                 </div>
@@ -1127,21 +1129,6 @@ export function MachoClickerPage() {
                       })}
                     </div>
                   )}
-                  {hoveredPowerUp ? (
-                    <div className="mt-3 rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB] p-4 text-[#7C2D12] shadow-xl">
-                      <div className="flex items-center gap-3">
-                        <Image src={hoveredPowerUp.spriteSrc} alt="" width={48} height={48} className="h-12 w-12 object-contain" />
-                        <div>
-                          <div className="text-base font-black">{hoveredPowerUp.name}</div>
-                          <div className="text-xs font-bold text-[#C2410C]">{hoveredPowerUp.effectLabel}</div>
-                        </div>
-                      </div>
-                      <div className="mt-3 text-sm font-semibold leading-6">{hoveredPowerUp.description}</div>
-                      <div className="mt-3 rounded-xl bg-[#FFE7C2] px-3 py-2 text-xs font-black">
-                        必要: {formatFullNumber(hoveredPowerUp.cost)} 筋肉
-                      </div>
-                    </div>
-                  ) : null}
                 </div>
                 <div className="grid gap-3">
                   {upgrades.map((upgrade) => {
@@ -1155,10 +1142,10 @@ export function MachoClickerPage() {
                         type="button"
                         onClick={() => buyUpgrade(upgrade)}
                         aria-disabled={!canBuy}
-                        onMouseEnter={() => setHoveredUpgradeKey(upgrade.key)}
-                        onMouseLeave={() => setHoveredUpgradeKey(null)}
-                        onFocus={() => setHoveredUpgradeKey(upgrade.key)}
-                        onBlur={() => setHoveredUpgradeKey(null)}
+                        onMouseEnter={() => setHoveredShopUpgradeKey(upgrade.key)}
+                        onMouseLeave={() => setHoveredShopUpgradeKey(null)}
+                        onFocus={() => setHoveredShopUpgradeKey(upgrade.key)}
+                        onBlur={() => setHoveredShopUpgradeKey(null)}
                         className={`group relative rounded-2xl border p-3 text-left transition ${
                           canBuy
                             ? "border-[#C2410C] bg-white text-[#7C2D12] hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(255,138,35,0.25)]"
@@ -1212,8 +1199,45 @@ export function MachoClickerPage() {
                     </button>
                   ))}
                 </div>
+                {hoveredShopUpgrade ? (
+                  <div className="pointer-events-none fixed right-[410px] top-28 z-50 hidden w-80 rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB] p-4 text-[#7C2D12] shadow-2xl xl:block">
+                    <div className="flex items-center gap-3">
+                      <Image src={hoveredShopUpgrade.spriteSrc} alt="" width={48} height={48} className="h-12 w-12 object-contain" />
+                      <div>
+                        <div className="text-base font-black">{hoveredShopUpgrade.name}</div>
+                        <div className="text-xs font-bold text-[#C2410C]">
+                          所有数 {formatFullNumber(state.upgrades[hoveredShopUpgrade.key])}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-3 text-sm font-semibold leading-6">{hoveredShopUpgrade.description}</div>
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-black">
+                      <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
+                        次の価格<br />{formatFullNumber(getUpgradeCost(hoveredShopUpgrade, state.upgrades[hoveredShopUpgrade.key]))}
+                      </div>
+                      <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
+                        毎秒<br />+{formatRate((hoveredShopUpgrade.perSecondBonus ?? 0) * getBuildingMultiplier(state, hoveredShopUpgrade.key))}
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+                {hoveredPowerUp ? (
+                  <div className="pointer-events-none fixed right-[410px] top-28 z-50 hidden w-80 rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB] p-4 text-[#7C2D12] shadow-2xl xl:block">
+                    <div className="flex items-center gap-3">
+                      <Image src={hoveredPowerUp.spriteSrc} alt="" width={48} height={48} className="h-12 w-12 object-contain" />
+                      <div>
+                        <div className="text-base font-black">{hoveredPowerUp.name}</div>
+                        <div className="text-xs font-bold text-[#C2410C]">{hoveredPowerUp.effectLabel}</div>
+                      </div>
+                    </div>
+                    <div className="mt-3 text-sm font-semibold leading-6">{hoveredPowerUp.description}</div>
+                    <div className="mt-3 rounded-xl bg-[#FFE7C2] px-3 py-2 text-xs font-black">
+                      必要: {formatFullNumber(hoveredPowerUp.cost)} 筋肉
+                    </div>
+                  </div>
+                ) : null}
                 {hoveredMystery ? (
-                  <div className="mt-3 rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB] p-4 text-[#7C2D12] shadow-xl">
+                  <div className="pointer-events-none fixed right-[410px] top-28 z-50 hidden w-80 rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB] p-4 text-[#7C2D12] shadow-2xl xl:block">
                     <div className="flex items-center gap-3">
                       <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#2A140B] text-2xl font-black text-[#FFE7C2]">
                         ?
