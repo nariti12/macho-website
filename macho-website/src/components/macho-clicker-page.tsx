@@ -13,9 +13,25 @@ const SAVE_INTERVAL_MS = 1000;
 const GAME_TICK_MS = 100;
 const NEWS_INTERVAL_MS = 18_000;
 const OFFLINE_LIMIT_SECONDS = 60 * 60 * 8;
-const MAX_SCORE = 999_999_999_999_999;
+const MAX_SCORE = 999_999_999_999_999_900_000;
 
-type UpgradeKey = "pushUp" | "abRoller" | "dumbbell" | "protein" | "chicken" | "benchPress" | "trainer" | "gym";
+type UpgradeKey =
+  | "pushUp"
+  | "abRoller"
+  | "dumbbell"
+  | "protein"
+  | "chicken"
+  | "benchPress"
+  | "trainer"
+  | "gym"
+  | "supplementStore"
+  | "mealPrepLab"
+  | "machoPortal"
+  | "timeGym"
+  | "antiGravityGym"
+  | "proteinPrism"
+  | "chanceMachine"
+  | "fractalMuscle";
 
 type Upgrade = {
   key: UpgradeKey;
@@ -40,6 +56,8 @@ type PowerUpgrade = {
   target?: UpgradeKey;
   buildingMultiplier?: number;
   clickBonus?: number;
+  clickMultiplier?: number;
+  clickCpsPercent?: number;
   goldenMultiplier?: number;
   unlock: (state: GameState) => boolean;
 };
@@ -197,6 +215,102 @@ const upgrades: Upgrade[] = [
     perSecondBonus: 44000,
     accent: "from-[#FFB45D] to-[#7C2D12]",
   },
+  {
+    key: "supplementStore",
+    name: "サプリ宇宙便",
+    label: "SHIP",
+    icon: "S",
+    spriteSrc: "/game/macho-clicker/protein.png",
+    description: "宇宙規模でサプリを届け、筋肉ポイントを増やします。",
+    baseCost: 5_100_000_000,
+    costRate: 1.15,
+    perSecondBonus: 260_000,
+    accent: "from-[#FFE7C2] to-[#B45309]",
+  },
+  {
+    key: "mealPrepLab",
+    name: "栄養錬金ラボ",
+    label: "LAB",
+    icon: "L",
+    spriteSrc: "/game/macho-clicker/meal.png",
+    description: "食事管理を錬金術レベルまで高める研究所です。",
+    baseCost: 75_000_000_000,
+    costRate: 1.15,
+    perSecondBonus: 1_600_000,
+    accent: "from-[#FED7AA] to-[#92400E]",
+  },
+  {
+    key: "machoPortal",
+    name: "マッチョポータル",
+    label: "PORT",
+    icon: "P",
+    spriteSrc: "/game/macho-clicker/gym.png",
+    description: "異世界の筋肉を呼び込むポータルです。",
+    baseCost: 1_000_000_000_000,
+    costRate: 1.15,
+    perSecondBonus: 10_000_000,
+    accent: "from-[#FDBA74] to-[#7C2D12]",
+  },
+  {
+    key: "timeGym",
+    name: "時空ジム",
+    label: "TIME",
+    icon: "T",
+    spriteSrc: "/game/macho-clicker/gym.png",
+    description: "未来のトレーニング成果を前借りします。",
+    baseCost: 14_000_000_000_000,
+    costRate: 1.15,
+    perSecondBonus: 65_000_000,
+    accent: "from-[#FFEDD5] to-[#C2410C]",
+  },
+  {
+    key: "antiGravityGym",
+    name: "反重力ジム",
+    label: "ANTI",
+    icon: "A",
+    spriteSrc: "/game/macho-clicker/trainer.png",
+    description: "重力を超えた負荷で筋肉ポイントを作ります。",
+    baseCost: 170_000_000_000_000,
+    costRate: 1.15,
+    perSecondBonus: 430_000_000,
+    accent: "from-[#FDE68A] to-[#9A3412]",
+  },
+  {
+    key: "proteinPrism",
+    name: "プロテインプリズム",
+    label: "PRISM",
+    icon: "R",
+    spriteSrc: "/game/macho-clicker/golden-protein.png",
+    description: "光をプロテインに変換する最強装置です。",
+    baseCost: 2_100_000_000_000_000,
+    costRate: 1.15,
+    perSecondBonus: 2_900_000_000,
+    accent: "from-[#FEF3C7] to-[#EA580C]",
+  },
+  {
+    key: "chanceMachine",
+    name: "筋肉ガチャ装置",
+    label: "LUCK",
+    icon: "C",
+    spriteSrc: "/game/macho-clicker/golden-protein.png",
+    description: "運の力で筋肉ポイントを引き当てます。",
+    baseCost: 26_000_000_000_000_000,
+    costRate: 1.15,
+    perSecondBonus: 21_000_000_000,
+    accent: "from-[#FDBA74] to-[#7C2D12]",
+  },
+  {
+    key: "fractalMuscle",
+    name: "フラクタル筋肉炉",
+    label: "FRAC",
+    icon: "F",
+    spriteSrc: "/game/macho-clicker/gym.png",
+    description: "筋肉が筋肉を生む、終盤用の増殖炉です。",
+    baseCost: 310_000_000_000_000_000,
+    costRate: 1.15,
+    perSecondBonus: 150_000_000_000,
+    accent: "from-[#FFB45D] to-[#451A03]",
+  },
 ];
 
 const visualUpgrades = upgrades.filter((upgrade) => upgrade.key !== "pushUp");
@@ -210,40 +324,56 @@ const emptyUpgrades: Record<UpgradeKey, number> = {
   benchPress: 0,
   trainer: 0,
   gym: 0,
+  supplementStore: 0,
+  mealPrepLab: 0,
+  machoPortal: 0,
+  timeGym: 0,
+  antiGravityGym: 0,
+  proteinPrism: 0,
+  chanceMachine: 0,
+  fractalMuscle: 0,
 };
 
-const powerUpgrades: PowerUpgrade[] = [
+const manualPowerUpgrades: PowerUpgrade[] = [
   {
     id: "grip-gloves",
     name: "握力強化グローブ",
-    description: "クリック時の筋肉ポイントが +1 されます。",
+    description: "クリック時の筋肉ポイントが2倍になります。",
     cost: 100,
     spriteSrc: "/game/macho-clicker/dumbbell.png",
-    effectLabel: "クリック +1",
-    clickBonus: 1,
+    effectLabel: "クリック x2",
+    clickMultiplier: 2,
     unlock: (state) => state.totalMuscle >= 50,
   },
   {
-    id: "roller-core",
-    name: "腹筋ローラー改",
-    description: "腹筋ローラー職人の毎秒生産が2倍になります。",
-    cost: 1_000,
-    spriteSrc: "/game/macho-clicker/ab-roller.png",
-    effectLabel: "腹筋ローラー x2",
-    target: "abRoller",
-    buildingMultiplier: 2,
-    unlock: (state) => state.upgrades.abRoller >= 1,
+    id: "double-grip",
+    name: "両手クリック",
+    description: "クリック時の筋肉ポイントがさらに2倍になります。",
+    cost: 500,
+    spriteSrc: "/game/macho-clicker/dumbbell.png",
+    effectLabel: "クリック x2",
+    clickMultiplier: 2,
+    unlock: (state) => state.upgrades.pushUp >= 1,
   },
   {
-    id: "barbell-plates",
-    name: "高重量プレート",
-    description: "バーベル部隊の毎秒生産が2倍になります。",
-    cost: 11_000,
-    spriteSrc: "/game/macho-clicker/bench.png",
-    effectLabel: "バーベル x2",
-    target: "dumbbell",
-    buildingMultiplier: 2,
-    unlock: (state) => state.upgrades.dumbbell >= 1,
+    id: "cps-click-1",
+    name: "神経伝達強化",
+    description: "クリック時に毎秒生産量の1%が追加されます。",
+    cost: 50_000,
+    spriteSrc: "/game/macho-clicker/trainer.png",
+    effectLabel: "クリック +CpS 1%",
+    clickCpsPercent: 0.01,
+    unlock: (state) => state.totalMuscle >= 1_000,
+  },
+  {
+    id: "cps-click-2",
+    name: "爆速パンプ",
+    description: "クリック時に毎秒生産量の1%が追加されます。",
+    cost: 5_000_000,
+    spriteSrc: "/game/macho-clicker/golden-protein.png",
+    effectLabel: "クリック +CpS 1%",
+    clickCpsPercent: 0.01,
+    unlock: (state) => state.totalMuscle >= 100_000,
   },
   {
     id: "protein-blend",
@@ -255,29 +385,29 @@ const powerUpgrades: PowerUpgrade[] = [
     goldenMultiplier: 2,
     unlock: (state) => state.totalMuscle >= 10_000,
   },
-  {
-    id: "factory-line",
-    name: "プロテイン自動ライン",
-    description: "プロテイン工房の毎秒生産が2倍になります。",
-    cost: 120_000,
-    spriteSrc: "/game/macho-clicker/protein.png",
-    effectLabel: "工房 x2",
-    target: "protein",
-    buildingMultiplier: 2,
-    unlock: (state) => state.upgrades.protein >= 1,
-  },
-  {
-    id: "meal-prep",
-    name: "作り置き高たんぱく飯",
-    description: "高たんぱく食堂の毎秒生産が2倍になります。",
-    cost: 1_300_000,
-    spriteSrc: "/game/macho-clicker/meal.png",
-    effectLabel: "食堂 x2",
-    target: "chicken",
-    buildingMultiplier: 2,
-    unlock: (state) => state.upgrades.chicken >= 1,
-  },
 ];
+
+const buildingPowerUpgradeTiers = [
+  { owned: 1, costMultiplier: 10, label: "基礎強化" },
+  { owned: 5, costMultiplier: 50, label: "効率化" },
+  { owned: 25, costMultiplier: 500, label: "量産体制" },
+] as const;
+
+const buildingPowerUpgrades: PowerUpgrade[] = upgrades.flatMap((upgrade) =>
+  buildingPowerUpgradeTiers.map((tier) => ({
+    id: `${upgrade.key}-${tier.owned}`,
+    name: `${upgrade.name}${tier.label}`,
+    description: `${upgrade.name}の毎秒生産が2倍になります。`,
+    cost: Math.ceil(upgrade.baseCost * tier.costMultiplier),
+    spriteSrc: upgrade.spriteSrc,
+    effectLabel: `${upgrade.name} x2`,
+    target: upgrade.key,
+    buildingMultiplier: 2,
+    unlock: (state: GameState) => state.upgrades[upgrade.key] >= tier.owned,
+  }))
+);
+
+const powerUpgrades: PowerUpgrade[] = [...manualPowerUpgrades, ...buildingPowerUpgrades];
 
 const mysteryShopItems: MysteryShopItem[] = [
   {
@@ -420,12 +550,29 @@ const getDumbbellOrbitItems = (count: number) => {
   return items;
 };
 
-const getClickPower = (state: GameState) =>
-  1 +
-  powerUpgrades.reduce(
-    (total, powerUp) => total + (state.purchasedPowerUps.includes(powerUp.id) ? powerUp.clickBonus ?? 0 : 0),
-    0
-  );
+const getClickPower = (state: GameState, pendingPowerUp?: PowerUpgrade) => {
+  const baseClick = powerUpgrades.reduce((total, powerUp) => {
+    if (!state.purchasedPowerUps.includes(powerUp.id)) return total;
+    return total + (powerUp.clickBonus ?? 0);
+  }, 1);
+  const clickMultiplier = powerUpgrades.reduce((total, powerUp) => {
+    if (!state.purchasedPowerUps.includes(powerUp.id)) return total;
+    return total * (powerUp.clickMultiplier ?? 1);
+  }, 1);
+  const cpsClickBonus = powerUpgrades.reduce((total, powerUp) => {
+    if (!state.purchasedPowerUps.includes(powerUp.id)) return total;
+    return total + getPerSecond(state) * (powerUp.clickCpsPercent ?? 0);
+  }, 0);
+
+  const currentClick = baseClick * clickMultiplier + cpsClickBonus;
+  if (!pendingPowerUp || state.purchasedPowerUps.includes(pendingPowerUp.id)) return currentClick;
+
+  const pendingBase = baseClick + (pendingPowerUp.clickBonus ?? 0);
+  const pendingMultiplier = clickMultiplier * (pendingPowerUp.clickMultiplier ?? 1);
+  const pendingCpsBonus = cpsClickBonus + getPerSecond(state) * (pendingPowerUp.clickCpsPercent ?? 0);
+
+  return pendingBase * pendingMultiplier + pendingCpsBonus;
+};
 
 const getBuildingMultiplier = (state: GameState, key: UpgradeKey) =>
   powerUpgrades.reduce((total, powerUp) => {
@@ -550,8 +697,10 @@ const getNewsLines = (state: GameState, title: string, perSecond: number) => {
 };
 
 const getPowerUpgradeSummary = (powerUp: PowerUpgrade, state: GameState) => {
-  if (powerUp.clickBonus) {
-    return `クリック +${formatNumber(powerUp.clickBonus)}`;
+  if (powerUp.clickBonus || powerUp.clickMultiplier || powerUp.clickCpsPercent) {
+    const before = getClickPower(state);
+    const after = getClickPower(state, powerUp);
+    return `クリック +${formatRate(Math.max(0, after - before))}`;
   }
 
   if (powerUp.target) {
@@ -626,15 +775,16 @@ const PowerUpgradeDetails = ({ state, powerUp }: { state: GameState; powerUp: Po
     }
   }
 
-  if (powerUp.clickBonus) {
+  if (powerUp.clickBonus || powerUp.clickMultiplier || powerUp.clickCpsPercent) {
     const currentClick = getClickPower(state);
+    const nextClick = getClickPower(state, powerUp);
     return (
       <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-black">
         <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
-          現在クリック<br />+{formatNumber(currentClick)}
+          現在クリック<br />+{formatRate(currentClick)}
         </div>
         <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
-          購入後<br />+{formatNumber(currentClick + powerUp.clickBonus)}
+          購入後<br />+{formatRate(nextClick)}
         </div>
       </div>
     );
@@ -1223,8 +1373,8 @@ export function MachoClickerPage() {
               </div>
 
               <div className="absolute inset-x-0 bottom-0 h-40 bg-[linear-gradient(180deg,transparent_0%,rgba(124,45,18,0.7)_90%)]" />
-              <div className="absolute inset-x-4 bottom-5 top-24 overflow-hidden rounded-[28px] border-4 border-[#7C2D12] bg-[linear-gradient(180deg,rgba(255,247,235,0.92)_0%,rgba(255,237,213,0.76)_62%,rgba(154,52,18,0.72)_100%)] shadow-inner">
-                <div className="grid h-full divide-y-2 divide-[#B45309]/35" style={{ gridTemplateRows: `repeat(${visualUpgrades.length}, minmax(0, 1fr))` }}>
+              <div className="absolute inset-x-4 bottom-5 top-24 overflow-y-auto rounded-[28px] border-4 border-[#7C2D12] bg-[linear-gradient(180deg,rgba(255,247,235,0.92)_0%,rgba(255,237,213,0.76)_62%,rgba(154,52,18,0.72)_100%)] shadow-inner">
+                <div className="grid auto-rows-[5rem] divide-y-2 divide-[#B45309]/35">
                   {visualUpgrades.map((upgrade) => {
                     const level = state.upgrades[upgrade.key];
                     const visibleCount = getUpgradeVisibleCount(level);
