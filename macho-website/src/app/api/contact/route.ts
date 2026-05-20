@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 
-const resendApiKey = process.env.RESEND_API_KEY ?? "re_GTo3TNmQ_NzCyeHyGpu7ucyuE2BqaKtLm";
+const resendApiKey = process.env.RESEND_API_KEY;
 const contactRecipient = "nariti12@gmail.com";
 
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
