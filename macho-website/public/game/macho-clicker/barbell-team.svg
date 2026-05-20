@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
+  <rect width="96" height="96" rx="18" fill="#ffedd5"/>
+  <rect x="12" y="38" width="10" height="20" rx="3" fill="#7c2d12"/>
+  <rect x="24" y="33" width="9" height="30" rx="3" fill="#9a3412"/>
+  <rect x="63" y="33" width="9" height="30" rx="3" fill="#9a3412"/>
+  <rect x="74" y="38" width="10" height="20" rx="3" fill="#7c2d12"/>
+  <rect x="30" y="44" width="36" height="8" rx="4" fill="#451a03"/>
+  <circle cx="48" cy="48" r="9" fill="#fb923c"/>
+  <path d="M36 70c6 4 18 4 24 0" stroke="#7c2d12" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <text x="48" y="23" text-anchor="middle" font-family="monospace" font-size="11" font-weight="900" fill="#9a3412">BAR</text>
+</svg>
