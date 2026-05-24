@@ -25,7 +25,6 @@
 | `/macho-clicker` | マチョクリッカーゲーム | `src/components/macho-clicker-page.tsx` |
 | `/menu` | マチョ田の筋トレメニュー | `src/app/menu/page.tsx` |
 | `/intake-calculator` | 1日摂取カロリー/たんぱく質計算機 | `src/app/intake-calculator/_components/intake-calculator.tsx` |
-| `/high-protein` | 高たんぱく食品一覧。カテゴリ/キーワード絞り込み | `src/components/high-protein-page.tsx` |
 | `/supplements-ranking` | おすすめプロテイン/クレアチン | `src/components/supplements-top-page.tsx` |
 | `/supplements-top3` | 旧URLから `/supplements-ranking` へリダイレクト | `src/app/supplements-top3/page.tsx` |
 | `/training-wear` | おすすめトレーニングシューズ | `src/app/training-wear/page.tsx` |
@@ -61,13 +60,6 @@
 - クレアチンは `INNOCECT` と `Nature In` の TOP2 を固定表示します。
 
 詳細は `docs/protein-rankings.md` を参照してください。
-
-## 高たんぱく食品一覧
-
-- データは `src/data/high-protein-foods.ts` に静的定義しています。
-- 食品ごとに `name`, `category`, `imageUrl`, `nutritionBasis`, `protein`, `calories`, `fat`, `carbs` を持ちます。
-- `nutritionBasis` で `1包装あたり` / `1食あたり` / `40gあたり` などの基準量を表示します。
-- Amazon商品がある場合は `amazonUrl` を持ち、Amazonアソシエイトリンクに変換して表示します。
 
 ## おすすめ商品ページ
 

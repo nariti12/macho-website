@@ -12,7 +12,6 @@ const staticRoutes = [
   "/profile",
   "/menu",
   "/intake-calculator",
-  "/high-protein",
   "/supplements-ranking",
   "/training-wear",
   "/training-gear",

@@ -33,13 +33,13 @@
         <mxCell id="cron" value="Vercel Cron&#xa;現在は停止&#xa;vercel.json = {}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF7EB;strokeColor=#F97316;fontSize=13;" vertex="1" parent="1">
           <mxGeometry x="325" y="440" width="190" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="pages" value="Pages&#xa;/&#xa;/blog, /blog/[id]&#xa;/supplements-ranking&#xa;/high-protein&#xa;/training-wear&#xa;/training-gear&#xa;/macho-clicker&#xa;/menu, /profile, /contact" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#FCD27B;fontSize=13;" vertex="1" parent="1">
+        <mxCell id="pages" value="Pages&#xa;/&#xa;/blog, /blog/[id]&#xa;/supplements-ranking&#xa;/training-wear&#xa;/training-gear&#xa;/macho-clicker&#xa;/menu, /profile, /contact" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#FCD27B;fontSize=13;" vertex="1" parent="1">
           <mxGeometry x="625" y="220" width="175" height="260" as="geometry" />
         </mxCell>
         <mxCell id="api" value="Route Handlers&#xa;/api/blogs&#xa;/api/blogs/[id]&#xa;/api/revalidate&#xa;/api/contact&#xa;/api/macho-clicker/rankings&#xa;/api/cron/protein-rankings" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#FCD27B;fontSize=13;" vertex="1" parent="1">
           <mxGeometry x="815" y="220" width="175" height="260" as="geometry" />
         </mxCell>
-        <mxCell id="static" value="Static Data / Assets&#xa;src/data/high-protein-foods.ts&#xa;public/picture&#xa;public/game/macho-clicker" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#94A3B8;fontSize=13;" vertex="1" parent="1">
+        <mxCell id="static" value="Static Data / Assets&#xa;public/picture&#xa;public/game/macho-clicker" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#94A3B8;fontSize=13;" vertex="1" parent="1">
           <mxGeometry x="625" y="570" width="365" height="120" as="geometry" />
         </mxCell>
         <mxCell id="affiliate-utils" value="Affiliate Link Utils&#xa;buildRakutenAffiliateUrl&#xa;buildAmazonAffiliateUrl" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF7EB;strokeColor=#F97316;fontSize=13;" vertex="1" parent="1">
