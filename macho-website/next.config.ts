@@ -42,6 +42,11 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "cloudinary.images-iherb.com",
+        pathname: "/image/upload/**",
+      },
+      {
+        protocol: "https",
         hostname: "fitnessshop.jp",
         pathname: "/**",
       },

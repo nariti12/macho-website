@@ -25,7 +25,7 @@
 | `/macho-clicker` | マチョクリッカーゲーム | `src/components/macho-clicker-page.tsx` |
 | `/menu` | マチョ田の筋トレメニュー | `src/app/menu/page.tsx` |
 | `/intake-calculator` | 1日摂取カロリー/たんぱく質計算機 | `src/app/intake-calculator/_components/intake-calculator.tsx` |
-| `/supplements-ranking` | おすすめプロテイン/クレアチン | `src/components/supplements-top-page.tsx` |
+| `/supplements-ranking` | おすすめサプリ | `src/components/supplements-top-page.tsx` |
 | `/supplements-top3` | 旧URLから `/supplements-ranking` へリダイレクト | `src/app/supplements-top3/page.tsx` |
 | `/training-wear` | おすすめトレーニングシューズ | `src/app/training-wear/page.tsx` |
 | `/training-gear` | おすすめトレーニングギア | `src/app/training-gear/page.tsx` |
@@ -49,7 +49,7 @@
   - `content2` がない場合: `richEditor` / `content` / `body` を通常本文として描画
 - microCMS Webhook から `/api/revalidate` を呼ぶと `blog-list` と該当記事タグを再検証します。
 
-## おすすめプロテイン/クレアチン
+## おすすめサプリ
 
 - ページ: `/supplements-ranking`
 - プロテインは現在 `Verifyst`、`X-PLOSION`、`Gold Standard` の TOP3 を表示対象にしています。

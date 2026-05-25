@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { SiteHeader } from "@/components/site-header";
-import { MALE_FIXED_BRAND_CONFIG, MALE_FIXED_BRAND_ORDER } from "@/lib/protein-rankings/constants";
+import { MALE_FIXED_BRAND_CONFIG, MALE_FIXED_BRAND_ORDER, MALE_FIXED_COMMENTS, MALE_FIXED_SCORES } from "@/lib/protein-rankings/constants";
 import { buildAmazonAffiliateUrl, buildProductOutboundLink, buildRakutenAffiliateUrl } from "@/lib/protein-rankings/links";
 import type { CommerceProvider, ProteinRankingPageData, RankingCardItem } from "@/lib/protein-rankings/types";
 
@@ -40,7 +40,7 @@ const creatineRecommendations: CreatineRecommendation[] = [
     name: "Nature In（ネイチャーイン）",
     comment: "Amazonで買うならネイチャーインが一番コスパがいいのでこれを購入してください。",
     imageUrl: "https://m.media-amazon.com/images/I/61Jwb0vWWZL._AC_SL1500_.jpg",
-    pricePerKgYen: 1980,
+    pricePerKgYen: 2390,
     amazonUrl:
       "https://www.amazon.co.jp/Nature-%EF%BC%88%E3%83%8D%E3%82%A4%E3%83%81%E3%83%A3%E3%83%BC%E3%82%A4%E3%83%B3%EF%BC%89-%E3%82%AF%E3%83%AC%E3%82%A2%E3%83%81%E3%83%B3%E3%83%A2%E3%83%8E%E3%83%8F%E3%82%A4%E3%83%89%E3%83%AC%E3%83%BC%E3%83%88-%E3%82%88%E3%81%8F%E9%96%89%E3%81%BE%E3%82%8B%E3%83%81%E3%83%A3%E3%83%83%E3%82%AF-ISO22000%E8%A6%8F%E6%A0%BC/dp/B0FY5PBSM1/ref=sr_1_7?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&sr=8-7",
   },
@@ -49,7 +49,7 @@ const creatineRecommendations: CreatineRecommendation[] = [
 const preWorkoutRecommendation: PreWorkoutRecommendation = {
   name: "PRE-X",
   comment: "コスパ最強のプレワークアウトです。モンスターとかレッドブルを買うならこれを買いましょう。",
-  imageUrl: "/images/supplements/pre-x.svg",
+  imageUrl: "https://cloudinary.images-iherb.com/image/upload/f_auto%2Cq_auto%3Aeco/images/ncs/ncs67096/l/8.jpg",
   iherbUrl:
     "https://jp.iherb.com/search?sug=nutricost%20pre-x&kw=nutricost%20pre-x&rank=4&rawkw=pre-x&refererLocation=suggestion",
 };
@@ -79,18 +79,6 @@ const formatUpdatedAt = (value: string | null) =>
         minute: "2-digit",
       })
     : null;
-
-const formatReview = (item: RankingCardItem) => {
-  const brandKey = getBrandKey(item);
-  const fallbackReviewAverage = brandKey ? MALE_FIXED_BRAND_CONFIG[brandKey].fallbackReviewAverage ?? null : null;
-  const reviewAverage = item.product.review_average ?? fallbackReviewAverage;
-
-  if (reviewAverage) {
-    return `${reviewAverage.toFixed(2)}点/5点`;
-  }
-
-  return "不明";
-};
 
 const formatPricePerKg = (item: RankingCardItem) => {
   const brandKey = getBrandKey(item);
@@ -167,7 +155,6 @@ const MetricChip = ({ label, value }: { label: string; value: string }) => (
 
 const renderMaleHighlights = (item: RankingCardItem) => (
   <>
-    <MetricChip label="レビュー" value={formatReview(item)} />
     <MetricChip label="1kgあたり" value={formatPricePerKg(item)} />
     <MetricChip
       label="美味しさ"
@@ -179,6 +166,53 @@ const renderMaleHighlights = (item: RankingCardItem) => (
     />
   </>
 );
+
+const buildFallbackRankingItem = (
+  brandKey: (typeof MALE_FIXED_BRAND_ORDER)[number],
+  index: number
+): RankingCardItem => {
+  const config = MALE_FIXED_BRAND_CONFIG[brandKey];
+
+  return {
+    rank: index + 1,
+    score: MALE_FIXED_SCORES[brandKey] / 100,
+    comment: MALE_FIXED_COMMENTS[brandKey],
+    product: {
+      id: `fallback-${brandKey}`,
+      ec_provider: "rakuten",
+      title: config.fallbackTitle,
+      image_url: config.fallbackImagePath,
+      price_yen: 0,
+      review_average: null,
+      review_count: 0,
+      item_url: config.rakutenSearchUrl ?? null,
+      affiliate_url: null,
+      shop_name: config.label,
+      matched_queries: ["fixed fallback"],
+      source_external_id: `curated:${brandKey}`,
+    },
+    metrics: null,
+  };
+};
+
+const ensureFixedProteinItems = (items: RankingCardItem[]) => {
+  const itemByBrand = new Map<(typeof MALE_FIXED_BRAND_ORDER)[number], RankingCardItem>();
+
+  items.forEach((item) => {
+    const brandKey = getBrandKey(item);
+    if (brandKey) {
+      itemByBrand.set(brandKey, item);
+    }
+  });
+
+  return MALE_FIXED_BRAND_ORDER.map((brandKey, index) => {
+    const item = itemByBrand.get(brandKey) ?? buildFallbackRankingItem(brandKey, index);
+    return {
+      ...item,
+      rank: index + 1,
+    };
+  });
+};
 
 const RankingCard = ({ item }: { item: RankingCardItem }) => (
   <article className="grid gap-5 rounded-3xl border border-[#FCD27B] bg-white/95 p-5 shadow-xl sm:grid-cols-[108px_1fr] sm:p-6">
@@ -319,10 +353,10 @@ export function SupplementsTopPage({ data }: { data: ProteinRankingPageData }) {
   const updatedAtLabel = formatUpdatedAt(data.updatedAt);
   const filteredSections = data.sections.map((section) => ({
     ...section,
-    items: section.items.filter((item) => {
+    items: ensureFixedProteinItems(section.items.filter((item) => {
       const brandKey = getBrandKey(item);
       return brandKey ? MALE_FIXED_BRAND_ORDER.includes(brandKey) : false;
-    }),
+    })),
   }));
 
   return (

@@ -39,7 +39,7 @@ export function HomePage() {
     { label: "マチョ\nクリッカー", href: "/macho-clicker" },
     { label: "マチョ田の\n筋トレメニュー", href: "/menu" },
     { label: "１日摂取カロリー/\nたんぱく質 計算機", href: "/intake-calculator" },
-    { label: "おすすめプロテイン/\nクレアチン", href: "/supplements-ranking" },
+    { label: "おすすめサプリ\n(プロテイン/クレアチン/プレワークアウト)", href: "/supplements-ranking" },
     { label: "おすすめ\nトレーニングシューズ", href: "/training-wear" },
     { label: "おすすめ\nトレーニングギア", href: "/training-gear" },
   ];
