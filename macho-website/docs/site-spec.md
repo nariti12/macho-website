@@ -59,6 +59,7 @@
 - 必要な場合は `/api/cron/protein-rankings` を手動実行してDBを更新します。
 - クレアチンは `INNOCECT` と `Nature In` の TOP2 を固定表示します。
 - プレワークアウトは `PRE-X` を固定表示します。
+- Amazon / iHerb の価格は公式APIで取得していないため、固定表示として管理します。
 
 詳細は `docs/protein-rankings.md` を参照してください。
 

@@ -146,11 +146,11 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     aliases: ["verifyst", "ベリフィスト"],
     fallbackTitle: "Verifyst ソイプロテイン",
     fallbackSearchTerm: "ベリフィスト ソイプロテイン 1kg",
-    fallbackImagePath: "/images/protein/verifyst.svg",
+    fallbackImagePath: "https://m.media-amazon.com/images/I/717OzVqgVYL._AC_SX679_.jpg",
     amazonSearchUrl:
       "https://www.amazon.co.jp/s?k=%E3%83%99%E3%83%AA%E3%83%95%E3%82%A3%E3%82%B9%E3%83%88&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
     preferredWeightG: 1000,
-    fallbackPricePerKgYen: 2480,
+    fallbackPricePerKgYen: 1666,
     fallbackReviewAverage: 4.35,
     tasteRating: "〇",
     formulaRating: "〇",

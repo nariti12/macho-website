@@ -31,7 +31,7 @@ const creatineRecommendations: CreatineRecommendation[] = [
     name: "INNOCECT（イノセクト）",
     comment: "イノセクトは昔からコスパ最強のクレアチンのブランド。",
     imageUrl: "https://shop.r10s.jp/innocect/cabinet/amino/creatine/new_creatin.jpg",
-    pricePerKgYen: 2980,
+    pricePerKgYen: 2449,
     rakutenUrl:
       "https://item.rakuten.co.jp/innocect/cre_1000/?iasid=07rpp_10095___2t-mompqf6d-1a-760651ea-0acb-40b3-88ee-e30aa1bc794a",
   },
@@ -117,6 +117,16 @@ const getOutboundLabel = (provider: CommerceProvider) => {
 const getFallbackImagePath = (item: RankingCardItem) => {
   const brandKey = getBrandKey(item);
   return brandKey ? MALE_FIXED_BRAND_CONFIG[brandKey].fallbackImagePath : null;
+};
+
+const getProductImagePath = (item: RankingCardItem) => {
+  const brandKey = getBrandKey(item);
+
+  if (brandKey === "verifyst") {
+    return MALE_FIXED_BRAND_CONFIG[brandKey].fallbackImagePath;
+  }
+
+  return item.product.image_url ?? getFallbackImagePath(item);
 };
 
 const getDisplayTitle = (item: RankingCardItem) => {
@@ -221,9 +231,9 @@ const RankingCard = ({ item }: { item: RankingCardItem }) => (
         {item.rank}
       </div>
       <div className="relative mt-0 aspect-square w-24 overflow-hidden rounded-2xl bg-[#FFF4E7] sm:mt-4 sm:w-[108px]">
-        {item.product.image_url || getFallbackImagePath(item) ? (
+        {getProductImagePath(item) ? (
           <Image
-            src={item.product.image_url ?? (getFallbackImagePath(item) as string)}
+            src={getProductImagePath(item) as string}
             alt={item.product.title}
             fill
             sizes="108px"
