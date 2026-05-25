@@ -227,7 +227,7 @@ export function HomePage() {
             />
             <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
               <h2 className="text-2xl font-bold text-white sm:text-3xl">Blog</h2>
-              <span className="text-sm font-medium text-white/80 sm:text-base">-筋トレとライフハック-</span>
+              <span className="text-sm font-medium text-white/80 sm:text-base">-筋トレ日記-</span>
             </div>
           </div>
 

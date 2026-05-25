@@ -10,14 +10,14 @@ const pageUrl = buildUrl("/blog");
 export const metadata: Metadata = {
   title: "ブログ一覧｜マチョ田の部屋",
   description:
-    "筋トレのコツや最新トレーニング情報をマチョ田が発信するブログ一覧ページ。カテゴリー別に記事をチェックできます。",
+    "マチョ田の筋トレ日記をまとめたブログ一覧ページ。キーワード検索や月別アーカイブから記事を探せます。",
   alternates: {
     canonical: pageUrl,
   },
   openGraph: {
     title: "ブログ一覧｜マチョ田の部屋",
     description:
-      "筋トレの悩みを解決する記事をまとめたブログ一覧ページです。カテゴリー別に最新コンテンツをチェックできます。",
+      "マチョ田の筋トレ日記をまとめたブログ一覧ページです。キーワード検索や月別アーカイブから記事を探せます。",
     url: pageUrl,
     type: "website",
   },
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "ブログ一覧｜マチョ田の部屋",
     description:
-      "筋トレに役立つ情報を発信するマチョ田のブログ一覧ページです。",
+      "マチョ田の筋トレ日記をまとめたブログ一覧ページです。",
   },
 };
 
@@ -34,6 +34,7 @@ const baseUrl = process.env.MICROCMS_BASE_URL ?? DEFAULT_BASE_URL;
 const MICROCMS_API_KEY = process.env.MICROCMS_API_KEY ?? "";
 const FALLBACK_IMAGE = "/images/blog-placeholder.svg";
 const LIMIT = 9;
+const FETCH_LIMIT = 100;
 
 interface MicroCMSImage {
   url: string;
@@ -70,16 +71,16 @@ const formatDate = (value: string | null | undefined) =>
       })
     : null;
 
-async function fetchBlogs(page: number) {
+async function fetchBlogs() {
   if (!MICROCMS_API_KEY) {
     throw new Error("MICROCMS_API_KEY is not configured.");
   }
   const endpoint = `${baseUrl.replace(/\/$/, "")}/blogs`;
-  const offset = Math.max(page - 1, 0) * LIMIT;
   const searchParams = new URLSearchParams({
-    limit: String(LIMIT),
-    offset: String(offset),
+    limit: String(FETCH_LIMIT),
+    offset: "0",
     status: "PUBLIC",
+    orders: "-publishedAt",
   });
   const response = await fetch(`${endpoint}?${searchParams.toString()}`, {
     headers: {
@@ -95,33 +96,88 @@ async function fetchBlogs(page: number) {
   }
 
   const data = (await response.json()) as MicroCMSResponse;
-  return {
-    totalCount: data.totalCount ?? 0,
-    items: (data.contents ?? []).map((item) => ({
+  const items = (data.contents ?? []).map((item) => ({
       id: item.id,
       title: item.title ?? "無題の記事",
       category: item.category?.name ?? "Blog",
       imageUrl: item.thumbnail?.url ?? item.eyecatch?.url ?? item.mainvisual?.url ?? FALLBACK_IMAGE,
+      publishedAt: item.publishedAt ?? item.updatedAt ?? null,
       updatedAt: item.updatedAt ?? item.publishedAt ?? null,
-    })),
+    }));
+
+  return {
+    totalCount: data.totalCount ?? items.length,
+    items,
   };
 }
 
-const buildPageHref = (page: number) => (page === 1 ? "/blog" : `/blog?page=${page}`);
+type BlogListItem = Awaited<ReturnType<typeof fetchBlogs>>["items"][number];
+
+const getMonthKey = (value: string | null | undefined) => {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+};
+
+const formatArchiveLabel = (monthKey: string) => {
+  const [year, month] = monthKey.split("-");
+  return `${year}年${Number(month)}月`;
+};
+
+const getArchives = (blogs: BlogListItem[]) => {
+  const counts = blogs.reduce<Record<string, number>>((acc, blog) => {
+    const monthKey = getMonthKey(blog.publishedAt);
+    if (!monthKey) return acc;
+    acc[monthKey] = (acc[monthKey] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  return Object.entries(counts)
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([monthKey, count]) => ({ monthKey, count, label: formatArchiveLabel(monthKey) }));
+};
+
+const filterBlogs = (blogs: BlogListItem[], query: string, archive: string) => {
+  const normalizedQuery = query.trim().toLowerCase();
+  return blogs.filter((blog) => {
+    const matchesQuery =
+      !normalizedQuery ||
+      `${blog.title} ${blog.category}`.toLowerCase().includes(normalizedQuery);
+    const matchesArchive = !archive || getMonthKey(blog.publishedAt) === archive;
+    return matchesQuery && matchesArchive;
+  });
+};
+
+const buildPageHref = (page: number, query: string, archive: string) => {
+  const params = new URLSearchParams();
+  if (page > 1) params.set("page", String(page));
+  if (query) params.set("q", query);
+  if (archive) params.set("archive", archive);
+  const search = params.toString();
+  return search ? `/blog?${search}` : "/blog";
+};
 
 export default async function BlogIndexPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; q?: string; archive?: string }>;
 }) {
   const profileImageSrc = "/picture/ore.png";
   const resolvedSearchParams = await searchParams;
   const page = Math.max(Number(resolvedSearchParams?.page ?? "1"), 1);
-  const { items: blogs, totalCount } = await fetchBlogs(page);
+  const query = resolvedSearchParams?.q?.trim() ?? "";
+  const archive = resolvedSearchParams?.archive?.trim() ?? "";
+  const { items: allBlogs } = await fetchBlogs();
+  const archives = getArchives(allBlogs);
+  const filteredBlogs = filterBlogs(allBlogs, query, archive);
+  const totalCount = filteredBlogs.length;
   const totalPages = Math.max(Math.ceil(totalCount / LIMIT), 1);
+  const currentPage = Math.min(page, totalPages);
+  const blogs = filteredBlogs.slice((currentPage - 1) * LIMIT, currentPage * LIMIT);
 
-  const prevPage = page > 1 ? page - 1 : null;
-  const nextPage = page < totalPages ? page + 1 : null;
+  const prevPage = currentPage > 1 ? currentPage - 1 : null;
+  const nextPage = currentPage < totalPages ? currentPage + 1 : null;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#FCC081" }}>
@@ -136,10 +192,66 @@ export default async function BlogIndexPage({
               ← TOPに戻る
             </Link>
             <h1 className="text-4xl font-bold text-gray-900">Blog</h1>
+            <p className="text-sm font-semibold text-white/90">筋トレ日記をキーワードや月別で探せます。</p>
           </div>
 
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
-            {blogs.map((blog) => (
+          <section className="grid gap-4 rounded-3xl bg-white/90 p-4 shadow-lg lg:grid-cols-[minmax(0,1fr)_320px]">
+            <form action="/blog" className="flex flex-col gap-3 sm:flex-row">
+              <input
+                type="search"
+                name="q"
+                defaultValue={query}
+                placeholder="記事タイトルで検索"
+                className="min-h-12 flex-1 rounded-2xl border border-[#FCD27B] bg-white px-4 text-sm font-semibold text-gray-800 outline-none transition focus:border-[#FF8A23] focus:ring-4 focus:ring-[#FF8A23]/20"
+              />
+              {archive ? <input type="hidden" name="archive" value={archive} /> : null}
+              <button
+                type="submit"
+                className="min-h-12 rounded-2xl bg-[#FF8A23] px-6 text-sm font-bold text-white shadow transition hover:bg-[#f57200]"
+              >
+                検索
+              </button>
+              {(query || archive) && (
+                <Link
+                  href="/blog"
+                  className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-[#FFF3DF] px-5 text-sm font-bold text-[#9A3412] transition hover:bg-[#FFE7C2]"
+                >
+                  リセット
+                </Link>
+              )}
+            </form>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href={buildPageHref(1, query, "")}
+                className={`rounded-full px-3 py-2 text-xs font-bold transition ${
+                  archive ? "bg-[#FFF3DF] text-[#9A3412] hover:bg-[#FFE7C2]" : "bg-[#7C2D12] text-white"
+                }`}
+              >
+                すべて
+              </Link>
+              {archives.map((item) => (
+                <Link
+                  key={item.monthKey}
+                  href={buildPageHref(1, query, item.monthKey)}
+                  className={`rounded-full px-3 py-2 text-xs font-bold transition ${
+                    archive === item.monthKey ? "bg-[#7C2D12] text-white" : "bg-[#FFF3DF] text-[#9A3412] hover:bg-[#FFE7C2]"
+                  }`}
+                >
+                  {item.label} ({item.count})
+                </Link>
+              ))}
+            </div>
+          </section>
+
+          <div className="flex items-center justify-between gap-4 rounded-2xl bg-white/60 px-4 py-3 text-sm font-bold text-[#7C2D12]">
+            <span>{totalCount}件の記事</span>
+            {(query || archive) && <span>絞り込み中</span>}
+          </div>
+
+          {blogs.length > 0 ? (
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+              {blogs.map((blog) => (
               <Link
                 key={blog.id}
                 href={`/blog/${blog.id}`}
@@ -159,15 +271,20 @@ export default async function BlogIndexPage({
                     {blog.category}
                   </span>
                   <h2 className="text-lg font-bold leading-tight text-gray-900 line-clamp-2">{blog.title}</h2>
-                  {formatDate(blog.updatedAt) && (
+                  {formatDate(blog.publishedAt) && (
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                      更新日: {formatDate(blog.updatedAt)}
+                      公開日: {formatDate(blog.publishedAt)}
                     </p>
                   )}
                 </div>
               </Link>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-3xl bg-white/90 p-8 text-center text-sm font-semibold text-gray-600 shadow">
+              条件に一致する記事がありません。
+            </div>
+          )}
 
           {totalPages > 1 && (
             <div className="mt-10 flex items-center justify-center gap-4">
@@ -176,19 +293,19 @@ export default async function BlogIndexPage({
                 className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
                   prevPage ? "bg-white/80 text-[#FF8A23] hover:bg-white" : "bg-white/40 text-gray-400 cursor-not-allowed"
                 }`}
-                href={prevPage ? buildPageHref(prevPage) : "#"}
+                href={prevPage ? buildPageHref(prevPage, query, archive) : "#"}
               >
                 ← 前へ
               </Link>
               <span className="text-sm font-semibold text-white/80">
-                {page} / {totalPages}
+                {currentPage} / {totalPages}
               </span>
               <Link
                 aria-disabled={!nextPage}
                 className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
                   nextPage ? "bg-white/80 text-[#FF8A23] hover:bg-white" : "bg-white/40 text-gray-400 cursor-not-allowed"
                 }`}
-                href={nextPage ? buildPageHref(nextPage) : "#"}
+                href={nextPage ? buildPageHref(nextPage, query, archive) : "#"}
               >
                 次へ →
               </Link>
