@@ -67,7 +67,7 @@
 
 - `/training-wear` はトレーニングシューズTOP5を静的定義します。
 - `/training-gear` はトレーニングベルトとパワーグリップを静的定義します。
-- 楽天検索URLがある商品は楽天APIから価格目安を取得し、週次再検証で更新します。
+- 楽天検索URLがある商品は楽天APIから参考価格を取得し、週次再検証で更新します。
 - Amazon / 公式サイトのみの商品は固定価格を表示します。
 - 楽天URLは `buildRakutenAffiliateUrl`、Amazon URLは `buildAmazonAffiliateUrl` でアフィリエイトURLに変換します。
 - Amazonのタグは `src/lib/protein-rankings/links.ts` の `AMAZON_ASSOCIATE_TAG` で管理します。

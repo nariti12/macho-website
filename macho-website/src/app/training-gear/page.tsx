@@ -10,6 +10,16 @@ import { buildUrl } from "@/lib/seo";
 const profileImageSrc = "/picture/ore.png";
 const pageUrl = buildUrl("/training-gear");
 
+const formatLastUpdated = () =>
+  new Date().toLocaleString("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
 type GearItem = {
   rank: number;
   name: string;
@@ -71,7 +81,7 @@ const gearSections: GearSection[] = [
         comment: "レバー式タイプでいい感じのやつです。",
         amazonUrl:
           "https://www.amazon.co.jp/s?k=%E3%83%88%E3%83%AC%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E3%83%99%E3%83%AB%E3%83%88+pl+college",
-        imageUrl: "/images/gear/pl-college-belt.svg",
+        imageUrl: "https://plcollege.com/cdn/shop/files/IMG_1838_752efbaf-4bbe-4909-9f33-beb6068ed968.jpg?v=1758187342",
         fallbackPriceYen: 18000,
       },
     ],
@@ -142,6 +152,7 @@ const getSections = async () =>
 
 export default async function TrainingGearPage() {
   const sections = await getSections();
+  const updatedAtLabel = formatLastUpdated();
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#FCC081" }}>
@@ -158,6 +169,7 @@ export default async function TrainingGearPage() {
                 {`トレーニングするなら「トレーニングベルト」と「パワーグリップ」は用意しておきたいです。トレーニングベルトは腹圧を高めて腰をサポートし、高重量トレーニング時により効かせるために役立ちます。
 またパワーグリップは、握力を補助してくれるため、主に背中トレーニングで狙った筋肉に集中しやすくなり、効率よく追い込めます。`}
               </p>
+              <p className="text-sm text-slate-500">最終更新: {updatedAtLabel}</p>
             </div>
           </section>
 
@@ -197,7 +209,7 @@ export default async function TrainingGearPage() {
                         <p className="text-sm leading-6 text-slate-600">{item.comment}</p>
                       </div>
                       <div className="w-fit rounded-2xl bg-[#FFF4E7] px-4 py-3 text-sm text-slate-700 shadow-inner">
-                        <div className="text-xs font-semibold uppercase tracking-wide text-[#C2410C]">価格目安</div>
+                        <div className="text-xs font-semibold uppercase tracking-wide text-[#C2410C]">参考価格</div>
                         <div className="mt-1 font-medium text-slate-800">{item.priceLabel}</div>
                       </div>
 

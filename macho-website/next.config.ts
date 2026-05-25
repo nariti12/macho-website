@@ -47,6 +47,16 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "verifyst.com",
+        pathname: "/cdn/shop/files/**",
+      },
+      {
+        protocol: "https",
+        hostname: "plcollege.com",
+        pathname: "/cdn/shop/files/**",
+      },
+      {
+        protocol: "https",
         hostname: "fitnessshop.jp",
         pathname: "/**",
       },

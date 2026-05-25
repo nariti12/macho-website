@@ -10,6 +10,16 @@ import { buildUrl } from "@/lib/seo";
 const profileImageSrc = "/picture/ore.png";
 const pageUrl = buildUrl("/training-wear");
 
+const formatLastUpdated = () =>
+  new Date().toLocaleString("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
 type ShoeItem = {
   rank: number;
   name: string;
@@ -110,6 +120,7 @@ const getItemsWithImages = async () => {
 
 export default async function TrainingWearPage() {
   const items = await getItemsWithImages();
+  const updatedAtLabel = formatLastUpdated();
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#FCC081" }}>
@@ -125,6 +136,7 @@ export default async function TrainingWearPage() {
               <p className="max-w-3xl text-base leading-7 text-slate-700">
                 カッコよくてジムに最適なトレーニングシューズをご紹介します。
               </p>
+              <p className="text-sm text-slate-500">最終更新: {updatedAtLabel}</p>
             </div>
           </section>
 
@@ -156,7 +168,7 @@ export default async function TrainingWearPage() {
                       <p className="text-sm leading-6 text-slate-600">{item.comment}</p>
                     </div>
                     <div className="w-fit rounded-2xl bg-[#FFF4E7] px-4 py-3 text-sm text-slate-700 shadow-inner">
-                      <div className="text-xs font-semibold uppercase tracking-wide text-[#C2410C]">価格目安</div>
+                      <div className="text-xs font-semibold uppercase tracking-wide text-[#C2410C]">参考価格</div>
                       <div className="mt-1 font-medium text-slate-800">{item.priceLabel}</div>
                     </div>
 

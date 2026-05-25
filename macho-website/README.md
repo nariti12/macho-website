@@ -78,7 +78,7 @@ supabase db push
 
 ## Manual Ranking Update
 
-Vercel Cron は週1回、日曜18:00 UTC（月曜03:00 JST）に `/api/cron/protein-rankings` を実行します。あわせて `/training-wear` と `/training-gear` を週次で叩き、楽天APIから取れる価格目安を再検証します。`CRON_SECRET` を Vercel 環境変数に設定しておくと、Cron リクエストにも認証ヘッダーが付与されます。
+Vercel Cron は週1回、日曜18:00 UTC（月曜03:00 JST）に `/api/cron/protein-rankings` を実行します。あわせて `/training-wear` と `/training-gear` を週次で叩き、楽天APIから取れる参考価格を再検証します。`CRON_SECRET` を Vercel 環境変数に設定しておくと、Cron リクエストにも認証ヘッダーが付与されます。
 
 ```json
 {

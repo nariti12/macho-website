@@ -144,15 +144,15 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     label: "Verifyst",
     displayName: "Verifyst（ベリフィスト）",
     aliases: ["verifyst", "ベリフィスト"],
-    fallbackTitle: "Verifyst ソイプロテイン",
-    fallbackSearchTerm: "ベリフィスト ソイプロテイン 1kg",
-    fallbackImagePath: "https://m.media-amazon.com/images/I/717OzVqgVYL._AC_SX679_.jpg",
+    fallbackTitle: "Verifyst ホエイプロテイン 3kg",
+    fallbackSearchTerm: "ベリフィスト ホエイプロテイン 3kg",
+    fallbackImagePath: "https://verifyst.com/cdn/shop/files/V001PL30.jpg?v=1729573021",
     rakutenSearchUrl:
-      "https://search.rakuten.co.jp/search/mall/%E3%83%99%E3%83%AA%E3%83%95%E3%82%A3%E3%82%B9%E3%83%88+%E3%83%97%E3%83%AD%E3%83%86%E3%82%A4%E3%83%B3/?l-id=pc_header_search_suggest",
+      "https://search.rakuten.co.jp/search/mall/%E3%83%99%E3%83%AA%E3%83%95%E3%82%A3%E3%82%B9%E3%83%88+%E3%83%9B%E3%82%A8%E3%82%A4+%E3%83%97%E3%83%AD%E3%83%86%E3%82%A4%E3%83%B3/?l-id=pc_header_search_suggest",
     amazonSearchUrl:
-      "https://www.amazon.co.jp/s?k=%E3%83%99%E3%83%AA%E3%83%95%E3%82%A3%E3%82%B9%E3%83%88&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
-    preferredWeightG: 1000,
-    fallbackPricePerKgYen: 1666,
+      "https://www.amazon.co.jp/s?k=%E3%83%99%E3%83%AA%E3%83%95%E3%82%A3%E3%82%B9%E3%83%88+%E3%83%9B%E3%82%A8%E3%82%A4&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
+    preferredWeightG: 3000,
+    fallbackPricePerKgYen: 3293,
     fallbackReviewAverage: 4.35,
     tasteRating: "〇",
     formulaRating: "〇",
@@ -195,7 +195,7 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
 
 export const MALE_FIXED_COMMENTS: Record<(typeof MALE_FIXED_BRAND_ORDER)[number], string> = {
   verifyst:
-    "コスパ最強王者のプロテイン。ホエイが高くて手が出せないのであればソイならホエイの半額で買えるので、そちらを購入しましょう。マチョ田もベリフィストのソイプロテインを購入しています。",
+    "コスパ最強王者のホエイプロテイン。毎日飲むなら価格を抑えやすく、まず候補に入れたいプロテインです。",
   "x-plosion":
     "ベリフィストの次にコスパがいいプロテイン。",
   "gold standard":
