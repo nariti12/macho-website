@@ -80,8 +80,8 @@ const gearSections: GearSection[] = [
         name: "P.L.College",
         comment: "レバー式タイプでいい感じのやつです。",
         amazonUrl:
-          "https://www.amazon.co.jp/s?k=%E3%83%88%E3%83%AC%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E3%83%99%E3%83%AB%E3%83%88+pl+college",
-        imageUrl: "https://plcollege.com/cdn/shop/files/005_7eb8a5dd-a114-49a3-b54e-b780cad26413.jpg?v=1758187342",
+          "https://www.amazon.co.jp/P-L-College-P-L-College%E3%83%91%E3%83%AF%E3%83%BC%E3%83%99%E3%83%AB%E3%83%88-%E3%83%91%E3%83%AF%E3%83%BC%E3%83%81%E3%83%A5%E3%83%BC%E3%83%96%E9%96%8B%E7%99%BA-%E3%83%88%E3%83%AC%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E3%83%99%E3%83%AB%E3%83%88-M/dp/B0F53HGKQP/ref=sr_1_6?sr=8-6",
+        imageUrl: "https://m.media-amazon.com/images/I/31unTrG-pXL.jpg",
         fallbackPriceYen: 18000,
       },
     ],

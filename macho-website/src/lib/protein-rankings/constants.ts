@@ -146,11 +146,11 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     aliases: ["verifyst", "ベリフィスト"],
     fallbackTitle: "Verifyst ホエイプロテイン 3kg",
     fallbackSearchTerm: "ベリフィスト ホエイプロテイン 3kg",
-    fallbackImagePath: "https://verifyst.com/cdn/shop/files/V001PL30.jpg?v=1729573021",
+    fallbackImagePath: "https://m.media-amazon.com/images/I/41G9IZiQ4lL._AC_SL1500_.jpg",
     rakutenSearchUrl:
       "https://search.rakuten.co.jp/search/mall/%E3%83%99%E3%83%AA%E3%83%95%E3%82%A3%E3%82%B9%E3%83%88+%E3%83%9B%E3%82%A8%E3%82%A4+%E3%83%97%E3%83%AD%E3%83%86%E3%82%A4%E3%83%B3/?l-id=pc_header_search_suggest",
     amazonSearchUrl:
-      "https://www.amazon.co.jp/s?k=%E3%83%99%E3%83%AA%E3%83%95%E3%82%A3%E3%82%B9%E3%83%88+%E3%83%9B%E3%82%A8%E3%82%A4&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
+      "https://www.amazon.co.jp/Verifyst-%E3%83%99%E3%83%AA%E3%83%95%E3%82%A3%E3%82%B9%E3%83%88-%E3%83%97%E3%83%AD%E3%83%86%E3%82%A4%E3%83%B3-%E3%83%81%E3%83%A7%E3%82%B3%E3%83%AC%E3%83%BC%E3%83%88%E9%A2%A8%E5%91%B3-%E3%81%B7%E3%82%8D%E3%81%A6%E3%81%84%E3%82%93/dp/B0D229NKL9/ref=sr_1_3?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&sr=8-3",
     preferredWeightG: 3000,
     fallbackPricePerKgYen: 3293,
     fallbackReviewAverage: 4.35,
