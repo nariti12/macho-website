@@ -52,12 +52,13 @@
 ## おすすめプロテイン/クレアチン
 
 - ページ: `/supplements-ranking`
-- プロテインは現在 `X-PLOSION` と `Gold Standard` の TOP2 を表示対象にしています。
+- プロテインは現在 `Verifyst`、`X-PLOSION`、`Gold Standard` の TOP3 を表示対象にしています。
 - 表示名、コメント、美味しさ、成分評価、Amazon検索URL、楽天検索URLは固定設定です。
 - プロテインの商品情報は Supabase の `rankings` / `products` / `product_metrics` を読み込みます。
-- 日次 Cron は停止済みです。`vercel.json` に Cron 設定はありません。
-- 必要な場合のみ `/api/cron/protein-rankings` を手動実行してDBを更新します。
+- Vercel Cron で週1回 `/api/cron/protein-rankings` を実行してDBを更新します。
+- 必要な場合は `/api/cron/protein-rankings` を手動実行してDBを更新します。
 - クレアチンは `INNOCECT` と `Nature In` の TOP2 を固定表示します。
+- プレワークアウトは `PRE-X` を固定表示します。
 
 詳細は `docs/protein-rankings.md` を参照してください。
 
@@ -111,8 +112,8 @@ Supabase migration は `supabase/migrations/` にあります。
 ## デプロイ/運用
 
 - Vercel に GitHub `main` ブランチを連携してデプロイします。
-- `vercel.json` は現在 `{}` で、日次 Cron は使っていません。
-- プロテインDBを更新したい場合だけ、手動で `/api/cron/protein-rankings` を実行します。
+- `vercel.json` に週次 Cron を設定しています。
+- プロテインDBを今すぐ更新したい場合は、手動で `/api/cron/protein-rankings` を実行します。
 - 通常確認コマンド:
 
 ```bash

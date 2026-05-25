@@ -60,7 +60,7 @@ supabase db push
 
 ## Ranking Data
 
-プロテイン表示は Supabase に保存済みのランキングを読み込みます。現在は日次 Cron を停止しており、必要な場合だけ手動更新します。
+プロテイン表示は Supabase に保存済みのランキングを読み込みます。Vercel Cron で週1回更新し、必要な場合は手動更新もできます。
 
 1. `/api/cron/protein-rankings` を手動実行すると、楽天の商品検索 API から固定ブランドの商品情報を取得
 2. 内容量を抽出して `1kgあたり` の価格を計算
@@ -70,20 +70,25 @@ supabase db push
 
 固定ブランドは次の順で扱います。
 
-1. `X-PLOSION`
-2. `Gold Standard`
-3. `be LEGEND`
-4. `WINZONE`
-5. `myprotein`
+1. `Verifyst`
+2. `X-PLOSION`
+3. `Gold Standard`
 
-現在のページでは `X-PLOSION` と `Gold Standard` を表示対象にしています。
+クレアチンとプレワークアウトは固定カードで表示します。プロテインの価格は cron 更新時に楽天の商品検索 API から取得した価格と内容量で `1kgあたり` を計算します。
 
 ## Manual Ranking Update
 
-日次 Cron は停止しています。`vercel.json` には Cron 設定を置いていません。
+Vercel Cron は週1回、日曜18:00 UTC（月曜03:00 JST）に `/api/cron/protein-rankings` を実行します。`CRON_SECRET` を Vercel 環境変数に設定しておくと、Cron リクエストにも認証ヘッダーが付与されます。
 
 ```json
-{}
+{
+  "crons": [
+    {
+      "path": "/api/cron/protein-rankings",
+      "schedule": "0 18 * * 0"
+    }
+  ]
+}
 ```
 
 ランキングを手動更新する場合は、`CRON_SECRET` を使って次のように叩きます。

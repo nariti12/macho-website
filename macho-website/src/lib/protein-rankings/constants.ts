@@ -94,6 +94,8 @@ export const DIET_KEYWORDS = [
 ] as const;
 
 export const TRUSTED_MALE_BRANDS = [
+  "verifyst",
+  "ベリフィスト",
   "x-plosion",
   "xplosion",
   "エクスプロージョン",
@@ -114,11 +116,9 @@ export const TRUSTED_MALE_BRANDS = [
 ] as const;
 
 export const MALE_FIXED_BRAND_ORDER = [
+  "verifyst",
   "x-plosion",
   "gold standard",
-  "be legend",
-  "winzone",
-  "myprotein",
 ] as const;
 
 export const MALE_FIXED_BRAND_CONFIG: Record<
@@ -130,7 +130,7 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     fallbackTitle: string;
     fallbackSearchTerm: string;
     fallbackImagePath: string;
-    rakutenSearchUrl: string;
+    rakutenSearchUrl?: string;
     amazonSearchUrl: string;
     preferredWeightG: number;
     fallbackPricePerKgYen: number;
@@ -140,6 +140,21 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     formulaRating: "◎" | "〇" | "△";
   }
 > = {
+  verifyst: {
+    label: "Verifyst",
+    displayName: "Verifyst（ベリフィスト）",
+    aliases: ["verifyst", "ベリフィスト"],
+    fallbackTitle: "Verifyst ソイプロテイン",
+    fallbackSearchTerm: "ベリフィスト ソイプロテイン 1kg",
+    fallbackImagePath: "/images/protein/verifyst.svg",
+    amazonSearchUrl:
+      "https://www.amazon.co.jp/s?k=%E3%83%99%E3%83%AA%E3%83%95%E3%82%A3%E3%82%B9%E3%83%88&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
+    preferredWeightG: 1000,
+    fallbackPricePerKgYen: 2480,
+    fallbackReviewAverage: 4.35,
+    tasteRating: "〇",
+    formulaRating: "〇",
+  },
   "x-plosion": {
     label: "X-PLOSION",
     displayName: "X-PLOSION（エクスプロージョン）",
@@ -174,78 +189,21 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     tasteRating: "◎",
     formulaRating: "◎",
   },
-  "be legend": {
-    label: "be LEGEND",
-    displayName: "be LEGEND（ビーレジェンド）",
-    aliases: ["be legend", "ビーレジェンド", "belegend"],
-    fallbackTitle: "be LEGEND ホエイプロテイン",
-    fallbackSearchTerm: "be LEGEND ホエイプロテイン 1kg",
-    fallbackImagePath: "/images/protein/be-legend.svg",
-    rakutenSearchUrl: "https://search.rakuten.co.jp/search/mall/be+LEGEND/",
-    amazonSearchUrl:
-      "https://www.amazon.co.jp/s?k=be+LEGEND&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
-    preferredWeightG: 1000,
-    fallbackPricePerKgYen: 4999,
-    fallbackReviewAverage: 4.65,
-    fallbackReviewCount: 179,
-    tasteRating: "〇",
-    formulaRating: "〇",
-  },
-  myprotein: {
-    label: "myprotein",
-    displayName: "Myprotein（マイプロテイン）",
-    aliases: ["myprotein", "マイプロテイン", "impact whey", "impact ホエイ"],
-    fallbackTitle: "myprotein Impact ホエイプロテイン",
-    fallbackSearchTerm: "myprotein Impact ホエイプロテイン 1kg",
-    fallbackImagePath: "/images/protein/myprotein.svg",
-    rakutenSearchUrl: "https://search.rakuten.co.jp/search/mall/+Myprotein/",
-    amazonSearchUrl:
-      "https://www.amazon.co.jp/s?k=Myprotein&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
-    preferredWeightG: 1000,
-    fallbackPricePerKgYen: 4390,
-    fallbackReviewAverage: 4.32,
-    fallbackReviewCount: 1380,
-    tasteRating: "△",
-    formulaRating: "◎",
-  },
-  winzone: {
-    label: "WINZONE",
-    displayName: "WINZONE（ウィンゾーン）",
-    aliases: ["winzone", "ウィンゾーン", "日本新薬"],
-    fallbackTitle: "WINZONE ホエイプロテイン",
-    fallbackSearchTerm: "WINZONE ホエイプロテイン 1kg",
-    fallbackImagePath: "/images/protein/winzone.svg",
-    rakutenSearchUrl: "https://search.rakuten.co.jp/search/mall/WINZONE/?l-id=pc_header_search_suggest",
-    amazonSearchUrl:
-      "https://www.amazon.co.jp/s?k=WINZONE&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
-    preferredWeightG: 1000,
-    fallbackPricePerKgYen: 4873,
-    fallbackReviewAverage: 4.73,
-    fallbackReviewCount: 3248,
-    tasteRating: "〇",
-    formulaRating: "〇",
-  },
 };
 
 export const MALE_FIXED_COMMENTS: Record<(typeof MALE_FIXED_BRAND_ORDER)[number], string> = {
+  verifyst:
+    "コスパ最強王者のプロテイン。ホエイが高くて手が出せないのであればソイならホエイの半額で買えるので、そちらを購入しましょう。マチョ田もベリフィストのソイプロテインを購入しています。",
   "x-plosion":
-    "総合的にみて現状で一番良いプロテイン。味と成分がバランスよく、かつコスパ最強なので、これを買っておけば間違いはないです。",
+    "ベリフィストの次にコスパがいいプロテイン。",
   "gold standard":
     "世界No1プロテインです。成分、味ともに最強ですが、その分他の国産プロテインと比べると高いです。",
-  "be legend":
-    "バランス良く無難なプロテインです。味は全体的に割と甘い印象です。",
-  myprotein:
-    "成分はかなり優秀なんですが、味ははっきり言ってまずいです。個人の感想ではなく、皆言ってます。",
-  winzone:
-    "味がめっちゃ濃いので濃い味好きな人はハマるかも。",
 };
 
 export const MALE_FIXED_SCORES: Record<(typeof MALE_FIXED_BRAND_ORDER)[number], number> = {
-  "x-plosion": 100,
-  "gold standard": 95,
-  "be legend": 80,
-  winzone: 75,
-  myprotein: 70,
+  verifyst: 100,
+  "x-plosion": 95,
+  "gold standard": 90,
 };
 
 export const MYBEST_MALE_URL = "https://my-best.com/3389";
@@ -276,7 +234,7 @@ export const TITLE_NOISE_PATTERNS = [
 ] as const;
 
 export const RANKING_LABELS: Record<RankingKey, string> = {
-  male: "おすすめプロテイン TOP2",
+  male: "おすすめプロテイン TOP3",
   female: "女性向け最強プロテイン TOP5",
 };
 

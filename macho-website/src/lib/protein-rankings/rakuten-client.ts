@@ -338,7 +338,7 @@ const fetchCuratedRakutenItem = async (
     })
     .sort((left, right) => left.penalty - right.penalty);
 
-  const item = rankedItems[0]?.entry ?? items[0];
+  const item = rankedItems[0]?.entry;
 
   if (!item?.itemCode || !item.itemName || !item.itemUrl) {
     return null;

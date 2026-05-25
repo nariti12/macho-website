@@ -30,7 +30,7 @@
         <mxCell id="vercel" value="Vercel&#xa;machoda.com&#xa;Next.js App Router" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#C2410C;fontSize=15;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="325" y="265" width="190" height="110" as="geometry" />
         </mxCell>
-        <mxCell id="cron" value="Vercel Cron&#xa;現在は停止&#xa;vercel.json = {}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF7EB;strokeColor=#F97316;fontSize=13;" vertex="1" parent="1">
+        <mxCell id="cron" value="Vercel Cron&#xa;週次更新&#xa;/api/cron/protein-rankings" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF7EB;strokeColor=#F97316;fontSize=13;" vertex="1" parent="1">
           <mxGeometry x="325" y="440" width="190" height="90" as="geometry" />
         </mxCell>
         <mxCell id="pages" value="Pages&#xa;/&#xa;/blog, /blog/[id]&#xa;/supplements-ranking&#xa;/training-wear&#xa;/training-gear&#xa;/macho-clicker&#xa;/menu, /profile, /contact" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#FCD27B;fontSize=13;" vertex="1" parent="1">

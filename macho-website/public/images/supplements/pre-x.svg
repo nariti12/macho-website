@@ -1,0 +1,9 @@
+<svg width="420" height="420" viewBox="0 0 420 420" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="420" height="420" rx="42" fill="#FFF4E7"/>
+  <path d="M130 82h160l-16 278H146L130 82Z" fill="#1F2937" stroke="#7C2D12" stroke-width="10"/>
+  <path d="M146 122h128l-8 152H154l-8-152Z" fill="#FF8A23"/>
+  <path d="M168 92h84v30h-84V92Z" fill="#C2410C"/>
+  <text x="210" y="188" text-anchor="middle" font-family="Arial, sans-serif" font-size="54" font-weight="900" fill="#FFF4E7">PRE-X</text>
+  <path d="M190 220l30-2-24 68 50-88-32 3 19-52-43 71Z" fill="#FDE68A"/>
+  <text x="210" y="318" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="800" fill="#FFF4E7">PRE WORKOUT</text>
+</svg>
