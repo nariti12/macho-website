@@ -183,7 +183,7 @@ export default async function BlogIndexPage({
     <div className="min-h-screen" style={{ backgroundColor: "#FCC081" }}>
       <SiteHeader profileImageSrc={profileImageSrc} />
       <main className="px-6 pb-16 pt-24 text-gray-900">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-10">
+        <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-10">
           <div className="flex flex-col items-start gap-3">
             <Link
               href="/"
@@ -195,15 +195,15 @@ export default async function BlogIndexPage({
             <p className="text-sm font-semibold text-white/90">筋トレ日記をキーワードや月別で探せます。</p>
           </div>
 
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
-            <div className="flex flex-col gap-8">
+          <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
+            <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
               <div className="flex items-center justify-between gap-4 rounded-2xl bg-white/60 px-4 py-3 text-sm font-bold text-[#7C2D12]">
                 <span>{totalCount}件の記事</span>
                 {(query || archive) && <span>絞り込み中</span>}
               </div>
 
               {blogs.length > 0 ? (
-                <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
                   {blogs.map((blog) => (
                     <Link
                       key={blog.id}
@@ -216,7 +216,7 @@ export default async function BlogIndexPage({
                           alt={blog.title}
                           fill
                           className="object-cover transition-transform duration-500 group-hover:scale-105"
-                          sizes="(min-width: 1024px) 40vw, (min-width: 768px) 50vw, 100vw"
+                          sizes="(min-width: 1280px) 25vw, (min-width: 768px) 50vw, 100vw"
                         />
                       </div>
                       <div className="flex flex-col gap-3 p-6">
@@ -266,7 +266,7 @@ export default async function BlogIndexPage({
               )}
             </div>
 
-            <aside className="flex flex-col gap-5 lg:sticky lg:top-24">
+            <aside className="flex flex-col gap-5 xl:sticky xl:top-24">
               <section className="rounded-3xl bg-white/90 p-5 shadow-lg">
                 <h2 className="text-lg font-black text-[#7C2D12]">検索</h2>
                 <form action="/blog" className="mt-4 flex flex-col gap-3">
