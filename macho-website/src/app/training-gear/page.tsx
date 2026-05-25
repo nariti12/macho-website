@@ -81,7 +81,7 @@ const gearSections: GearSection[] = [
         comment: "レバー式タイプでいい感じのやつです。",
         amazonUrl:
           "https://www.amazon.co.jp/s?k=%E3%83%88%E3%83%AC%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E3%83%99%E3%83%AB%E3%83%88+pl+college",
-        imageUrl: "https://plcollege.com/cdn/shop/files/IMG_1838_752efbaf-4bbe-4909-9f33-beb6068ed968.jpg?v=1758187342",
+        imageUrl: "https://plcollege.com/cdn/shop/files/005_7eb8a5dd-a114-49a3-b54e-b780cad26413.jpg?v=1758187342",
         fallbackPriceYen: 18000,
       },
     ],
