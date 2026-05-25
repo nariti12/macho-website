@@ -3,6 +3,14 @@
     {
       "path": "/api/cron/protein-rankings",
       "schedule": "0 18 * * 0"
+    },
+    {
+      "path": "/training-wear",
+      "schedule": "10 18 * * 0"
+    },
+    {
+      "path": "/training-gear",
+      "schedule": "20 18 * * 0"
     }
   ]
 }

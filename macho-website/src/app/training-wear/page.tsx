@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 
 import { SiteHeader } from "@/components/site-header";
 import { buildAmazonAffiliateUrl, buildRakutenAffiliateUrl } from "@/lib/protein-rankings/links";
+import { fetchRakutenPriceLabel } from "@/lib/rakuten-price";
 import { buildUrl } from "@/lib/seo";
 
 const profileImageSrc = "/picture/ore.png";
@@ -16,6 +17,7 @@ type ShoeItem = {
   searchUrl: string;
   amazonUrl: string;
   imageUrl: string;
+  fallbackPriceYen: number;
 };
 
 const shoeItems: ShoeItem[] = [
@@ -28,6 +30,7 @@ const shoeItems: ShoeItem[] = [
     amazonUrl:
       "https://www.amazon.co.jp/s?k=INOV8+%E3%83%88%E3%83%AC%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E3%82%B7%E3%83%A5%E3%83%BC%E3%82%BA&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
     imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/store-descente/cabinet/542/nt5ssz93m_1001.jpg",
+    fallbackPriceYen: 19800,
   },
   {
     rank: 2,
@@ -38,16 +41,18 @@ const shoeItems: ShoeItem[] = [
     amazonUrl:
       "https://www.amazon.co.jp/s?k=vibram+fivefingers&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
     imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/vibramfivefingers/cabinet/fivefingers/imgrc0087708199.jpg",
+    fallbackPriceYen: 25300,
   },
   {
     rank: 3,
-    name: "親方寅さん トビシューズ",
-    comment: "とにかく安い。荷物もかさばらない。現場用シューズですが、筋トレ用としても使いやすいです。",
+    name: "SAGUARO（サグアロ） ベアフットシューズ",
+    comment: "コスパ最強ベアフットシューズ。まずベアフット系を試したい人にも選びやすいです。",
     searchUrl:
-      "https://search.rakuten.co.jp/search/mall/%E5%AF%85%E3%81%95%E3%82%93%E3%80%80%E3%82%B9%E3%83%AA%E3%83%83%E3%83%9D%E3%83%B3%E3%82%B7%E3%83%A5%E3%83%BC%E3%82%BA/",
+      "https://search.rakuten.co.jp/search/mall/%E3%82%B5%E3%82%B0%E3%82%A2%E3%83%AD+%E3%83%99%E3%82%A2%E3%83%95%E3%83%83%E3%83%88%E3%82%B7%E3%83%A5%E3%83%BC%E3%82%BA/",
     amazonUrl:
-      "https://www.amazon.co.jp/s?k=%E8%A6%AA%E6%96%B9%E5%AF%85%E3%81%95%E3%82%93+%E3%82%B9%E3%83%AA%E3%83%83%E3%83%9D%E3%83%B3&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
-    imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/luce-8/cabinet/1bn863.jpg",
+      "https://www.amazon.co.jp/s?k=saguaro+%E3%83%99%E3%82%A2%E3%83%95%E3%83%83%E3%83%88%E3%82%B7%E3%83%A5%E3%83%BC%E3%82%BA",
+    imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/saguaro/cabinet/09107349/09133691/xza32_15.jpg",
+    fallbackPriceYen: 4580,
   },
   {
     rank: 4,
@@ -58,16 +63,18 @@ const shoeItems: ShoeItem[] = [
     amazonUrl:
       "https://www.amazon.co.jp/s?k=NIKE+Metcon&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
     imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/supersportsxebio/cabinet/1/8250401/8631591_m.jpg",
+    fallbackPriceYen: 13900,
   },
   {
     rank: 5,
-    name: "SAGUARO（サグアロ） ベアフットシューズ",
-    comment: "コスパ最強ベアフットシューズ。まずベアフット系を試したい人にも選びやすいです。",
+    name: "親方寅さん トビシューズ",
+    comment: "とにかく安い。荷物もかさばらない。現場用シューズですが、筋トレ用としても使いやすいです。",
     searchUrl:
-      "https://search.rakuten.co.jp/search/mall/%E3%82%B5%E3%82%B0%E3%82%A2%E3%83%AD+%E3%83%99%E3%82%A2%E3%83%95%E3%83%83%E3%83%88%E3%82%B7%E3%83%A5%E3%83%BC%E3%82%BA/",
+      "https://search.rakuten.co.jp/search/mall/%E5%AF%85%E3%81%95%E3%82%93%E3%80%80%E3%82%B9%E3%83%AA%E3%83%83%E3%83%9D%E3%83%B3%E3%82%B7%E3%83%A5%E3%83%BC%E3%82%BA/",
     amazonUrl:
-      "https://www.amazon.co.jp/s?k=saguaro+%E3%83%99%E3%82%A2%E3%83%95%E3%83%83%E3%83%88%E3%82%B7%E3%83%A5%E3%83%BC%E3%82%BA",
-    imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/saguaro/cabinet/09107349/09133691/xza32_15.jpg",
+      "https://www.amazon.co.jp/s?k=%E8%A6%AA%E6%96%B9%E5%AF%85%E3%81%95%E3%82%93+%E3%82%B9%E3%83%AA%E3%83%83%E3%83%9D%E3%83%B3&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
+    imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/luce-8/cabinet/1bn863.jpg",
+    fallbackPriceYen: 1980,
   },
 ];
 
@@ -90,14 +97,15 @@ export const metadata: Metadata = {
   },
 };
 
-export const revalidate = 86400;
+export const revalidate = 604800;
 
 const getItemsWithImages = async () => {
-  return shoeItems.map((item) => ({
+  return Promise.all(shoeItems.map(async (item) => ({
     ...item,
     affiliateUrl: buildRakutenAffiliateUrl(item.searchUrl),
     amazonAffiliateUrl: buildAmazonAffiliateUrl(item.amazonUrl),
-  }));
+    priceLabel: await fetchRakutenPriceLabel(item.searchUrl, item.fallbackPriceYen),
+  })));
 };
 
 export default async function TrainingWearPage() {
@@ -146,6 +154,10 @@ export default async function TrainingWearPage() {
                     <div className="flex flex-col gap-2">
                       <h2 className="text-xl font-bold leading-tight text-[#7C2D12]">{item.name}</h2>
                       <p className="text-sm leading-6 text-slate-600">{item.comment}</p>
+                    </div>
+                    <div className="w-fit rounded-2xl bg-[#FFF4E7] px-4 py-3 text-sm text-slate-700 shadow-inner">
+                      <div className="text-xs font-semibold uppercase tracking-wide text-[#C2410C]">価格目安</div>
+                      <div className="mt-1 font-medium text-slate-800">{item.priceLabel}</div>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3">

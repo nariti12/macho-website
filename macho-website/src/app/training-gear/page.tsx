@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 
 import { SiteHeader } from "@/components/site-header";
 import { buildAmazonAffiliateUrl, buildRakutenAffiliateUrl } from "@/lib/protein-rankings/links";
+import { fetchRakutenPriceLabel, formatYen } from "@/lib/rakuten-price";
 import { buildUrl } from "@/lib/seo";
 
 const profileImageSrc = "/picture/ore.png";
@@ -14,6 +15,7 @@ type GearItem = {
   name: string;
   comment: string;
   imageUrl: string;
+  fallbackPriceYen: number;
   searchUrl?: string;
   amazonUrl?: string;
 };
@@ -34,19 +36,26 @@ const gearSections: GearSection[] = [
         name: "SBD",
         comment: "憧れのSBD。でも価格が高騰しすぎて買えません。高杉や・・・。",
         imageUrl: "https://shop.r10s.jp/jumblestore/cabinet/05987/2341684105987-01.jpg",
+        fallbackPriceYen: 48800,
       },
       {
         rank: 2,
-        name: "ゴールドジム プロレザー",
-        comment: "ワンランク上のベルト。皮なじみが良く扱いやすいです。",
+        name: "鬼 ONI",
+        comment: "最初は馴染むまで大変ですが、馴染むと最強です。",
         searchUrl:
-          "https://search.rakuten.co.jp/search/mall/%E3%82%B4%E3%83%BC%E3%83%AB%E3%83%89%E3%82%B8%E3%83%A0+%E3%83%97%E3%83%AD%E3%83%AC%E3%82%B6%E3%83%BC+%E3%83%91%E3%83%AF%E3%83%BC%E3%83%99%E3%83%AB%E3%83%88/",
-        amazonUrl:
-          "https://www.amazon.co.jp/s?k=%E3%82%B4%E3%83%BC%E3%83%AB%E3%83%89%E3%82%B8%E3%83%A0+%E3%83%97%E3%83%AD%E3%83%AC%E3%82%B6%E3%83%BC&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
-        imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/goldsgym/cabinet/ggp/imgrc0075354610.jpg",
+          "https://search.rakuten.co.jp/search/mall/ONI%E3%80%80%E3%83%91%E3%83%AF%E3%83%BC%E3%83%99%E3%83%AB%E3%83%88/200170/",
+        imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/tfgoods/cabinet/goodsp/compass1534142264.jpg",
+        fallbackPriceYen: 19800,
       },
       {
         rank: 3,
+        name: "木澤さんベルト",
+        comment: "木澤さんの魂が込められたベルト。",
+        imageUrl: "https://fitnessshop.jp/cdn/shop/files/2d9c4804812069d1138604546f3593c3_1200x1200.png?v=1684400831",
+        fallbackPriceYen: 19800,
+      },
+      {
+        rank: 4,
         name: "ゴールドジム レザー",
         comment: "迷ったらこれ。王道ベルト。コスパ・品質ともに良し。",
         searchUrl:
@@ -54,20 +63,16 @@ const gearSections: GearSection[] = [
         amazonUrl:
           "https://www.amazon.co.jp/s?k=%E3%82%B4%E3%83%BC%E3%83%AB%E3%83%89%E3%82%B8%E3%83%A0+%E3%83%88%E3%83%AC%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E3%83%99%E3%83%AB%E3%83%88",
         imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/powerpit/cabinet/04825845/imgrc0092518792.jpg",
-      },
-      {
-        rank: 4,
-        name: "木澤さんベルト",
-        comment: "木澤さんの魂が込められたベルト。",
-        imageUrl: "https://fitnessshop.jp/cdn/shop/files/2d9c4804812069d1138604546f3593c3_1200x1200.png?v=1684400831",
+        fallbackPriceYen: 7920,
       },
       {
         rank: 5,
-        name: "鬼 ONI",
-        comment: "最初は馴染むまで大変ですが、馴染むと最強です。",
-        searchUrl:
-          "https://search.rakuten.co.jp/search/mall/ONI%E3%80%80%E3%83%91%E3%83%AF%E3%83%BC%E3%83%99%E3%83%AB%E3%83%88/200170/",
-        imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/tfgoods/cabinet/goodsp/compass1534142264.jpg",
+        name: "P.L.College",
+        comment: "レバー式タイプでいい感じのやつです。",
+        amazonUrl:
+          "https://www.amazon.co.jp/s?k=%E3%83%88%E3%83%AC%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E3%83%99%E3%83%AB%E3%83%88+pl+college",
+        imageUrl: "/images/gear/pl-college-belt.svg",
+        fallbackPriceYen: 18000,
       },
     ],
   },
@@ -84,6 +89,7 @@ const gearSections: GearSection[] = [
         amazonUrl:
           "https://www.amazon.co.jp/s?k=versa+gripps+%E3%83%91%E3%83%AF%E3%83%BC%E3%82%B0%E3%83%AA%E3%83%83%E3%83%97",
         imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/tkikaku/cabinet/traininggoods/vgripps/powergripps-aii2.jpg",
+        fallbackPriceYen: 11980,
       },
       {
         rank: 2,
@@ -94,6 +100,7 @@ const gearSections: GearSection[] = [
         amazonUrl:
           "https://www.amazon.co.jp/s?k=%E3%82%B4%E3%83%BC%E3%83%AB%E3%83%89%E3%82%B8%E3%83%A0+%E3%83%91%E3%83%AF%E3%83%BC%E3%82%B0%E3%83%AA%E3%83%83%E3%83%97&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
         imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/goldsgym/cabinet/ggp/3710-2.jpg",
+        fallbackPriceYen: 10450,
       },
     ],
   },
@@ -101,37 +108,40 @@ const gearSections: GearSection[] = [
 
 export const metadata: Metadata = {
   title: "おすすめトレーニングギア｜マチョ田の部屋",
-  description: "筋トレで揃えておきたいおすすめトレーニングギアをご紹介します。",
+  description: "トレーニングベルトとパワーグリップを中心に、おすすめトレーニングギアをご紹介します。",
   alternates: {
     canonical: pageUrl,
   },
   openGraph: {
     title: "おすすめトレーニングギア｜マチョ田の部屋",
-    description: "筋トレで揃えておきたいおすすめトレーニングギアをご紹介します。",
+    description: "トレーニングベルトとパワーグリップを中心に、おすすめトレーニングギアをご紹介します。",
     url: pageUrl,
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "おすすめトレーニングギア｜マチョ田の部屋",
-    description: "筋トレで揃えておきたいおすすめトレーニングギアをご紹介します。",
+    description: "トレーニングベルトとパワーグリップを中心に、おすすめトレーニングギアをご紹介します。",
   },
 };
 
-export const revalidate = 86400;
+export const revalidate = 604800;
 
-const getSections = () =>
-  gearSections.map((section) => ({
+const getSections = async () =>
+  Promise.all(gearSections.map(async (section) => ({
     ...section,
-    items: section.items.map((item) => ({
+    items: await Promise.all(section.items.map(async (item) => ({
       ...item,
       affiliateUrl: item.searchUrl ? buildRakutenAffiliateUrl(item.searchUrl) : null,
       amazonAffiliateUrl: item.amazonUrl ? buildAmazonAffiliateUrl(item.amazonUrl) : null,
-    })),
-  }));
+      priceLabel: item.searchUrl
+        ? await fetchRakutenPriceLabel(item.searchUrl, item.fallbackPriceYen)
+        : formatYen(item.fallbackPriceYen),
+    }))),
+  })));
 
-export default function TrainingGearPage() {
-  const sections = getSections();
+export default async function TrainingGearPage() {
+  const sections = await getSections();
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#FCC081" }}>
@@ -144,8 +154,9 @@ export default function TrainingGearPage() {
                 Training Gear
               </span>
               <h1 className="text-3xl font-bold text-[#7C2D12] sm:text-4xl">おすすめトレーニングギア</h1>
-              <p className="max-w-3xl text-base leading-7 text-slate-700">
-                筋トレで揃えておきたいおすすめトレーニングギアをご紹介します。
+              <p className="max-w-3xl whitespace-pre-line text-base leading-8 text-slate-700">
+                {`トレーニングするなら「トレーニングベルト」と「パワーグリップ」は用意しておきたいです。トレーニングベルトは腹圧を高めて腰をサポートし、高重量トレーニング時により効かせるために役立ちます。
+またパワーグリップは、握力を補助してくれるため、主に背中トレーニングで狙った筋肉に集中しやすくなり、効率よく追い込めます。`}
               </p>
             </div>
           </section>
@@ -184,6 +195,10 @@ export default function TrainingGearPage() {
                       <div className="flex flex-col gap-2">
                         <h3 className="text-xl font-bold leading-tight text-[#7C2D12]">{item.name}</h3>
                         <p className="text-sm leading-6 text-slate-600">{item.comment}</p>
+                      </div>
+                      <div className="w-fit rounded-2xl bg-[#FFF4E7] px-4 py-3 text-sm text-slate-700 shadow-inner">
+                        <div className="text-xs font-semibold uppercase tracking-wide text-[#C2410C]">価格目安</div>
+                        <div className="mt-1 font-medium text-slate-800">{item.priceLabel}</div>
                       </div>
 
                       {item.affiliateUrl || item.amazonAffiliateUrl ? (

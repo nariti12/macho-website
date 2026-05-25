@@ -1,0 +1,8 @@
+<svg width="420" height="420" viewBox="0 0 420 420" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="420" height="420" rx="42" fill="#FFF4E7"/>
+  <path d="M68 187c26-40 72-62 142-62s116 22 142 62" stroke="#7C2D12" stroke-width="34" stroke-linecap="round"/>
+  <path d="M68 233c26 40 72 62 142 62s116-22 142-62" stroke="#7C2D12" stroke-width="34" stroke-linecap="round"/>
+  <rect x="168" y="150" width="84" height="120" rx="14" fill="#FF8A23" stroke="#9A3412" stroke-width="8"/>
+  <rect x="185" y="174" width="50" height="72" rx="6" fill="#FFF4E7"/>
+  <text x="210" y="342" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="800" fill="#7C2D12">P.L.College</text>
+</svg>
