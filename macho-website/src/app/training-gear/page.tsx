@@ -165,7 +165,7 @@ export default async function TrainingGearPage() {
                 Training Gear
               </span>
               <h1 className="text-3xl font-bold text-[#7C2D12] sm:text-4xl">おすすめトレーニングギア</h1>
-              <p className="max-w-3xl whitespace-pre-line text-base leading-8 text-slate-700">
+              <p className="max-w-5xl whitespace-pre-line text-base leading-8 text-slate-700">
                 {`トレーニングするなら「トレーニングベルト」と「パワーグリップ」は用意しておきたいです。トレーニングベルトは腹圧を高めて腰をサポートし、高重量トレーニング時により効かせるために役立ちます。
 またパワーグリップは、握力を補助してくれるため、主に背中トレーニングで狙った筋肉に集中しやすくなり、効率よく追い込めます。`}
               </p>

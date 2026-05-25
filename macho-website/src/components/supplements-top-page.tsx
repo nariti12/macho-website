@@ -48,7 +48,7 @@ const creatineRecommendations: CreatineRecommendation[] = [
 
 const preWorkoutRecommendation: PreWorkoutRecommendation = {
   name: "PRE-X",
-  comment: "コスパ最強のプレワークアウトです。モンスターとかレッドブルを買うならこれを買いましょう。",
+  comment: "コスパ最強のプレワークアウトです。モンスターとかレッドブルを買うならこれを買って炭酸で割って飲みましょう。",
   imageUrl: "https://cloudinary.images-iherb.com/image/upload/f_auto%2Cq_auto%3Aeco/images/ncs/ncs67096/l/8.jpg",
   iherbUrl:
     "https://jp.iherb.com/search?sug=nutricost%20pre-x&kw=nutricost%20pre-x&rank=4&rawkw=pre-x&refererLocation=suggestion",
@@ -220,6 +220,8 @@ const ensureFixedProteinItems = (items: RankingCardItem[]) => {
     return {
       ...item,
       rank: index + 1,
+      score: MALE_FIXED_SCORES[brandKey] / 100,
+      comment: MALE_FIXED_COMMENTS[brandKey],
     };
   });
 };
@@ -380,7 +382,7 @@ export function SupplementsTopPage({ data }: { data: ProteinRankingPageData }) {
                 Protein / Creatine
               </span>
               <h1 className="text-3xl font-bold text-[#7C2D12] sm:text-4xl">おすすめプロテイン/クレアチン/プレワークアウト</h1>
-              <p className="max-w-3xl whitespace-pre-line text-base leading-8 text-slate-700">
+              <p className="max-w-5xl whitespace-pre-line text-base leading-8 text-slate-700">
                 {`筋トレをするなら、基本は「プロテイン」と「クレアチン」を摂取しておけば間違いありません。
 プロテインは筋肉の材料となるたんぱく質を手軽に補給でき、クレアチンは筋力やトレーニングパフォーマンス向上が期待できます。
 さらに、トレーニング中の集中力やモチベーションを高めたい方には、プレワークアウトもおすすめです。

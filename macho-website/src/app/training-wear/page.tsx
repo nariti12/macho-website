@@ -133,7 +133,7 @@ export default async function TrainingWearPage() {
                 Training Shoes
               </span>
               <h1 className="text-3xl font-bold text-[#7C2D12] sm:text-4xl">おすすめトレーニングシューズ TOP5</h1>
-              <p className="max-w-3xl text-base leading-7 text-slate-700">
+              <p className="max-w-5xl text-base leading-7 text-slate-700">
                 カッコよくてジムに最適なトレーニングシューズをご紹介します。
               </p>
               <p className="text-sm text-slate-500">最終更新: {updatedAtLabel}</p>

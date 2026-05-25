@@ -16,7 +16,7 @@ type TrainingDay = {
 const weeklyMenu: TrainingDay[] = [
   {
     day: "月曜日",
-    title: "オフ",
+    title: "オフ or 有酸素",
     isOff: true,
   },
   {
@@ -32,7 +32,7 @@ const weeklyMenu: TrainingDay[] = [
   },
   {
     day: "水曜日",
-    title: "オフ",
+    title: "オフ or 有酸素",
     isOff: true,
   },
   {
@@ -48,7 +48,7 @@ const weeklyMenu: TrainingDay[] = [
   },
   {
     day: "金曜日",
-    title: "オフ",
+    title: "オフ or アルコール",
     isOff: true,
   },
   {
@@ -65,7 +65,7 @@ const weeklyMenu: TrainingDay[] = [
   },
   {
     day: "日曜日",
-    title: "胸 + 二頭筋",
+    title: "弱点補強（胸 + 二頭筋）",
     exercises: [
       "ベンチプレス 9回 × 5set",
       "マシンインクラインプレス 12回 × 3set",
@@ -113,7 +113,7 @@ export default function MenuPage() {
               <h1 className="text-3xl font-bold text-[#7C2D12] sm:text-4xl">
                 マチョ田の筋トレメニュー
               </h1>
-              <div className="max-w-3xl text-sm leading-7 text-slate-700 sm:text-base">
+              <div className="max-w-5xl text-sm leading-7 text-slate-700 sm:text-base">
                 <p>
                   マチョ田は、週4回ジムでトレーニングをしています。メニューは分割法で組んでおり、各部位ごとに上部・中部・下部をしっかりと鍛えられるように意識したメニューとなっています。胸については、特に重点的に鍛えているため、週2回は胸トレの日を設けています。また、腹筋ローラーが大好きで、すべてのトレーニング日に取り入れています。トレーニング時間は大体1時間〜1時間30分ぐらいです。
                 </p>
