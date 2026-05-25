@@ -195,7 +195,7 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
 
 export const MALE_FIXED_COMMENTS: Record<(typeof MALE_FIXED_BRAND_ORDER)[number], string> = {
   verifyst:
-    "コスパ最強王者のホエイプロテイン。毎日飲むなら価格を抑えやすく、まず候補に入れたいプロテインです。",
+    "コスパ最強王者のプロテイン。ホエイが高くて手が出せないのであればソイならホエイの半額で買えるので、そちらを購入しましょう。マチョ田もベリフィストのソイプロテインを購入しています。",
   "x-plosion":
     "ベリフィストの次にコスパがいいプロテイン。",
   "gold standard":
