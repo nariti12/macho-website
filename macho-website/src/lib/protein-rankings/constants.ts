@@ -9,39 +9,6 @@ export const RAKUTEN_RANKING_PAGES = 1;
 export const RAKUTEN_RANKING_PAGE_SIZE = 80;
 export const RAKUTEN_REQUEST_DELAY_MS = 450;
 export const RAKUTEN_MAX_RETRIES = 3;
-export const TOP_RANKING_LIMIT = 5;
-
-export const MIN_REVIEW_COUNT = 5;
-export const STRICT_MIN_REVIEW_COUNT = 30;
-
-export const BANNED_PRODUCT_KEYWORDS = [
-  "シェイカー",
-  "プロテインバー",
-  "バー",
-  "サンプル",
-  "お試し",
-  "空容器",
-  "ボトル",
-  "スプーン",
-  "ケース",
-  "グミ",
-  "ゼリー",
-  "スープ",
-  "クッキー",
-  "パンケーキ",
-  "シリアル",
-] as const;
-
-export const CHILDREN_EXCLUSION_KEYWORDS = [
-  "ジュニア",
-  "キッズ",
-  "小学生",
-  "成長期",
-  "育ち盛り",
-] as const;
-
-export const BANNED_BRANDS = ["savas", "ザバス"] as const;
-
 export const LIKELY_PROTEIN_KEYWORDS = [
   "プロテイン",
   "protein",
@@ -208,11 +175,6 @@ export const MALE_FIXED_SCORES: Record<(typeof MALE_FIXED_BRAND_ORDER)[number], 
   "gold standard": 90,
 };
 
-export const MYBEST_MALE_URL = "https://my-best.com/3389";
-export const MYBEST_FEMALE_URL = "https://my-best.com/23907";
-export const MYBEST_MALE_SIGNAL_BONUS = 0.12;
-export const MYBEST_FEMALE_SIGNAL_BONUS = 0.14;
-
 export const TITLE_NOISE_PATTERNS = [
   /【[^】]*】/g,
   /\([^)]*\)/g,
@@ -237,24 +199,8 @@ export const TITLE_NOISE_PATTERNS = [
 
 export const RANKING_LABELS: Record<RankingKey, string> = {
   male: "おすすめプロテイン TOP3",
-  female: "女性向け最強プロテイン TOP5",
 };
 
 export const RANKING_DESCRIPTIONS: Record<RankingKey, string> = {
   male: "",
-  female:
-    "楽天売上ランキングをベースに、レビュー、女性向け訴求、my-best掲載を見直して選んだ女性向け上位5商品です。",
 };
-
-export const MALE_WEIGHTS = {
-  sales: 0.7,
-  review: 0.15,
-} as const;
-
-export const FEMALE_WEIGHTS = {
-  sales: 0.5,
-  review: 0.25,
-  suitability: 0.15,
-} as const;
-
-export const MAX_EXPERT_BONUS = 0.15;

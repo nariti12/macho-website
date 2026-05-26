@@ -1,4 +1,4 @@
-export type RankingKey = "male" | "female";
+export type RankingKey = "male";
 
 export type ProteinType = "wpi" | "wpc" | "whey" | "soy" | "casein" | "other";
 
@@ -47,15 +47,6 @@ export type ProductMetricInput = {
 export type EnrichedProduct = {
   product: NormalizedRakutenRankingProduct;
   metrics: ProductMetricInput;
-};
-
-export type ExpertSignalRecord = {
-  productId?: string;
-  sourceExternalId?: string;
-  bonus: number;
-  signalKey: string;
-  note: string | null;
-  isActive: boolean;
 };
 
 export type RankingScoreBreakdown = Record<string, number>;

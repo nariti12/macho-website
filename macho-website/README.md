@@ -44,6 +44,8 @@ npm run dev
 
 - `supabase/migrations/20260314120000_add_protein_rankings.sql`
 - `supabase/migrations/20260405133000_refactor_protein_rankings_for_sales.sql`
+- `supabase/migrations/20260510120000_add_macho_clicker_scores.sql`
+- `supabase/migrations/20260526090000_drop_unused_expert_signals.sql`
 
 ```bash
 supabase db push
@@ -54,9 +56,7 @@ supabase db push
 - `products`
 - `product_metrics`
 - `rankings`
-- `expert_signals`
-
-`expert_signals` は将来の専門家加点用の拡張ポイントで、初期版では未使用です。
+- `macho_clicker_scores`
 
 ## Ranking Data
 

@@ -98,7 +98,6 @@ Supabase migration は `supabase/migrations/` にあります。
 - `products`: 楽天由来の商品基本情報
 - `product_metrics`: 抽出した内容量、たんぱく質情報、分類情報
 - `rankings`: 表示用ランキング
-- `expert_signals`: 将来拡張用の専門家加点
 - `macho_clicker_scores`: マチョクリッカーランキング
 
 ## 環境変数

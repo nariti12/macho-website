@@ -19,7 +19,7 @@ export const refreshProteinRankings = async () => {
     };
   });
 
-  const rankings = buildRankings(enrichedProducts, new Map());
+  const rankings = buildRankings(enrichedProducts);
   const saved = await saveProteinRankingSnapshot({
     products: enrichedProducts,
     rankings,
