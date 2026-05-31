@@ -6,10 +6,11 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { siteUrl } from "@/lib/seo";
-import { GoogleAdSense } from "@/components/google-adsense";
 import { GoogleAnalytics } from "@/components/google-analytics";
 import { GoogleTagManager } from "@/components/google-tag-manager";
 import { ScrollProgress } from "@/components/scroll-progress";
+
+const adsenseClient = process.env.NEXT_PUBLIC_ADSENSE_CLIENT ?? "ca-pub-8978423301604206";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -69,10 +70,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
+      <head>
+        {adsenseClient ? (
+          <script
+            async
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`}
+            crossOrigin="anonymous"
+          />
+        ) : null}
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <GoogleAdSense />
         <GoogleTagManager />
         <ScrollProgress />
         <Suspense fallback={null}>
