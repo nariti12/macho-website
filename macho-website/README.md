@@ -37,6 +37,7 @@ npm run dev
 - `RAKUTEN_AFFILIATE_ID`
 - `RAKUTEN_SITE_ORIGIN`
 - `CRON_SECRET`
+- `NEXT_PUBLIC_ADSENSE_CLIENT`
 
 ## Supabase Migration
 

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { siteUrl } from "@/lib/seo";
+import { GoogleAdSense } from "@/components/google-adsense";
 import { GoogleAnalytics } from "@/components/google-analytics";
 import { GoogleTagManager } from "@/components/google-tag-manager";
 import { ScrollProgress } from "@/components/scroll-progress";
@@ -71,6 +72,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <GoogleAdSense />
         <GoogleTagManager />
         <ScrollProgress />
         <Suspense fallback={null}>
