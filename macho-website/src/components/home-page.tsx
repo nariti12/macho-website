@@ -36,12 +36,13 @@ export function HomePage() {
   const loadingTimeoutRef = useRef<number | null>(null);
 
   const menuItems = [
-    { label: "マチョ\nクリッカー", href: "/macho-clicker" },
+    { label: "マチョ\nクリッカー", href: "/macho-clicker", wide: true },
     { label: "マチョ田の\n筋トレメニュー", href: "/menu" },
     { label: "１日摂取カロリー/\nたんぱく質 計算機", href: "/intake-calculator" },
     { label: "おすすめサプリ\n(プロテイン/クレアチン/プレワークアウト)", href: "/supplements-ranking" },
     { label: "おすすめ\nトレーニングシューズ", href: "/training-wear" },
     { label: "おすすめ\nトレーニングギア", href: "/training-gear" },
+    { label: "筋トレFAQ", href: "/training-faq" },
   ];
 
   useEffect(() => {
@@ -189,7 +190,7 @@ export function HomePage() {
               {menuItems.map((item, index) => {
                 const lines = item.label.split('\n');
                 const className =
-                  "w-full rounded-3xl bg-[#FF8A23] py-6 px-6 text-lg font-bold leading-tight text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_25px_50px_-12px_rgba(255,138,35,0.5)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/60 sm:text-xl md:py-8 md:px-10 md:text-2xl";
+                  `w-full rounded-3xl bg-[#FF8A23] py-6 px-6 text-lg font-bold leading-tight text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_25px_50px_-12px_rgba(255,138,35,0.5)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/60 sm:text-xl md:py-8 md:px-10 md:text-2xl ${item.wide ? "sm:col-span-2" : ""}`;
                 const content = lines.map((line, lineIndex) => (
                   <div key={lineIndex}>{line}</div>
                 ));

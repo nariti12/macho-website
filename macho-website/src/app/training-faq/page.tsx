@@ -1,0 +1,332 @@
+import Link from "next/link";
+import type { Metadata } from "next";
+
+import { SiteHeader } from "@/components/site-header";
+import { buildUrl, toJsonLd } from "@/lib/seo";
+
+const profileImageSrc = "/picture/ore.png";
+const pageUrl = buildUrl("/training-faq");
+
+type FaqItem = {
+  question: string;
+  answer: string;
+};
+
+type FaqSection = {
+  title: string;
+  items: FaqItem[];
+};
+
+const faqSections: FaqSection[] = [
+  {
+    title: "筋トレ初心者向け",
+    items: [
+      {
+        question: "筋トレは週何回やればいいですか？",
+        answer: "初心者は週2回の全身トレーニングがおすすめです。慣れてきたら週3回以上の分割法が効果的です。",
+      },
+      {
+        question: "1回の筋トレ時間はどれくらいが理想ですか？",
+        answer: "60〜90分程度が目安です。長時間よりも集中して質の高いトレーニングを行うことが大切です。",
+      },
+      {
+        question: "ジムと家トレはどちらがおすすめですか？",
+        answer: "基本的にはジムがおすすめです。ただし、自宅にパワーラックやダンベルなどの器具を揃えられるなら、移動時間が不要な家トレが最強です。",
+      },
+      {
+        question: "筋トレ初心者は何から始めればいいですか？",
+        answer: "スクワット・ベンチプレス・デッドリフトなどのBIG3や、マシントレーニングから始めるのがおすすめです。\nまずは正しいフォームを身につけることが大切です。",
+      },
+      {
+        question: "筋トレは毎日やってもいいですか？",
+        answer: "毎日行っても問題ありませんが、同じ部位は48〜72時間程度休ませるのがおすすめです。",
+      },
+      {
+        question: "有酸素運動と筋トレはどちらを先にやるべきですか？",
+        answer: "筋力アップや筋肥大が目的なら筋トレを先に行いましょう。\n有酸素運動を先に行うと疲労によって筋トレのパフォーマンスが落ちるので、おすすめしません。",
+      },
+      {
+        question: "筋肉痛がある日は休んだ方がいいですか？",
+        answer: "強い筋肉痛がある部位は休ませるのがおすすめです。筋肉痛がない部位であれば通常通りトレーニングして問題ありません。",
+      },
+      {
+        question: "筋トレを休むと筋肉はどれくらいで落ちますか？",
+        answer: "一般的には2〜3週間程度から筋力や筋量の低下が始まりますが、短期間なら大きく落ちることはありませんので、気にする必要はありません。",
+      },
+      {
+        question: "筋トレを始めたらどれくらいで効果が出ますか？",
+        answer: "見た目の変化を感じるには3〜6か月程度はかかるかと思います。毎日死ぬほど追い込むとかじゃない限り、1か月とかで見た目は変わらないですね。",
+      },
+    ],
+  },
+  {
+    title: "プロテイン・サプリメント",
+    items: [
+      {
+        question: "プロテインはいつ飲むのが効果的ですか？",
+        answer: "おすすめは朝起きた後と寝る前です。どちらも体がタンパク質を必要としているタイミングのため、タンパク質を効率よく補給できます。",
+      },
+      {
+        question: "プロテインを飲むだけで筋肉はつきますか？",
+        answer: "つきません。あくまでタンパク質の補助サプリでしかないですからね。",
+      },
+      {
+        question: "ホエイとソイはどちらがおすすめですか？",
+        answer: "筋肥大を目的としている場合はホエイの方が優秀ですが、特に大会を目指しているほどではないのであれば、\nソイでも十分効果はありますので、正直どちらでもよいと考えています。価格重視であれば、安いソイをおすすめします。",
+      },
+      {
+        question: "プロテインは1日に何回飲めばいいですか？",
+        answer: "回数よりも1日のタンパク質摂取量を満たすことが重要です。食事で不足する分を2回程度補う人が多い印象です。",
+      },
+      {
+        question: "クレアチンは本当に効果がありますか？",
+        answer: "研究結果でもちゃんと立証されていますし、クレアチンが一番サプリメントの中で重要だと考えているプロの方も多いです。\n筋力向上や高強度トレーニングのパフォーマンス向上が期待できます。",
+      },
+      {
+        question: "クレアチンはいつ飲めばいいですか？",
+        answer: "摂取タイミングよりも毎日継続することが重要です。飲み忘れ防止のため、プロテインと一緒に摂る人が多いです。",
+      },
+      {
+        question: "EAAとBCAAは必要ですか？",
+        answer: "十分なタンパク質を摂取できているなら基本的に不要です。特にプロテインを摂取しているのであれば、必要なアミノ酸もまとめて摂取できますので、\nあえて別にBCAAやEAAを摂取する必要はないと考えています。",
+      },
+      {
+        question: "プレワークアウトは初心者にも必要ですか？",
+        answer: "必須ではありません。まずは食事・睡眠・トレーニング習慣を整え、それでも集中力やパフォーマンスを高めたい場合に検討しましょう。",
+      },
+      {
+        question: "サプリメントの優先順位を教えてください。",
+        answer: "①プロテイン ②クレアチン ③プレワークアウト ④マルチビタミンの順でおすすめです。\nまずは食事で不足しがちなタンパク質を補い、その後にパフォーマンス向上系のサプリを検討しましょう。",
+      },
+    ],
+  },
+  {
+    title: "食事・ダイエット",
+    items: [
+      {
+        question: "筋肉をつけるには何を食べればいいですか？",
+        answer: "鶏むね肉、卵、魚、赤身肉、乳製品などの高タンパク食品を積極的に摂りましょう。\nまた、筋肉を成長させるためにはご飯などの炭水化物もしっかり摂ることが大切です。",
+      },
+      {
+        question: "ダイエット中でも筋トレは必要ですか？",
+        answer: "必要です。筋トレを行うことで筋肉量の減少を抑えやすくなり、基礎代謝の維持やリバウンド防止にもつながります。",
+      },
+      {
+        question: "筋トレ中のおすすめの間食はありますか？",
+        answer: "プロテインとかゆで卵が良いですが、空腹対策ならコンビニとかでよく売っている0キロカロリーのゼリーがおすすめです。",
+      },
+      {
+        question: "お酒は筋トレにどのくらい悪影響がありますか？",
+        answer: "毎日しこたま飲むレベルではなければ、あまり気にしなくても良いと思います。",
+      },
+      {
+        question: "筋トレ中にラーメンを食べても大丈夫ですか？",
+        answer: "もちろん大丈夫です。ダイエット中は摂取カロリーの管理が重要なので、1日の総摂取カロリーの範囲内で楽しみましょう。\nカロリーなどの計算は、以下で簡単に確認できます。\nhttps://www.machoda.com/intake-calculator",
+      },
+      {
+        question: "減量中におすすめのコンビニ飯はありますか？",
+        answer: "セブンの「たんぱく質が摂れるチキン＆チリ」がおすすめです。",
+      },
+      {
+        question: "タンパク質は1日何g摂ればいいですか？",
+        answer: "自分の体重の2倍ぐらいのたんぱく質を取るのが目安です。(60kgなら120gぐらい)\n必要量は以下で簡単に計算できますので、確認してみて下さい。\nhttps://www.machoda.com/intake-calculator",
+      },
+      {
+        question: "筋肉をつけながら痩せることはできますか？",
+        answer: "可能です。ただし「筋肉を増やす」と「脂肪を減らす」は本来逆のことをしているため、どちらか一方に集中した方が結果は出やすいです。",
+      },
+      {
+        question: "ダイエットで一番大事なことは何ですか？",
+        answer: "消費カロリーより摂取カロリーを少なくすることです。どんな食事法でも最終的にはカロリー収支が重要になります。",
+      },
+    ],
+  },
+  {
+    title: "トレーニング種目",
+    items: [
+      {
+        question: "筋トレは1set 何回やればいいですか？",
+        answer: "7〜15回程度で限界になる重量がおすすめです。ただし、初心者の場合はそれよりもまず正しいフォームでできることを最優先に実施しましょう。",
+      },
+      {
+        question: "ベンチプレスの重量が伸びません。",
+        answer: "十分なタンパク質や睡眠は取れていますか？正しいフォームでしょうか。おしりを浮かせてたり、可動域が狭かったり、反動使ってあげてませんか？\n重量が伸びない時はちゃんと見直しと改善を実施しましょう。",
+      },
+      {
+        question: "スクワットで膝が痛くなります。",
+        answer: "フォームが悪かったり、可動域が浅いと膝を痛める可能性があります。\n一度ビデオで自分のフォームを確認して、重量を落とすなどしながらフォームの見直しを行ってください。",
+      },
+      {
+        question: "デッドリフトで腰が痛くなります。",
+        answer: "こちらもまずはフォームを見直しましょう。\nベルトは必ず巻くようにして下さい。腰痛持ちの方はハーフデッドやルーマニアンデッドリフトの方が合う場合もありますので、自分の適したやり方を見つけましょう。",
+      },
+      {
+        question: "胸に効かせるコツはありますか？",
+        answer: "肩甲骨を寄せて胸を張り、胸の筋肉が伸び縮みしていることを意識しましょう。重量よりもまずはフォームを優先して実施してください。",
+      },
+      {
+        question: "背中に効かせるコツはありますか？",
+        answer: "胸を張り、腕ではなく肘で引くイメージを持つと背中に効かせやすくなります。重量を追い過ぎるとどうしても腕で引いてしまいがちなので注意してください。",
+      },
+      {
+        question: "腕を太くするには何をすればいいですか？",
+        answer: "腕の太さの約3分の2は上腕三頭筋です。プレスダウンやトライセプスエクステンションなどで三頭筋を鍛えましょう。",
+      },
+      {
+        question: "肩を大きくするには何をすればいいですか？",
+        answer: "サイドレイズは非常におすすめです。加えてショルダープレスなども取り入れるとバランスよく肩を発達させられます。",
+      },
+      {
+        question: "腹筋は毎日やった方がいいですか？",
+        answer: "毎日やっても問題ありません。ただし、腹筋を見えるようにしたいなら腹筋運動よりも体脂肪を落とすことが優先です。",
+      },
+    ],
+  },
+  {
+    title: "トレーニングギア",
+    items: [
+      {
+        question: "トレーニングベルトは必要ですか？",
+        answer: "高重量を扱うならおすすめです。腹圧をかけやすくなり、スクワットやデッドリフトが安定して高重量を扱えます。",
+      },
+      {
+        question: "パワーグリップは必要ですか？",
+        answer: "背中の種目を本格的に行うならおすすめです。高重量を扱う場合、握力が足りず背中に効かせられなくなってしまうことが多いので、\n特にデッドリフトをやる場合は必要になってくると思います。",
+      },
+      {
+        question: "リストラップは必要ですか？",
+        answer: "ベンチプレスやショルダープレスで手首が痛くなる人にはおすすめです。",
+      },
+      {
+        question: "筋トレシューズは何を選べばいいですか？",
+        answer: "おすすめを以下に載せていますので、参考にしてください。\nhttps://www.machoda.com/training-wear",
+      },
+      {
+        question: "初心者が最初に買うべきギアは何ですか？",
+        answer: "①トレーニングベルト ②パワーグリップです。最低限この２つは必要になってくると思います。その他のギアは、必要に応じて検討するレベルで良いかと思います。",
+      },
+    ],
+  },
+];
+
+export const metadata: Metadata = {
+  title: "筋トレFAQ｜マチョ田の部屋",
+  description: "筋トレ初心者、プロテイン、食事、種目、トレーニングギアについてよくある質問をまとめています。",
+  alternates: {
+    canonical: pageUrl,
+  },
+  openGraph: {
+    title: "筋トレFAQ｜マチョ田の部屋",
+    description: "筋トレ初心者、プロテイン、食事、種目、トレーニングギアについてよくある質問をまとめています。",
+    url: pageUrl,
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "筋トレFAQ｜マチョ田の部屋",
+    description: "筋トレ初心者、プロテイン、食事、種目、トレーニングギアについてよくある質問をまとめています。",
+  },
+};
+
+const renderAnswer = (answer: string) => {
+  const parts = answer.split(/(https:\/\/www\.machoda\.com\/[^\s]+)/g);
+
+  return parts.map((part) => {
+    if (part === "https://www.machoda.com/intake-calculator") {
+      return (
+        <Link key={part} href="/intake-calculator" className="font-semibold text-[#C2410C] underline underline-offset-4">
+          {part}
+        </Link>
+      );
+    }
+
+    if (part === "https://www.machoda.com/training-wear") {
+      return (
+        <Link key={part} href="/training-wear" className="font-semibold text-[#C2410C] underline underline-offset-4">
+          {part}
+        </Link>
+      );
+    }
+
+    return part;
+  });
+};
+
+export default function TrainingFaqPage() {
+  const faqJsonLd = toJsonLd({
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqSections.flatMap((section) =>
+      section.items.map((item) => ({
+        "@type": "Question",
+        name: item.question,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: item.answer,
+        },
+      }))
+    ),
+  });
+
+  return (
+    <div className="min-h-screen" style={{ backgroundColor: "#FCC081" }}>
+      <SiteHeader profileImageSrc={profileImageSrc} />
+      <main className="px-4 pb-20 pt-20 sm:px-6 md:px-12">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqJsonLd }} />
+        <div className="mx-auto flex max-w-6xl flex-col gap-8">
+          <section className="rounded-[32px] bg-white/95 p-8 shadow-2xl sm:p-10">
+            <div className="flex flex-col gap-4">
+              <span className="inline-flex w-fit rounded-full bg-[#FFE7C2] px-4 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#9A3412]">
+                Training FAQ
+              </span>
+              <h1 className="text-3xl font-bold text-[#7C2D12] sm:text-4xl">筋トレFAQ</h1>
+              <p className="max-w-5xl text-base leading-8 text-slate-700">
+                筋トレ初心者、プロテイン、食事、種目、トレーニングギアについて、よくある疑問をまとめました。
+              </p>
+            </div>
+          </section>
+
+          <nav className="rounded-[28px] bg-white/90 p-5 shadow-xl">
+            <div className="flex flex-wrap gap-3">
+              {faqSections.map((section) => (
+                <a
+                  key={section.title}
+                  href={`#${section.title}`}
+                  className="rounded-full bg-[#FFF4E7] px-4 py-2 text-sm font-semibold text-[#9A3412] transition hover:bg-[#FFE7C2]"
+                >
+                  {section.title}
+                </a>
+              ))}
+            </div>
+          </nav>
+
+          {faqSections.map((section, sectionIndex) => (
+            <section key={section.title} id={section.title} className="scroll-mt-24 rounded-[32px] bg-white/95 p-6 shadow-2xl sm:p-8">
+              <div className="mb-6 flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#FF8A23] text-sm font-bold text-white shadow-lg">
+                  {sectionIndex + 1}
+                </span>
+                <h2 className="text-2xl font-bold text-[#7C2D12] sm:text-3xl">{section.title}</h2>
+              </div>
+
+              <div className="grid gap-4">
+                {section.items.map((item, index) => (
+                  <article key={`${section.title}-${index}`} className="rounded-3xl border border-[#FCD27B] bg-[#FFFDF8] p-5 shadow-sm">
+                    <h3 className="flex gap-3 text-base font-bold leading-7 text-[#7C2D12] sm:text-lg">
+                      <span className="text-[#FF8A23]">Q.</span>
+                      <span>{item.question}</span>
+                    </h3>
+                    <p className="mt-3 whitespace-pre-line pl-0 text-sm leading-7 text-slate-700 sm:pl-8 sm:text-base">
+                      <span className="mr-2 font-bold text-[#C2410C]">A.</span>
+                      {renderAnswer(item.answer)}
+                    </p>
+                  </article>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      </main>
+    </div>
+  );
+}

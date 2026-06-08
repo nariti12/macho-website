@@ -15,6 +15,7 @@ const staticRoutes = [
   "/supplements-ranking",
   "/training-wear",
   "/training-gear",
+  "/training-faq",
   "/blog",
   "/contact",
   "/privacy",
