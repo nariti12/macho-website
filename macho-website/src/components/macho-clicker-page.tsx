@@ -10,10 +10,22 @@ const profileImageSrc = "/picture/ore.png";
 const characterImageSrc = "/picture/man.png";
 const STORAGE_KEY = "machoda:macho-clicker:v3";
 const SAVE_INTERVAL_MS = 1000;
-const GAME_TICK_MS = 100;
+const GAME_TICK_MS = 50;
 const NEWS_INTERVAL_MS = 18_000;
 const OFFLINE_LIMIT_SECONDS = 60 * 60 * 8;
 const MAX_SCORE = 999_999_999_999_999_900_000;
+const PRESTIGE_REQUIREMENT = 1_000_000;
+const PRESTIGE_BONUS_RATE = 0.01;
+const LUCKY_BANK_RATE = 0.15;
+const LUCKY_CPS_SECONDS = 900;
+const LUCKY_FLAT_BONUS = 13;
+const FRENZY_DURATION_MS = 77_000;
+const CLICK_FRENZY_DURATION_MS = 13_000;
+const FRENZY_MULTIPLIER = 7;
+const CLICK_FRENZY_MULTIPLIER = 777;
+const GOLDEN_SPAWN_MIN_MS = 5 * 60 * 1000;
+const GOLDEN_SPAWN_MAX_MS = 15 * 60 * 1000;
+const GOLDEN_LIFETIME_MS = 13_000;
 
 type UpgradeKey =
   | "pushUp"
@@ -68,6 +80,9 @@ type GameState = {
   clickCount: number;
   upgrades: Record<UpgradeKey, number>;
   purchasedPowerUps: string[];
+  activeBuffs: ActiveBuff[];
+  prestigeLevel: number;
+  ascensionCount: number;
   lastSavedAt: number;
   unlockedAchievements: string[];
 };
@@ -109,6 +124,14 @@ type GoldenProtein = {
   id: number;
   x: number;
   y: number;
+};
+
+type ActiveBuff = {
+  id: string;
+  type: "frenzy" | "clickFrenzy";
+  name: string;
+  multiplier: number;
+  endAt: number;
 };
 
 type MysteryShopItem = {
@@ -479,6 +502,18 @@ const achievements: Achievement[] = [
     description: "累計10,000,000筋肉ポイントを達成",
     isUnlocked: (state) => state.totalMuscle >= 10_000_000,
   },
+  {
+    key: "first-ascension",
+    title: "仕上げ直し",
+    description: "初めて仕上げ直しを実行した",
+    isUnlocked: (state) => state.ascensionCount >= 1,
+  },
+  {
+    key: "prestige-10",
+    title: "永久パンプ",
+    description: "永久倍率が10%を超えた",
+    isUnlocked: (state) => state.prestigeLevel >= 10,
+  },
 ];
 
 const initialState: GameState = {
@@ -487,6 +522,9 @@ const initialState: GameState = {
   clickCount: 0,
   upgrades: emptyUpgrades,
   purchasedPowerUps: [],
+  activeBuffs: [],
+  prestigeLevel: 0,
+  ascensionCount: 0,
   lastSavedAt: Date.now(),
   unlockedAchievements: [],
 };
@@ -507,6 +545,24 @@ const getUpgradeCost = (upgrade: Upgrade, level: number) => Math.ceil(upgrade.ba
 const getShortage = (muscle: number, cost: number) => Math.max(0, cost - muscle);
 
 const getUpgradeVisibleCount = (level: number) => Math.min(180, level);
+
+const getActiveBuffs = (state: GameState) => state.activeBuffs.filter((buff) => buff.endAt > Date.now());
+
+const getPrestigeMultiplier = (state: GameState) => 1 + state.prestigeLevel * PRESTIGE_BONUS_RATE;
+
+const getFrenzyMultiplier = (state: GameState) =>
+  getActiveBuffs(state).reduce((total, buff) => (buff.type === "frenzy" ? total * buff.multiplier : total), 1);
+
+const getClickFrenzyMultiplier = (state: GameState) =>
+  getActiveBuffs(state).reduce((total, buff) => (buff.type === "clickFrenzy" ? total * buff.multiplier : total), 1);
+
+const getPendingPrestige = (state: GameState) =>
+  Math.max(0, Math.floor(Math.sqrt(state.totalMuscle / PRESTIGE_REQUIREMENT)) - state.prestigeLevel);
+
+const upsertBuff = (buffs: ActiveBuff[], nextBuff: ActiveBuff) => [
+  ...buffs.filter((buff) => buff.type !== nextBuff.type && buff.endAt > Date.now()),
+  nextBuff,
+];
 
 const mobilePanels: { key: MobilePanel; label: string }[] = [
   { key: "click", label: "クリック" },
@@ -564,14 +620,14 @@ const getClickPower = (state: GameState, pendingPowerUp?: PowerUpgrade) => {
     return total + getPerSecond(state) * (powerUp.clickCpsPercent ?? 0);
   }, 0);
 
-  const currentClick = baseClick * clickMultiplier + cpsClickBonus;
+  const currentClick = (baseClick * clickMultiplier + cpsClickBonus) * getClickFrenzyMultiplier(state);
   if (!pendingPowerUp || state.purchasedPowerUps.includes(pendingPowerUp.id)) return currentClick;
 
   const pendingBase = baseClick + (pendingPowerUp.clickBonus ?? 0);
   const pendingMultiplier = clickMultiplier * (pendingPowerUp.clickMultiplier ?? 1);
   const pendingCpsBonus = cpsClickBonus + getPerSecond(state) * (pendingPowerUp.clickCpsPercent ?? 0);
 
-  return pendingBase * pendingMultiplier + pendingCpsBonus;
+  return (pendingBase * pendingMultiplier + pendingCpsBonus) * getClickFrenzyMultiplier(state);
 };
 
 const getBuildingMultiplier = (state: GameState, key: UpgradeKey) =>
@@ -601,12 +657,14 @@ const getGoldenMultiplier = (state: GameState) =>
     return total * (powerUp.goldenMultiplier ?? 1);
   }, 1);
 
-const getPerSecond = (state: GameState) =>
+const getBasePerSecond = (state: GameState) =>
   upgrades.reduce(
     (total, upgrade) =>
       total + (upgrade.perSecondBonus ?? 0) * state.upgrades[upgrade.key] * getBuildingMultiplier(state, upgrade.key),
     0
   );
+
+const getPerSecond = (state: GameState) => getBasePerSecond(state) * getPrestigeMultiplier(state) * getFrenzyMultiplier(state);
 
 const getTitle = (totalMuscle: number) => {
   if (totalMuscle >= 10_000_000) return "マチョ神";
@@ -820,6 +878,19 @@ const readSavedState = (): GameState => {
       purchasedPowerUps: Array.isArray(saved.purchasedPowerUps)
         ? saved.purchasedPowerUps.filter((id): id is string => typeof id === "string")
         : [],
+      activeBuffs: Array.isArray(saved.activeBuffs)
+        ? saved.activeBuffs.filter(
+            (buff): buff is ActiveBuff =>
+              typeof buff?.id === "string" &&
+              (buff.type === "frenzy" || buff.type === "clickFrenzy") &&
+              typeof buff.name === "string" &&
+              typeof buff.multiplier === "number" &&
+              typeof buff.endAt === "number" &&
+              buff.endAt > Date.now()
+          )
+        : [],
+      prestigeLevel: typeof saved.prestigeLevel === "number" ? Math.max(0, Math.floor(saved.prestigeLevel)) : 0,
+      ascensionCount: typeof saved.ascensionCount === "number" ? Math.max(0, Math.floor(saved.ascensionCount)) : 0,
       lastSavedAt: typeof saved.lastSavedAt === "number" ? saved.lastSavedAt : Date.now(),
       unlockedAchievements: Array.isArray(saved.unlockedAchievements) ? saved.unlockedAchievements : [],
     };
@@ -864,9 +935,13 @@ export function MachoClickerPage() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const effectIdRef = useRef(0);
   const stateRef = useRef<GameState>(initialState);
+  const lastTickAtRef = useRef(Date.now());
   const soundRefs = useRef<Partial<Record<SoundType, HTMLAudioElement>>>({});
   const clickPower = useMemo(() => getClickPower(state), [state]);
   const perSecond = useMemo(() => getPerSecond(state), [state]);
+  const basePerSecond = useMemo(() => getBasePerSecond(state), [state]);
+  const activeBuffs = getActiveBuffs(state);
+  const pendingPrestige = getPendingPrestige(state);
   const title = getTitle(state.totalMuscle);
   const nextGoal = getNextTitleGoal(state.totalMuscle);
   const titleProgress = Math.min(100, Math.max(0, (state.totalMuscle / nextGoal.value) * 100));
@@ -886,6 +961,7 @@ export function MachoClickerPage() {
 
   useEffect(() => {
     setState(readSavedState());
+    lastTickAtRef.current = Date.now();
     setIsLoaded(true);
   }, []);
 
@@ -926,15 +1002,19 @@ export function MachoClickerPage() {
   }, [isLoaded]);
 
   useEffect(() => {
-    if (!isLoaded || perSecond <= 0) return;
+    if (!isLoaded) return;
 
     const timer = window.setInterval(() => {
-      const gain = perSecond * (GAME_TICK_MS / 1000);
+      const now = Date.now();
+      const deltaSeconds = Math.max(0, (now - lastTickAtRef.current) / 1000);
+      lastTickAtRef.current = now;
+      const gain = perSecond * deltaSeconds;
       setState((current) => ({
         ...current,
         muscle: clampScore(current.muscle + gain),
         totalMuscle: clampScore(current.totalMuscle + gain),
-        lastSavedAt: Date.now(),
+        activeBuffs: getActiveBuffs(current),
+        lastSavedAt: now,
       }));
     }, GAME_TICK_MS);
 
@@ -957,21 +1037,29 @@ export function MachoClickerPage() {
   }, []);
 
   useEffect(() => {
+    let hideTimer: number | null = null;
+    let spawnTimer: number | null = null;
+
     const spawn = () => {
       setGoldenProtein({
         id: Date.now(),
         x: 12 + Math.random() * 76,
         y: 14 + Math.random() * 62,
       });
-      window.setTimeout(() => setGoldenProtein(null), 8500);
+      hideTimer = window.setTimeout(() => setGoldenProtein(null), GOLDEN_LIFETIME_MS);
+      scheduleNext();
     };
 
-    const initialTimer = window.setTimeout(spawn, 45000);
-    const interval = window.setInterval(spawn, 90000);
+    const scheduleNext = () => {
+      const delay = GOLDEN_SPAWN_MIN_MS + Math.random() * (GOLDEN_SPAWN_MAX_MS - GOLDEN_SPAWN_MIN_MS);
+      spawnTimer = window.setTimeout(spawn, delay);
+    };
+
+    scheduleNext();
 
     return () => {
-      window.clearTimeout(initialTimer);
-      window.clearInterval(interval);
+      if (hideTimer !== null) window.clearTimeout(hideTimer);
+      if (spawnTimer !== null) window.clearTimeout(spawnTimer);
     };
   }, []);
 
@@ -1108,15 +1196,52 @@ export function MachoClickerPage() {
 
   const collectGoldenProtein = () => {
     if (!goldenProtein) return;
-    const bonus = Math.max(15, Math.floor((clickPower * 10 + perSecond * 60) * getGoldenMultiplier(state)));
-    spawnClickEffects(bonus);
-    setState((current) => ({
-      ...current,
-      muscle: clampScore(current.muscle + bonus),
-      totalMuscle: clampScore(current.totalMuscle + bonus),
-      lastSavedAt: Date.now(),
-    }));
-    setPurchaseFlash(`ゴールデンプロテイン +${formatNumber(bonus)}`);
+    const roll = Math.random();
+    const now = Date.now();
+
+    if (roll < 0.5) {
+      const bonus = Math.floor(
+        Math.min(state.muscle * LUCKY_BANK_RATE + LUCKY_FLAT_BONUS, perSecond * LUCKY_CPS_SECONDS + LUCKY_FLAT_BONUS) *
+          getGoldenMultiplier(state)
+      );
+      const safeBonus = Math.max(15, bonus);
+      spawnClickEffects(safeBonus);
+      setState((current) => ({
+        ...current,
+        muscle: clampScore(current.muscle + safeBonus),
+        totalMuscle: clampScore(current.totalMuscle + safeBonus),
+        lastSavedAt: now,
+      }));
+      setPurchaseFlash(`Lucky! +${formatNumber(safeBonus)}`);
+    } else if (roll < 0.82) {
+      const buff: ActiveBuff = {
+        id: `frenzy-${now}`,
+        type: "frenzy",
+        name: "パンプアップ",
+        multiplier: FRENZY_MULTIPLIER,
+        endAt: now + FRENZY_DURATION_MS,
+      };
+      setState((current) => ({
+        ...current,
+        activeBuffs: upsertBuff(current.activeBuffs, buff),
+        lastSavedAt: now,
+      }));
+      setPurchaseFlash(`パンプアップ: ${FRENZY_MULTIPLIER}倍`);
+    } else {
+      const buff: ActiveBuff = {
+        id: `click-frenzy-${now}`,
+        type: "clickFrenzy",
+        name: "鬼クリック",
+        multiplier: CLICK_FRENZY_MULTIPLIER,
+        endAt: now + CLICK_FRENZY_DURATION_MS,
+      };
+      setState((current) => ({
+        ...current,
+        activeBuffs: upsertBuff(current.activeBuffs, buff),
+        lastSavedAt: now,
+      }));
+      setPurchaseFlash(`鬼クリック: ${CLICK_FRENZY_MULTIPLIER}倍`);
+    }
     setGoldenProtein(null);
     playSound("golden");
     window.setTimeout(() => setPurchaseFlash(null), 1400);
@@ -1124,9 +1249,42 @@ export function MachoClickerPage() {
 
   const resetGame = () => {
     if (!window.confirm("マチョクリッカーの進行状況をリセットしますか？")) return;
-    const nextState = { ...initialState, upgrades: { ...emptyUpgrades }, purchasedPowerUps: [], lastSavedAt: Date.now() };
+    const nextState = {
+      ...initialState,
+      upgrades: { ...emptyUpgrades },
+      purchasedPowerUps: [],
+      activeBuffs: [],
+      prestigeLevel: 0,
+      ascensionCount: 0,
+      lastSavedAt: Date.now(),
+    };
     setState(nextState);
     setCombo(0);
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
+  };
+
+  const ascend = () => {
+    if (pendingPrestige <= 0) return;
+    if (!window.confirm(`仕上げ直しを実行して、永久倍率 +${pendingPrestige}% を獲得しますか？`)) return;
+
+    const nextState: GameState = {
+      ...initialState,
+      muscle: 0,
+      totalMuscle: state.totalMuscle,
+      clickCount: 0,
+      upgrades: { ...emptyUpgrades },
+      purchasedPowerUps: [],
+      activeBuffs: [],
+      prestigeLevel: state.prestigeLevel + pendingPrestige,
+      ascensionCount: state.ascensionCount + 1,
+      lastSavedAt: Date.now(),
+      unlockedAchievements: state.unlockedAchievements,
+    };
+
+    setState(nextState);
+    setCombo(0);
+    setPurchaseFlash(`仕上げ直し完了: 永久倍率 +${pendingPrestige}%`);
+    window.setTimeout(() => setPurchaseFlash(null), 1600);
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
   };
 
@@ -1157,8 +1315,8 @@ export function MachoClickerPage() {
   };
 
   return (
-    <div className="min-h-screen overflow-hidden bg-[#FFF3DF] text-slate-900" onPointerDown={unlockAudio}>
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_18%_8%,rgba(255,184,77,0.28),transparent_32%),radial-gradient(circle_at_86%_0%,rgba(251,146,60,0.22),transparent_30%),linear-gradient(180deg,#FFF7EB_0%,#FDBA74_48%,#7C2D12_100%)]" />
+    <div className="macho-game-shell min-h-screen overflow-hidden bg-[#FFF3DF] text-slate-900" onPointerDown={unlockAudio}>
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_18%_8%,rgba(255,184,77,0.34),transparent_32%),radial-gradient(circle_at_86%_0%,rgba(251,146,60,0.26),transparent_30%),linear-gradient(180deg,#FFF7EB_0%,#FDBA74_48%,#7C2D12_100%)]" />
       <SiteHeader profileImageSrc={profileImageSrc} />
 
       {achievementToast ? (
@@ -1177,7 +1335,7 @@ export function MachoClickerPage() {
 
       <main className="relative z-10 px-0 pb-12 pt-16">
         <div className="flex w-full max-w-none flex-col gap-2">
-          <section className="overflow-hidden border-y-4 border-[#7C2D12] bg-[#7C2D12] text-white shadow-2xl">
+          <section className="macho-game-panel overflow-hidden border-y-4 border-[#7C2D12] bg-[#7C2D12] text-white shadow-2xl">
             <div className="grid gap-px bg-[#FED7AA] lg:grid-cols-[420px_minmax(0,1fr)_390px]">
               <div className="bg-[#9A3412] px-5 py-4">
                 <h1 className="text-3xl font-black tracking-tight text-[#FFE7C2]">マチョクリッカー</h1>
@@ -1201,7 +1359,9 @@ export function MachoClickerPage() {
               </div>
               <div className="bg-[#9A3412] px-5 py-4">
                 <div className="flex items-center justify-between gap-3">
-                  <div className="text-xs font-black text-[#FFB45D]">次の称号: {nextGoal.title}</div>
+                  <div className="text-xs font-black text-[#FFB45D]">
+                    次の称号: {nextGoal.title} / 永久倍率 +{state.prestigeLevel}%
+                  </div>
                   <button
                     type="button"
                     onClick={() => setSoundEnabled((current) => !current)}
@@ -1214,8 +1374,28 @@ export function MachoClickerPage() {
                 <div className="mt-2 h-3 overflow-hidden rounded-full bg-white/15">
                   <div className="h-full rounded-full bg-gradient-to-r from-[#FFB45D] to-[#FF5A1F]" style={{ width: `${titleProgress}%` }} />
                 </div>
+                <div className="mt-2 flex items-center justify-between gap-2 text-[11px] font-black text-[#FFE7C2]">
+                  <span>基礎CPS +{formatRate(basePerSecond)}</span>
+                  <button
+                    type="button"
+                    onClick={ascend}
+                    disabled={pendingPrestige <= 0}
+                    className="rounded-full bg-[#FF8A23] px-3 py-1 text-white transition hover:bg-[#f57200] disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/45"
+                  >
+                    仕上げ直し +{pendingPrestige}%
+                  </button>
+                </div>
               </div>
             </div>
+            {activeBuffs.length > 0 ? (
+              <div className="flex flex-wrap gap-2 border-t border-[#FED7AA] bg-[#2A140B] px-4 py-2">
+                {activeBuffs.map((buff) => (
+                  <span key={buff.id} className="rounded-full bg-[#FFE7C2] px-3 py-1 text-xs font-black text-[#7C2D12]">
+                    {buff.name} x{buff.multiplier} 残り{Math.max(0, Math.ceil((buff.endAt - Date.now()) / 1000))}秒
+                  </span>
+                ))}
+              </div>
+            ) : null}
             <div className="relative flex items-center gap-4 overflow-hidden border-t border-[#FED7AA] bg-[#7C2D12] px-4 py-2">
               <span className="relative z-10 shrink-0 rounded bg-[#FF8A23] px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] shadow-lg">
                 Macho News
@@ -1245,7 +1425,7 @@ export function MachoClickerPage() {
             ))}
           </nav>
 
-          <section className="grid min-h-[calc(100vh-12rem)] overflow-hidden border-y-4 border-[#7C2D12] bg-[#7C2D12] shadow-2xl xl:grid-cols-[minmax(620px,760px)_minmax(0,1fr)_390px]">
+          <section className="macho-game-panel grid min-h-[calc(100vh-12rem)] overflow-hidden border-y-4 border-[#7C2D12] bg-[#7C2D12] shadow-2xl xl:grid-cols-[minmax(620px,760px)_minmax(0,1fr)_390px]">
             <aside
               className={`relative min-h-[calc(100vh-15rem)] flex-col items-center justify-between overflow-hidden border-b-4 border-[#7C2D12] bg-[radial-gradient(circle_at_center,#FFF0D5_0%,#FDBA74_54%,#B45309_100%)] p-4 text-center sm:p-5 xl:flex xl:min-h-[800px] xl:border-b-0 xl:border-r-4 ${
                 mobilePanel === "click" ? "flex" : "hidden"
@@ -1611,7 +1791,7 @@ export function MachoClickerPage() {
             </aside>
           </section>
 
-          <section className="grid gap-4 rounded-[28px] border border-[#FCD27B]/60 bg-[#2A140B]/90 p-4 text-white shadow-2xl md:grid-cols-3">
+          <section className="grid gap-4 rounded-[28px] border border-[#FCD27B]/60 bg-[#2A140B]/90 p-4 text-white shadow-2xl md:grid-cols-4">
             <div className="rounded-2xl bg-white/10 px-4 py-3">
               <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Achievements</div>
               <div className="mt-1 text-2xl font-black">{state.unlockedAchievements.length}/{achievements.length}</div>
@@ -1619,6 +1799,10 @@ export function MachoClickerPage() {
             <div className="rounded-2xl bg-white/10 px-4 py-3">
               <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Upgrades</div>
               <div className="mt-1 text-2xl font-black">{ownedUpgradeCount}</div>
+            </div>
+            <div className="rounded-2xl bg-white/10 px-4 py-3">
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Prestige</div>
+              <div className="mt-1 text-2xl font-black">+{state.prestigeLevel}%</div>
             </div>
             <div className="rounded-2xl bg-white/10 px-4 py-3">
               <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Unlocked</div>
