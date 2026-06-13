@@ -13,7 +13,7 @@ const SAVE_INTERVAL_MS = 1000;
 const GAME_TICK_MS = 50;
 const NEWS_INTERVAL_MS = 18_000;
 const OFFLINE_LIMIT_SECONDS = 60 * 60 * 8;
-const MAX_SCORE = 999_999_999_999_999_900_000;
+const MAX_SCORE = 1e300;
 const PRESTIGE_REQUIREMENT = 1_000_000;
 const PRESTIGE_BONUS_RATE = 0.01;
 const LUCKY_BANK_RATE = 0.15;
@@ -43,7 +43,10 @@ type UpgradeKey =
   | "antiGravityGym"
   | "proteinPrism"
   | "chanceMachine"
-  | "fractalMuscle";
+  | "fractalMuscle"
+  | "idleverseGym"
+  | "cortexTrainer"
+  | "finalMacho";
 
 type Upgrade = {
   key: UpgradeKey;
@@ -77,6 +80,7 @@ type PowerUpgrade = {
 type GameState = {
   muscle: number;
   totalMuscle: number;
+  handMadeMuscle: number;
   clickCount: number;
   upgrades: Record<UpgradeKey, number>;
   purchasedPowerUps: string[];
@@ -334,6 +338,42 @@ const upgrades: Upgrade[] = [
     perSecondBonus: 150_000_000_000,
     accent: "from-[#FFB45D] to-[#451A03]",
   },
+  {
+    key: "idleverseGym",
+    name: "アイドルバースジム",
+    label: "IDLE",
+    icon: "I",
+    spriteSrc: "/game/macho-clicker/idleverse-gym.svg",
+    description: "別次元の放置ゲームから筋肉ポイントを横取りします。",
+    baseCost: 12_000_000_000_000_000_000_000,
+    costRate: 1.15,
+    perSecondBonus: 8_300_000_000_000,
+    accent: "from-[#FED7AA] to-[#2A140B]",
+  },
+  {
+    key: "cortexTrainer",
+    name: "脳筋コルテックス",
+    label: "CORTEX",
+    icon: "C",
+    spriteSrc: "/game/macho-clicker/cortex-trainer.svg",
+    description: "脳まで筋肉化し、思考だけで筋肉ポイントを作ります。",
+    baseCost: 1_900_000_000_000_000_000_000_000,
+    costRate: 1.15,
+    perSecondBonus: 64_000_000_000_000,
+    accent: "from-[#FFE7C2] to-[#7C2D12]",
+  },
+  {
+    key: "finalMacho",
+    name: "マチョ田本人",
+    label: "YOU",
+    icon: "Y",
+    spriteSrc: "/game/macho-clicker/final-macho.svg",
+    description: "最終的にマチョ田自身が筋肉ポイントを量産します。",
+    baseCost: 540_000_000_000_000_000_000_000_000,
+    costRate: 1.15,
+    perSecondBonus: 510_000_000_000_000,
+    accent: "from-[#FF8A23] to-[#451A03]",
+  },
 ];
 
 const visualUpgrades = upgrades.filter((upgrade) => upgrade.key !== "pushUp");
@@ -355,6 +395,9 @@ const emptyUpgrades: Record<UpgradeKey, number> = {
   proteinPrism: 0,
   chanceMachine: 0,
   fractalMuscle: 0,
+  idleverseGym: 0,
+  cortexTrainer: 0,
+  finalMacho: 0,
 };
 
 const manualPowerUpgrades: PowerUpgrade[] = [
@@ -414,6 +457,9 @@ const buildingPowerUpgradeTiers = [
   { owned: 1, costMultiplier: 10, label: "基礎強化" },
   { owned: 5, costMultiplier: 50, label: "効率化" },
   { owned: 25, costMultiplier: 500, label: "量産体制" },
+  { owned: 50, costMultiplier: 5_000, label: "完全自動化" },
+  { owned: 100, costMultiplier: 50_000, label: "神域到達" },
+  { owned: 150, costMultiplier: 500_000, label: "宇宙規模化" },
 ] as const;
 
 const buildingPowerUpgrades: PowerUpgrade[] = upgrades.flatMap((upgrade) =>
@@ -485,6 +531,18 @@ const achievements: Achievement[] = [
     isUnlocked: (state) => Object.values(state.upgrades).reduce((total, level) => total + level, 0) >= 10,
   },
   {
+    key: "building-50",
+    title: "ジム拡張",
+    description: "強化メニューを合計50回購入した",
+    isUnlocked: (state) => Object.values(state.upgrades).reduce((total, level) => total + level, 0) >= 50,
+  },
+  {
+    key: "building-100",
+    title: "巨大ジム運営者",
+    description: "強化メニューを合計100回購入した",
+    isUnlocked: (state) => Object.values(state.upgrades).reduce((total, level) => total + level, 0) >= 100,
+  },
+  {
     key: "click-master",
     title: "クリック職人",
     description: "クリック回数が1,000回を超えた",
@@ -519,6 +577,7 @@ const achievements: Achievement[] = [
 const initialState: GameState = {
   muscle: 0,
   totalMuscle: 0,
+  handMadeMuscle: 0,
   clickCount: 0,
   upgrades: emptyUpgrades,
   purchasedPowerUps: [],
@@ -531,12 +590,59 @@ const initialState: GameState = {
 
 const clampScore = (value: number) => Math.min(MAX_SCORE, Math.max(0, value));
 
-const formatNumber = (value: number) => Math.floor(value).toLocaleString("ja-JP");
+const largeNumberUnits = [
+  { value: 1e90, name: "novemvigintillion" },
+  { value: 1e87, name: "octovigintillion" },
+  { value: 1e84, name: "septenvigintillion" },
+  { value: 1e81, name: "sexvigintillion" },
+  { value: 1e78, name: "quinvigintillion" },
+  { value: 1e75, name: "quattuorvigintillion" },
+  { value: 1e72, name: "trevigintillion" },
+  { value: 1e69, name: "duovigintillion" },
+  { value: 1e66, name: "unvigintillion" },
+  { value: 1e63, name: "vigintillion" },
+  { value: 1e60, name: "novemdecillion" },
+  { value: 1e57, name: "octodecillion" },
+  { value: 1e54, name: "septendecillion" },
+  { value: 1e51, name: "sexdecillion" },
+  { value: 1e48, name: "quindecillion" },
+  { value: 1e45, name: "quattuordecillion" },
+  { value: 1e42, name: "tredecillion" },
+  { value: 1e39, name: "duodecillion" },
+  { value: 1e36, name: "undecillion" },
+  { value: 1e33, name: "decillion" },
+  { value: 1e30, name: "nonillion" },
+  { value: 1e27, name: "octillion" },
+  { value: 1e24, name: "septillion" },
+  { value: 1e21, name: "sextillion" },
+  { value: 1e18, name: "quintillion" },
+  { value: 1e15, name: "quadrillion" },
+  { value: 1e12, name: "trillion" },
+  { value: 1e9, name: "billion" },
+  { value: 1e6, name: "million" },
+] as const;
+
+const formatNumber = (value: number) => {
+  const safeValue = Math.max(0, value);
+  if (safeValue < 1_000_000) return Math.floor(safeValue).toLocaleString("ja-JP");
+
+  const unit = largeNumberUnits.find((candidate) => safeValue >= candidate.value);
+  if (!unit) return Math.floor(safeValue).toLocaleString("ja-JP");
+
+  const scaled = safeValue / unit.value;
+  const decimals = scaled >= 100 ? 1 : scaled >= 10 ? 2 : 3;
+  return `${scaled.toLocaleString("en-US", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  })} ${unit.name}`;
+};
 
 const formatFullNumber = (value: number) => Math.floor(value).toLocaleString("ja-JP");
 
 const formatRate = (value: number) =>
-  value < 100 && !Number.isInteger(value)
+  value >= 1_000_000
+    ? formatNumber(value)
+    : value < 100 && !Number.isInteger(value)
     ? value.toLocaleString("ja-JP", { minimumFractionDigits: 1, maximumFractionDigits: 1 })
     : Math.floor(value).toLocaleString("ja-JP");
 
@@ -794,7 +900,7 @@ const BuildingProductionDetails = ({
   return (
     <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-black">
       <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
-        次の価格<br />{formatFullNumber(getUpgradeCost(upgrade, owned))}
+        次の価格<br />{formatNumber(getUpgradeCost(upgrade, owned))}
       </div>
       <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
         1個あたり<br />+{formatRate(unitProduction)}/秒
@@ -873,6 +979,7 @@ const readSavedState = (): GameState => {
     const normalized: GameState = {
       muscle: typeof saved.muscle === "number" ? clampScore(saved.muscle) : 0,
       totalMuscle: typeof saved.totalMuscle === "number" ? clampScore(saved.totalMuscle) : 0,
+      handMadeMuscle: typeof saved.handMadeMuscle === "number" ? clampScore(saved.handMadeMuscle) : 0,
       clickCount: typeof saved.clickCount === "number" ? Math.max(0, Math.floor(saved.clickCount)) : 0,
       upgrades: normalizeSavedUpgrades(saved.upgrades),
       purchasedPowerUps: Array.isArray(saved.purchasedPowerUps)
@@ -1143,6 +1250,7 @@ export function MachoClickerPage() {
       ...current,
       muscle: clampScore(current.muscle + gain),
       totalMuscle: clampScore(current.totalMuscle + gain),
+      handMadeMuscle: clampScore(current.handMadeMuscle + gain),
       clickCount: current.clickCount + 1,
       lastSavedAt: Date.now(),
     }));
@@ -1345,7 +1453,9 @@ export function MachoClickerPage() {
                 <div className="grid grid-cols-3 gap-3 text-center">
                   <div>
                     <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#FFB45D]">Current</div>
-                    <div className="mt-1 text-2xl font-black text-white">{formatFullNumber(state.muscle)}</div>
+                    <div className="mt-1 text-2xl font-black text-white" title={formatFullNumber(state.muscle)}>
+                      {formatNumber(state.muscle)}
+                    </div>
                   </div>
                   <div>
                     <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#FFB45D]">Per Second</div>
@@ -1353,7 +1463,9 @@ export function MachoClickerPage() {
                   </div>
                   <div>
                     <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#FFB45D]">Total</div>
-                    <div className="mt-1 text-2xl font-black text-white">{formatFullNumber(state.totalMuscle)}</div>
+                    <div className="mt-1 text-2xl font-black text-white" title={formatFullNumber(state.totalMuscle)}>
+                      {formatNumber(state.totalMuscle)}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1433,7 +1545,9 @@ export function MachoClickerPage() {
             >
               <div className="relative z-10 w-full rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB]/95 px-4 py-4 text-[#7C2D12] shadow-xl">
                 <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Muscle Points</div>
-                <div className="mt-1 break-all text-4xl font-black sm:text-5xl">{formatFullNumber(state.muscle)}</div>
+                <div className="mt-1 break-words text-4xl font-black sm:text-5xl" title={formatFullNumber(state.muscle)}>
+                  {formatNumber(state.muscle)}
+                </div>
                 <div className="mt-2 text-sm font-bold text-[#9A3412]">クリック: +{formatNumber(clickPower)} / COMBO {combo}</div>
               </div>
 
@@ -1707,7 +1821,7 @@ export function MachoClickerPage() {
                                 canBuy ? "bg-[#7C2D12] text-white" : "bg-[#D6A169] text-[#7C2D12]"
                               }`}
                             >
-                              {canBuy ? "必要" : "あと"}: {formatFullNumber(canBuy ? cost : shortage)} 筋肉
+                              {canBuy ? "必要" : "あと"}: {formatNumber(canBuy ? cost : shortage)} 筋肉
                             </span>
                           </span>
                         </div>
@@ -1768,7 +1882,7 @@ export function MachoClickerPage() {
                     </div>
                     <div className="mt-3 text-sm font-semibold leading-6">{hoveredPowerUp.description}</div>
                     <div className="mt-3 rounded-xl bg-[#FFE7C2] px-3 py-2 text-xs font-black">
-                      必要: {formatFullNumber(hoveredPowerUp.cost)} 筋肉
+                      必要: {formatNumber(hoveredPowerUp.cost)} 筋肉
                     </div>
                     <PowerUpgradeDetails state={state} powerUp={hoveredPowerUp} />
                   </div>
@@ -1791,7 +1905,7 @@ export function MachoClickerPage() {
             </aside>
           </section>
 
-          <section className="grid gap-4 rounded-[28px] border border-[#FCD27B]/60 bg-[#2A140B]/90 p-4 text-white shadow-2xl md:grid-cols-4">
+          <section className="grid gap-4 rounded-[28px] border border-[#FCD27B]/60 bg-[#2A140B]/90 p-4 text-white shadow-2xl md:grid-cols-4 xl:grid-cols-6">
             <div className="rounded-2xl bg-white/10 px-4 py-3">
               <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Achievements</div>
               <div className="mt-1 text-2xl font-black">{state.unlockedAchievements.length}/{achievements.length}</div>
@@ -1803,6 +1917,14 @@ export function MachoClickerPage() {
             <div className="rounded-2xl bg-white/10 px-4 py-3">
               <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Prestige</div>
               <div className="mt-1 text-2xl font-black">+{state.prestigeLevel}%</div>
+            </div>
+            <div className="rounded-2xl bg-white/10 px-4 py-3">
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Hand-made</div>
+              <div className="mt-1 text-2xl font-black">{formatNumber(state.handMadeMuscle)}</div>
+            </div>
+            <div className="rounded-2xl bg-white/10 px-4 py-3">
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Ascensions</div>
+              <div className="mt-1 text-2xl font-black">{formatFullNumber(state.ascensionCount)}</div>
             </div>
             <div className="rounded-2xl bg-white/10 px-4 py-3">
               <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Unlocked</div>
