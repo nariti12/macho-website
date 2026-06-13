@@ -23,7 +23,8 @@ const faqSections: FaqSection[] = [
     items: [
       {
         question: "筋トレは週何回やればいいですか？",
-        answer: "初心者は週2回の全身トレーニングがおすすめです。慣れてきたら週3回以上の分割法が効果的です。",
+        answer:
+          "初心者はまずは全身法トレーニングで週2回ぐらいから始めると良いと思います。\n慣れてきたら週3回以上に増やしていき、トレーニングする部位を分けて行う分割法でメニューを組むと効果的です。",
       },
       {
         question: "1回の筋トレ時間はどれくらいが理想ですか？",
@@ -64,7 +65,8 @@ const faqSections: FaqSection[] = [
     items: [
       {
         question: "プロテインはいつ飲むのが効果的ですか？",
-        answer: "おすすめは朝起きた後と寝る前です。どちらも体がタンパク質を必要としているタイミングのため、タンパク質を効率よく補給できます。",
+        answer:
+          "おすすめは朝起きた後と寝る前です。どちらも体がタンパク質を必要としているタイミングのため、タンパク質を効率よく補給できます。\nちなみにトレーニング後30分以内にプロテインを飲むと良い説がありますが、そんな研究結果はないそうです。",
       },
       {
         question: "プロテインを飲むだけで筋肉はつきますか？",
@@ -72,7 +74,8 @@ const faqSections: FaqSection[] = [
       },
       {
         question: "ホエイとソイはどちらがおすすめですか？",
-        answer: "筋肥大を目的としている場合はホエイの方が優秀ですが、特に大会を目指しているほどではないのであれば、\nソイでも十分効果はありますので、正直どちらでもよいと考えています。価格重視であれば、安いソイをおすすめします。",
+        answer:
+          "筋肥大を目的としている場合はホエイの方が優秀ですが、特に大会を目指しているほどではないのであれば、効果は誤差レベルなのでソイでも良いと思います。\n私は倍の値段を払ってまでホエイを買う価値はないと思っています。\n価格重視であれば、安いソイをおすすめします。",
       },
       {
         question: "プロテインは1日に何回飲めばいいですか？",
@@ -88,7 +91,8 @@ const faqSections: FaqSection[] = [
       },
       {
         question: "EAAとBCAAは必要ですか？",
-        answer: "十分なタンパク質を摂取できているなら基本的に不要です。特にプロテインを摂取しているのであれば、必要なアミノ酸もまとめて摂取できますので、\nあえて別にBCAAやEAAを摂取する必要はないと考えています。",
+        answer:
+          "十分なタンパク質を摂取できているなら基本的に不要です。特にプロテインを摂取しているのであれば、必要なアミノ酸もまとめて摂取できますので、あえて別にBCAAやEAAを摂取する必要はないと考えています。",
       },
       {
         question: "プレワークアウトは初心者にも必要ですか？",
@@ -117,7 +121,8 @@ const faqSections: FaqSection[] = [
       },
       {
         question: "お酒は筋トレにどのくらい悪影響がありますか？",
-        answer: "毎日しこたま飲むレベルではなければ、あまり気にしなくても良いと思います。",
+        answer:
+          "毎日しこたま飲むレベルではなければ、あまり気にしなくても良いと思います。\nアルコールでなくなるような筋肉であればそんなもんいらんのです。",
       },
       {
         question: "筋トレ中にラーメンを食べても大丈夫ですか？",
@@ -154,7 +159,8 @@ const faqSections: FaqSection[] = [
       },
       {
         question: "スクワットで膝が痛くなります。",
-        answer: "フォームが悪かったり、可動域が浅いと膝を痛める可能性があります。\n一度ビデオで自分のフォームを確認して、重量を落とすなどしながらフォームの見直しを行ってください。",
+        answer:
+          "フォームが崩れていたり、急に重量を上げたりすると膝を痛めることがあります。\nまずは重量を落として動画でフォームを確認してみましょう。痛みを我慢して続けるのだけは辞めましょうね。",
       },
       {
         question: "デッドリフトで腰が痛くなります。",
@@ -316,10 +322,10 @@ export default function TrainingFaqPage() {
                       <span className="text-[#FF8A23]">Q.</span>
                       <span>{item.question}</span>
                     </h3>
-                    <p className="mt-3 whitespace-pre-line pl-0 text-sm leading-7 text-slate-700 sm:pl-8 sm:text-base">
-                      <span className="mr-2 font-bold text-[#C2410C]">A.</span>
-                      {renderAnswer(item.answer)}
-                    </p>
+                    <div className="mt-3 grid grid-cols-[auto_1fr] gap-x-2 pl-0 text-sm leading-7 text-slate-700 sm:pl-8 sm:text-base">
+                      <span className="font-bold text-[#C2410C]">A.</span>
+                      <p className="whitespace-pre-line">{renderAnswer(item.answer)}</p>
+                    </div>
                   </article>
                 ))}
               </div>
