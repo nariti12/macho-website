@@ -21,8 +21,10 @@ const LUCKY_CPS_SECONDS = 900;
 const LUCKY_FLAT_BONUS = 13;
 const FRENZY_DURATION_MS = 77_000;
 const CLICK_FRENZY_DURATION_MS = 13_000;
+const BUILDING_FRENZY_DURATION_MS = 30_000;
 const FRENZY_MULTIPLIER = 7;
 const CLICK_FRENZY_MULTIPLIER = 777;
+const BUILDING_FRENZY_MULTIPLIER = 20;
 const GOLDEN_SPAWN_MIN_MS = 5 * 60 * 1000;
 const GOLDEN_SPAWN_MAX_MS = 15 * 60 * 1000;
 const GOLDEN_LIFETIME_MS = 13_000;
@@ -113,7 +115,7 @@ type Spark = {
   rotate: number;
 };
 
-type MobilePanel = "click" | "gym" | "shop";
+type MobilePanel = "click" | "gym" | "shop" | "stats";
 
 type SoundType = "click" | "buy" | "blocked" | "golden";
 
@@ -132,10 +134,16 @@ type GoldenProtein = {
 
 type ActiveBuff = {
   id: string;
-  type: "frenzy" | "clickFrenzy";
+  type: "frenzy" | "clickFrenzy" | "buildingFrenzy";
   name: string;
   multiplier: number;
   endAt: number;
+};
+
+type SeasonalEvent = {
+  name: string;
+  description: string;
+  multiplier: number;
 };
 
 type MysteryShopItem = {
@@ -572,6 +580,42 @@ const achievements: Achievement[] = [
     description: "永久倍率が10%を超えた",
     isUnlocked: (state) => state.prestigeLevel >= 10,
   },
+  {
+    key: "millionaire",
+    title: "ミリオン到達",
+    description: "累計1 million筋肉ポイントを達成",
+    isUnlocked: (state) => state.totalMuscle >= 1_000_000,
+  },
+  {
+    key: "billionaire",
+    title: "ビリオン到達",
+    description: "累計1 billion筋肉ポイントを達成",
+    isUnlocked: (state) => state.totalMuscle >= 1_000_000_000,
+  },
+  {
+    key: "trillionaire",
+    title: "トリリオン到達",
+    description: "累計1 trillion筋肉ポイントを達成",
+    isUnlocked: (state) => state.totalMuscle >= 1_000_000_000_000,
+  },
+  {
+    key: "golden-boost",
+    title: "黄金の筋肉",
+    description: "ゴールデン効果を受けた",
+    isUnlocked: (state) => state.activeBuffs.length > 0,
+  },
+  {
+    key: "all-basic-buildings",
+    title: "ジム一式完成",
+    description: "全設備を1つ以上購入した",
+    isUnlocked: (state) => upgrades.every((upgrade) => state.upgrades[upgrade.key] >= 1),
+  },
+  {
+    key: "hundred-dumbbells",
+    title: "ダンベル百景",
+    description: "ダンベルを100個購入した",
+    isUnlocked: (state) => state.upgrades.pushUp >= 100,
+  },
 ];
 
 const initialState: GameState = {
@@ -659,6 +703,9 @@ const getPrestigeMultiplier = (state: GameState) => 1 + state.prestigeLevel * PR
 const getFrenzyMultiplier = (state: GameState) =>
   getActiveBuffs(state).reduce((total, buff) => (buff.type === "frenzy" ? total * buff.multiplier : total), 1);
 
+const getBuildingFrenzyMultiplier = (state: GameState) =>
+  getActiveBuffs(state).reduce((total, buff) => (buff.type === "buildingFrenzy" ? total * buff.multiplier : total), 1);
+
 const getClickFrenzyMultiplier = (state: GameState) =>
   getActiveBuffs(state).reduce((total, buff) => (buff.type === "clickFrenzy" ? total * buff.multiplier : total), 1);
 
@@ -670,10 +717,41 @@ const upsertBuff = (buffs: ActiveBuff[], nextBuff: ActiveBuff) => [
   nextBuff,
 ];
 
+const getSeasonalEvent = (date = new Date()): SeasonalEvent => {
+  const month = date.getMonth() + 1;
+  if (month === 12 || month <= 2) {
+    return {
+      name: "冬の増量期",
+      description: "食べて鍛える季節。全体生産が少し上がります。",
+      multiplier: 1.08,
+    };
+  }
+  if (month >= 3 && month <= 5) {
+    return {
+      name: "春の入会キャンペーン",
+      description: "新規トレーニーが増える季節。設備生産が少し上がります。",
+      multiplier: 1.05,
+    };
+  }
+  if (month >= 6 && month <= 8) {
+    return {
+      name: "夏の仕上げ期",
+      description: "絞りの季節。クリック効率と生産が少し上がります。",
+      multiplier: 1.07,
+    };
+  }
+  return {
+    name: "秋のバルク期",
+    description: "じっくり重量を伸ばす季節。全体生産が少し上がります。",
+    multiplier: 1.06,
+  };
+};
+
 const mobilePanels: { key: MobilePanel; label: string }[] = [
   { key: "click", label: "クリック" },
   { key: "shop", label: "ショップ" },
   { key: "gym", label: "ジム" },
+  { key: "stats", label: "統計" },
 ];
 
 const soundFiles: Record<SoundType, string> = {
@@ -770,7 +848,12 @@ const getBasePerSecond = (state: GameState) =>
     0
   );
 
-const getPerSecond = (state: GameState) => getBasePerSecond(state) * getPrestigeMultiplier(state) * getFrenzyMultiplier(state);
+const getPerSecond = (state: GameState) =>
+  getBasePerSecond(state) *
+  getPrestigeMultiplier(state) *
+  getFrenzyMultiplier(state) *
+  getBuildingFrenzyMultiplier(state) *
+  getSeasonalEvent().multiplier;
 
 const getTitle = (totalMuscle: number) => {
   if (totalMuscle >= 10_000_000) return "マチョ神";
@@ -844,17 +927,32 @@ const getBodyStage = (totalMuscle: number) => {
 };
 
 const getNewsLines = (state: GameState, title: string, perSecond: number) => {
+  const seasonalEvent = getSeasonalEvent();
   const lines = [
     "ジムの片隅で謎のクリック音が鳴り響いています。",
     "マチョ田、今日も腹筋ローラーを抱えて登場。",
     `${title} が街で少しずつ噂になっています。`,
     `現在の自動筋トレ効率は毎秒 ${formatRate(perSecond)} 筋肉です。`,
+    `${seasonalEvent.name} 開催中。${seasonalEvent.description}`,
+    "速報: プロテイン工房の在庫がなぜか爆発的に増えています。",
+    "近所のトレーニーが、マチョ田のクリック音で目を覚ましました。",
+    "筋肉ポイント市場は今日も強気です。",
+    "専門家は『腹筋ローラーは裏切らない』とコメントしています。",
+    "ジムの床が少しずつ強化されています。",
   ];
 
   if (state.totalMuscle >= 50_000) lines.push("近所のジムで『あの人、仕上がってない？』という声が増えています。");
   if (state.totalMuscle >= 1_000_000) lines.push("マチョ田級の肉体が完成しつつあります。もはや歩くパワーラックです。");
+  if (state.totalMuscle >= 1_000_000_000) lines.push("筋肉ポイントが billion に到達。街のジムがざわついています。");
+  if (state.totalMuscle >= 1_000_000_000_000) lines.push("筋肉ポイントが trillion に到達。もはや単位が現実離れしています。");
+  if (state.prestigeLevel > 0) lines.push(`仕上げ直しの効果で永久倍率が +${state.prestigeLevel}% になっています。`);
+  if (state.activeBuffs.length > 0) lines.push("ゴールデン効果発動中。今すぐクリックする価値があります。");
+  if (state.upgrades.finalMacho > 0) lines.push("マチョ田本人が稼働開始。ゲームの概念が少し壊れました。");
   if (Object.values(state.upgrades).reduce((total, level) => total + level, 0) >= 10) {
     lines.push("強化メニューの購入履歴が完全に筋トレ沼です。");
+  }
+  if (Object.values(state.upgrades).reduce((total, level) => total + level, 0) >= 100) {
+    lines.push("設備数100突破。これはもうジムではなく筋肉都市です。");
   }
 
   return lines;
@@ -989,7 +1087,7 @@ const readSavedState = (): GameState => {
         ? saved.activeBuffs.filter(
             (buff): buff is ActiveBuff =>
               typeof buff?.id === "string" &&
-              (buff.type === "frenzy" || buff.type === "clickFrenzy") &&
+              (buff.type === "frenzy" || buff.type === "clickFrenzy" || buff.type === "buildingFrenzy") &&
               typeof buff.name === "string" &&
               typeof buff.multiplier === "number" &&
               typeof buff.endAt === "number" &&
@@ -1040,6 +1138,7 @@ export function MachoClickerPage() {
   const [hoveredMysteryId, setHoveredMysteryId] = useState<string | null>(null);
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("click");
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [saveMessage, setSaveMessage] = useState("");
   const effectIdRef = useRef(0);
   const stateRef = useRef<GameState>(initialState);
   const lastTickAtRef = useRef(Date.now());
@@ -1049,6 +1148,7 @@ export function MachoClickerPage() {
   const basePerSecond = useMemo(() => getBasePerSecond(state), [state]);
   const activeBuffs = getActiveBuffs(state);
   const pendingPrestige = getPendingPrestige(state);
+  const seasonalEvent = getSeasonalEvent();
   const title = getTitle(state.totalMuscle);
   const nextGoal = getNextTitleGoal(state.totalMuscle);
   const titleProgress = Math.min(100, Math.max(0, (state.totalMuscle / nextGoal.value) * 100));
@@ -1321,7 +1421,7 @@ export function MachoClickerPage() {
         lastSavedAt: now,
       }));
       setPurchaseFlash(`Lucky! +${formatNumber(safeBonus)}`);
-    } else if (roll < 0.82) {
+    } else if (roll < 0.76) {
       const buff: ActiveBuff = {
         id: `frenzy-${now}`,
         type: "frenzy",
@@ -1335,7 +1435,7 @@ export function MachoClickerPage() {
         lastSavedAt: now,
       }));
       setPurchaseFlash(`パンプアップ: ${FRENZY_MULTIPLIER}倍`);
-    } else {
+    } else if (roll < 0.92) {
       const buff: ActiveBuff = {
         id: `click-frenzy-${now}`,
         type: "clickFrenzy",
@@ -1349,6 +1449,20 @@ export function MachoClickerPage() {
         lastSavedAt: now,
       }));
       setPurchaseFlash(`鬼クリック: ${CLICK_FRENZY_MULTIPLIER}倍`);
+    } else {
+      const buff: ActiveBuff = {
+        id: `building-frenzy-${now}`,
+        type: "buildingFrenzy",
+        name: "設備暴走",
+        multiplier: BUILDING_FRENZY_MULTIPLIER,
+        endAt: now + BUILDING_FRENZY_DURATION_MS,
+      };
+      setState((current) => ({
+        ...current,
+        activeBuffs: upsertBuff(current.activeBuffs, buff),
+        lastSavedAt: now,
+      }));
+      setPurchaseFlash(`設備暴走: ${BUILDING_FRENZY_MULTIPLIER}倍`);
     }
     setGoldenProtein(null);
     playSound("golden");
@@ -1369,6 +1483,56 @@ export function MachoClickerPage() {
     setState(nextState);
     setCombo(0);
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
+  };
+
+  const manualSave = () => {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...stateRef.current, lastSavedAt: Date.now() }));
+    setSaveMessage("保存しました。");
+    window.setTimeout(() => setSaveMessage(""), 1800);
+  };
+
+  const exportSave = async () => {
+    const saveText = btoa(unescape(encodeURIComponent(JSON.stringify({ ...stateRef.current, lastSavedAt: Date.now() }))));
+    try {
+      await navigator.clipboard.writeText(saveText);
+      setSaveMessage("セーブデータをコピーしました。");
+    } catch {
+      window.prompt("セーブデータをコピーしてください。", saveText);
+      setSaveMessage("セーブデータを表示しました。");
+    }
+    window.setTimeout(() => setSaveMessage(""), 2200);
+  };
+
+  const importSave = () => {
+    const saveText = window.prompt("インポートするセーブデータを貼り付けてください。");
+    if (!saveText) return;
+
+    try {
+      const parsed = JSON.parse(decodeURIComponent(escape(atob(saveText)))) as Partial<GameState>;
+      const importedState: GameState = {
+        ...initialState,
+        ...parsed,
+        muscle: typeof parsed.muscle === "number" ? clampScore(parsed.muscle) : 0,
+        totalMuscle: typeof parsed.totalMuscle === "number" ? clampScore(parsed.totalMuscle) : 0,
+        handMadeMuscle: typeof parsed.handMadeMuscle === "number" ? clampScore(parsed.handMadeMuscle) : 0,
+        clickCount: typeof parsed.clickCount === "number" ? Math.max(0, Math.floor(parsed.clickCount)) : 0,
+        upgrades: normalizeSavedUpgrades(parsed.upgrades),
+        purchasedPowerUps: Array.isArray(parsed.purchasedPowerUps)
+          ? parsed.purchasedPowerUps.filter((id): id is string => typeof id === "string")
+          : [],
+        activeBuffs: [],
+        prestigeLevel: typeof parsed.prestigeLevel === "number" ? Math.max(0, Math.floor(parsed.prestigeLevel)) : 0,
+        ascensionCount: typeof parsed.ascensionCount === "number" ? Math.max(0, Math.floor(parsed.ascensionCount)) : 0,
+        lastSavedAt: Date.now(),
+        unlockedAchievements: Array.isArray(parsed.unlockedAchievements) ? parsed.unlockedAchievements : [],
+      };
+      setState(importedState);
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(importedState));
+      setSaveMessage("インポートしました。");
+    } catch {
+      setSaveMessage("インポートに失敗しました。");
+    }
+    window.setTimeout(() => setSaveMessage(""), 2200);
   };
 
   const ascend = () => {
@@ -1520,7 +1684,7 @@ export function MachoClickerPage() {
             </div>
           </section>
 
-          <nav className="grid grid-cols-3 gap-2 border-x-4 border-[#7C2D12] bg-[#2A140B] p-2 xl:hidden" aria-label="マチョクリッカー画面切り替え">
+          <nav className="grid grid-cols-4 gap-2 border-x-4 border-[#7C2D12] bg-[#2A140B] p-2 xl:hidden" aria-label="マチョクリッカー画面切り替え">
             {mobilePanels.map((panel) => (
               <button
                 key={panel.key}
@@ -1903,9 +2067,45 @@ export function MachoClickerPage() {
                 ) : null}
               </div>
             </aside>
+
+            <section className={`${mobilePanel === "stats" ? "block" : "hidden"} bg-[#FFF7EB] p-4 text-[#7C2D12] xl:hidden`}>
+              <div className="rounded-3xl border-2 border-[#FDBA74] bg-white p-4 shadow-xl">
+                <h2 className="text-2xl font-black">統計・セーブ</h2>
+                <div className="mt-4 grid gap-3">
+                  {[
+                    ["現在", formatNumber(state.muscle)],
+                    ["累計", formatNumber(state.totalMuscle)],
+                    ["毎秒", `+${formatRate(perSecond)}`],
+                    ["クリック", `+${formatNumber(clickPower)}`],
+                    ["手作り筋肉", formatNumber(state.handMadeMuscle)],
+                    ["クリック数", formatFullNumber(state.clickCount)],
+                    ["設備数", formatFullNumber(ownedUpgradeCount)],
+                    ["実績", `${state.unlockedAchievements.length}/${achievements.length}`],
+                    ["季節イベント", seasonalEvent.name],
+                  ].map(([label, value]) => (
+                    <div key={label} className="rounded-2xl bg-[#FFF4E7] px-4 py-3">
+                      <div className="text-xs font-black text-[#C2410C]">{label}</div>
+                      <div className="mt-1 break-words text-lg font-black">{value}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-5 grid grid-cols-3 gap-2">
+                  <button type="button" onClick={manualSave} className="rounded-2xl bg-[#7C2D12] px-3 py-3 text-xs font-black text-white">
+                    保存
+                  </button>
+                  <button type="button" onClick={exportSave} className="rounded-2xl bg-[#FF8A23] px-3 py-3 text-xs font-black text-white">
+                    Export
+                  </button>
+                  <button type="button" onClick={importSave} className="rounded-2xl bg-[#C2410C] px-3 py-3 text-xs font-black text-white">
+                    Import
+                  </button>
+                </div>
+                {saveMessage ? <p className="mt-3 text-sm font-bold text-[#C2410C]">{saveMessage}</p> : null}
+              </div>
+            </section>
           </section>
 
-          <section className="grid gap-4 rounded-[28px] border border-[#FCD27B]/60 bg-[#2A140B]/90 p-4 text-white shadow-2xl md:grid-cols-4 xl:grid-cols-6">
+          <section className="grid gap-4 rounded-[28px] border border-[#FCD27B]/60 bg-[#2A140B]/90 p-4 text-white shadow-2xl md:grid-cols-4 xl:grid-cols-7">
             <div className="rounded-2xl bg-white/10 px-4 py-3">
               <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Achievements</div>
               <div className="mt-1 text-2xl font-black">{state.unlockedAchievements.length}/{achievements.length}</div>
@@ -1927,6 +2127,10 @@ export function MachoClickerPage() {
               <div className="mt-1 text-2xl font-black">{formatFullNumber(state.ascensionCount)}</div>
             </div>
             <div className="rounded-2xl bg-white/10 px-4 py-3">
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Season</div>
+              <div className="mt-1 text-lg font-black">{seasonalEvent.name}</div>
+            </div>
+            <div className="rounded-2xl bg-white/10 px-4 py-3">
               <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Unlocked</div>
               <div className="mt-2 flex flex-wrap gap-2">
                 {achievements.slice(0, 6).map((achievement) => {
@@ -1942,6 +2146,28 @@ export function MachoClickerPage() {
                     </span>
                   );
                 })}
+              </div>
+            </div>
+            <div className="rounded-2xl bg-white/10 px-4 py-3 md:col-span-2 xl:col-span-7">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Save Data</div>
+                  <div className="mt-1 text-sm font-bold text-white/80">
+                    オートセーブ対応。必要なら手動保存・エクスポート・インポートできます。
+                  </div>
+                  {saveMessage ? <div className="mt-2 text-sm font-black text-[#FFE7C2]">{saveMessage}</div> : null}
+                </div>
+                <div className="grid grid-cols-3 gap-2 lg:w-[26rem]">
+                  <button type="button" onClick={manualSave} className="rounded-2xl bg-[#7C2D12] px-4 py-3 text-sm font-black text-white transition hover:bg-[#9A3412]">
+                    保存
+                  </button>
+                  <button type="button" onClick={exportSave} className="rounded-2xl bg-[#FF8A23] px-4 py-3 text-sm font-black text-white transition hover:bg-[#f57200]">
+                    Export
+                  </button>
+                  <button type="button" onClick={importSave} className="rounded-2xl bg-[#C2410C] px-4 py-3 text-sm font-black text-white transition hover:bg-[#9A3412]">
+                    Import
+                  </button>
+                </div>
               </div>
             </div>
           </section>
