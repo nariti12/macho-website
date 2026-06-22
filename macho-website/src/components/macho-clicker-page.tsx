@@ -431,6 +431,30 @@ const upgradeSceneClasses: Record<UpgradeKey, string> = {
 
 const getUpgradeSceneClass = (key: UpgradeKey) => upgradeSceneClasses[key];
 
+const upgradeSceneImages: Record<UpgradeKey, string> = {
+  pushUp: "/game/macho-clicker/scenes/barbell-zone.svg",
+  abRoller: "/game/macho-clicker/scenes/ab-studio.svg",
+  dumbbell: "/game/macho-clicker/scenes/barbell-zone.svg",
+  protein: "/game/macho-clicker/scenes/protein-workshop.svg",
+  chicken: "/game/macho-clicker/scenes/meal-kitchen.svg",
+  benchPress: "/game/macho-clicker/scenes/barbell-zone.svg",
+  trainer: "/game/macho-clicker/scenes/lab-floor.svg",
+  gym: "/game/macho-clicker/scenes/barbell-zone.svg",
+  supplementStore: "/game/macho-clicker/scenes/cosmic-gym.svg",
+  mealPrepLab: "/game/macho-clicker/scenes/lab-floor.svg",
+  machoPortal: "/game/macho-clicker/scenes/cosmic-gym.svg",
+  timeGym: "/game/macho-clicker/scenes/cosmic-gym.svg",
+  antiGravityGym: "/game/macho-clicker/scenes/cosmic-gym.svg",
+  proteinPrism: "/game/macho-clicker/scenes/protein-workshop.svg",
+  chanceMachine: "/game/macho-clicker/scenes/macho-arena.svg",
+  fractalMuscle: "/game/macho-clicker/scenes/macho-arena.svg",
+  idleverseGym: "/game/macho-clicker/scenes/cosmic-gym.svg",
+  cortexTrainer: "/game/macho-clicker/scenes/lab-floor.svg",
+  finalMacho: "/game/macho-clicker/scenes/macho-arena.svg",
+};
+
+const getUpgradeSceneImage = (key: UpgradeKey) => upgradeSceneImages[key];
+
 const emptyUpgrades: Record<UpgradeKey, number> = {
   pushUp: 0,
   abRoller: 0,
@@ -1897,28 +1921,38 @@ export function MachoClickerPage() {
 
               <div className="absolute inset-x-0 bottom-0 h-40 bg-[linear-gradient(180deg,transparent_0%,rgba(124,45,18,0.7)_90%)]" />
               <div className="absolute inset-x-4 bottom-5 top-24 overflow-y-auto rounded-[28px] border-4 border-[#7C2D12] bg-[linear-gradient(180deg,rgba(255,247,235,0.92)_0%,rgba(255,237,213,0.76)_62%,rgba(154,52,18,0.72)_100%)] shadow-inner">
-                <div className="grid auto-rows-[5rem] divide-y-2 divide-[#B45309]/35">
+                <div className="grid auto-rows-[7.25rem] divide-y-2 divide-[#B45309]/35">
                   {visualUpgrades.map((upgrade) => {
                     const level = state.upgrades[upgrade.key];
                     const visibleCount = getUpgradeVisibleCount(level);
                     return (
                       <div
                         key={upgrade.key}
-                        className={`relative flex min-h-0 items-center overflow-hidden bg-gradient-to-r px-3 ${getUpgradeSceneClass(upgrade.key)}`}
+                        className={`relative grid min-h-0 grid-cols-[10rem_minmax(0,1fr)] items-stretch overflow-hidden bg-gradient-to-r ${getUpgradeSceneClass(upgrade.key)}`}
                         onMouseEnter={() => setHoveredGymUpgradeKey(upgrade.key)}
                         onMouseLeave={() => setHoveredGymUpgradeKey(null)}
                         onFocus={() => setHoveredGymUpgradeKey(upgrade.key)}
                         onBlur={() => setHoveredGymUpgradeKey(null)}
                       >
-                        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.18)_0%,transparent_18%,rgba(69,26,3,0.18)_100%)]" />
-                        <div className="absolute inset-x-0 bottom-0 h-5 bg-[repeating-linear-gradient(90deg,rgba(69,26,3,0.34)_0_10px,rgba(255,247,237,0.18)_10px_20px)]" />
-                        <div className="absolute right-4 top-1 text-[2.6rem] font-black uppercase leading-none text-white/15">
-                          {upgrade.label}
+                        <Image
+                          src={getUpgradeSceneImage(upgrade.key)}
+                          alt=""
+                          fill
+                          sizes="(min-width: 1280px) 60vw, 100vw"
+                          className="z-0 object-cover opacity-95"
+                        />
+                        <div className="absolute inset-0 z-[1] bg-[linear-gradient(90deg,rgba(42,20,11,0.58)_0%,rgba(42,20,11,0.22)_28%,rgba(42,20,11,0.08)_100%)]" />
+                        <div className="relative z-10 flex min-w-0 flex-col justify-between border-r-4 border-[#2A140B]/60 bg-[#2A140B]/72 px-3 py-3 text-[#FFE7C2] shadow-xl">
+                          <div>
+                            <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#FFB45D]">{upgrade.label}</div>
+                            <div className="mt-1 break-words text-sm font-black leading-tight">{upgrade.name}</div>
+                          </div>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="rounded-full bg-[#FF8A23] px-2 py-1 text-xs font-black text-white">Lv.{level}</span>
+                            <Image src={upgrade.spriteSrc} alt="" width={34} height={34} className="h-8 w-8 object-contain drop-shadow-lg" />
+                          </div>
                         </div>
-                        <div className="absolute left-3 top-1 z-10 rounded-full bg-[#2A140B]/85 px-2 py-0.5 text-[10px] font-black text-[#FFE7C2] shadow-lg">
-                          {upgrade.name} Lv.{level}
-                        </div>
-                        <div className="relative z-10 grid max-w-full grid-flow-col grid-rows-3 gap-x-1 gap-y-0.5 overflow-hidden pt-5 [grid-auto-columns:1.35rem] sm:[grid-auto-columns:1.55rem] 2xl:[grid-auto-columns:1.75rem]">
+                        <div className="relative z-10 grid max-w-full grid-flow-col grid-rows-3 gap-x-1 gap-y-1 overflow-hidden px-3 py-4 [grid-auto-columns:1.55rem] sm:[grid-auto-columns:1.75rem] 2xl:[grid-auto-columns:2rem]">
                           {Array.from({ length: visibleCount }, (_, index) => (
                             <div
                               key={`${upgrade.key}-unit-${index}`}
@@ -1935,7 +1969,7 @@ export function MachoClickerPage() {
                             </div>
                           ))}
                         </div>
-                        <div className="relative z-10 ml-2 shrink-0">
+                        <div className="absolute bottom-2 right-3 z-20">
                           {level > visibleCount ? (
                             <span className="rounded-full bg-white/90 px-2 py-1 text-xs font-black text-[#7C2D12]">
                               +{level - visibleCount}
