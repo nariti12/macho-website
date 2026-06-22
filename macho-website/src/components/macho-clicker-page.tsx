@@ -146,6 +146,16 @@ type SeasonalEvent = {
   multiplier: number;
 };
 
+type AmbientItem = {
+  id: string;
+  src: string;
+  left: string;
+  size: number;
+  delay: string;
+  duration: string;
+  opacity: number;
+};
+
 type MysteryShopItem = {
   id: string;
   name: string;
@@ -385,6 +395,41 @@ const upgrades: Upgrade[] = [
 ];
 
 const visualUpgrades = upgrades.filter((upgrade) => upgrade.key !== "pushUp");
+
+const ambientItems: AmbientItem[] = [
+  { id: "amb-dumbbell-1", src: "/game/macho-clicker/dumbbell.png", left: "7%", size: 36, delay: "-2s", duration: "15s", opacity: 0.42 },
+  { id: "amb-protein-1", src: "/game/macho-clicker/protein.png", left: "17%", size: 44, delay: "-11s", duration: "21s", opacity: 0.34 },
+  { id: "amb-roller-1", src: "/game/macho-clicker/ab-roller.png", left: "29%", size: 40, delay: "-7s", duration: "18s", opacity: 0.38 },
+  { id: "amb-meal-1", src: "/game/macho-clicker/meal.png", left: "41%", size: 46, delay: "-16s", duration: "24s", opacity: 0.3 },
+  { id: "amb-bench-1", src: "/game/macho-clicker/bench.png", left: "54%", size: 52, delay: "-5s", duration: "22s", opacity: 0.28 },
+  { id: "amb-golden-1", src: "/game/macho-clicker/golden-protein.png", left: "66%", size: 40, delay: "-13s", duration: "19s", opacity: 0.34 },
+  { id: "amb-trainer-1", src: "/game/macho-clicker/trainer.png", left: "78%", size: 42, delay: "-9s", duration: "23s", opacity: 0.28 },
+  { id: "amb-gym-1", src: "/game/macho-clicker/gym.png", left: "90%", size: 50, delay: "-18s", duration: "26s", opacity: 0.24 },
+];
+
+const upgradeSceneClasses: Record<UpgradeKey, string> = {
+  pushUp: "from-[#FFF7EB] via-[#FED7AA] to-[#F97316]",
+  abRoller: "from-[#E0F2FE] via-[#BAE6FD] to-[#0284C7]",
+  dumbbell: "from-[#E5E7EB] via-[#9CA3AF] to-[#374151]",
+  protein: "from-[#FFF1F2] via-[#FDBA74] to-[#C2410C]",
+  chicken: "from-[#FEF3C7] via-[#F59E0B] to-[#92400E]",
+  benchPress: "from-[#FEE2E2] via-[#FB7185] to-[#7F1D1D]",
+  trainer: "from-[#ECFCCB] via-[#84CC16] to-[#365314]",
+  gym: "from-[#DBEAFE] via-[#60A5FA] to-[#1E3A8A]",
+  supplementStore: "from-[#F5F3FF] via-[#A78BFA] to-[#4C1D95]",
+  mealPrepLab: "from-[#DCFCE7] via-[#22C55E] to-[#14532D]",
+  machoPortal: "from-[#FAE8FF] via-[#D946EF] to-[#581C87]",
+  timeGym: "from-[#E0E7FF] via-[#818CF8] to-[#312E81]",
+  antiGravityGym: "from-[#F0FDFA] via-[#2DD4BF] to-[#134E4A]",
+  proteinPrism: "from-[#FEF9C3] via-[#FACC15] to-[#A16207]",
+  chanceMachine: "from-[#FFE4E6] via-[#F43F5E] to-[#881337]",
+  fractalMuscle: "from-[#FFEDD5] via-[#EA580C] to-[#431407]",
+  idleverseGym: "from-[#F8FAFC] via-[#64748B] to-[#0F172A]",
+  cortexTrainer: "from-[#FCE7F3] via-[#EC4899] to-[#831843]",
+  finalMacho: "from-[#FFF7ED] via-[#FF8A23] to-[#451A03]",
+};
+
+const getUpgradeSceneClass = (key: UpgradeKey) => upgradeSceneClasses[key];
 
 const emptyUpgrades: Record<UpgradeKey, number> = {
   pushUp: 0,
@@ -1707,6 +1752,26 @@ export function MachoClickerPage() {
                 mobilePanel === "click" ? "flex" : "hidden"
               }`}
             >
+              <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                {ambientItems.map((item) => (
+                  <span
+                    key={item.id}
+                    className="macho-ambient-fall absolute -top-20 z-0"
+                    style={
+                      {
+                        left: item.left,
+                        width: item.size,
+                        height: item.size,
+                        animationDelay: item.delay,
+                        animationDuration: item.duration,
+                        opacity: item.opacity,
+                      } as CSSProperties
+                    }
+                  >
+                    <Image src={item.src} alt="" width={64} height={64} className="h-full w-full object-contain drop-shadow-xl" />
+                  </span>
+                ))}
+              </div>
               <div className="relative z-10 w-full rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB]/95 px-4 py-4 text-[#7C2D12] shadow-xl">
                 <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Muscle Points</div>
                 <div className="mt-1 break-words text-4xl font-black sm:text-5xl" title={formatFullNumber(state.muscle)}>
@@ -1839,16 +1904,21 @@ export function MachoClickerPage() {
                     return (
                       <div
                         key={upgrade.key}
-                        className="relative flex min-h-0 items-center overflow-hidden px-3"
+                        className={`relative flex min-h-0 items-center overflow-hidden bg-gradient-to-r px-3 ${getUpgradeSceneClass(upgrade.key)}`}
                         onMouseEnter={() => setHoveredGymUpgradeKey(upgrade.key)}
                         onMouseLeave={() => setHoveredGymUpgradeKey(null)}
                         onFocus={() => setHoveredGymUpgradeKey(upgrade.key)}
                         onBlur={() => setHoveredGymUpgradeKey(null)}
                       >
-                        <div className="absolute left-3 top-1 z-10 rounded-full bg-[#7C2D12]/85 px-2 py-0.5 text-[10px] font-black text-[#FFE7C2]">
+                        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.18)_0%,transparent_18%,rgba(69,26,3,0.18)_100%)]" />
+                        <div className="absolute inset-x-0 bottom-0 h-5 bg-[repeating-linear-gradient(90deg,rgba(69,26,3,0.34)_0_10px,rgba(255,247,237,0.18)_10px_20px)]" />
+                        <div className="absolute right-4 top-1 text-[2.6rem] font-black uppercase leading-none text-white/15">
+                          {upgrade.label}
+                        </div>
+                        <div className="absolute left-3 top-1 z-10 rounded-full bg-[#2A140B]/85 px-2 py-0.5 text-[10px] font-black text-[#FFE7C2] shadow-lg">
                           {upgrade.name} Lv.{level}
                         </div>
-                        <div className="grid max-w-full grid-flow-col grid-rows-3 gap-x-1 gap-y-0.5 overflow-hidden pt-5 [grid-auto-columns:1.35rem] sm:[grid-auto-columns:1.55rem] 2xl:[grid-auto-columns:1.75rem]">
+                        <div className="relative z-10 grid max-w-full grid-flow-col grid-rows-3 gap-x-1 gap-y-0.5 overflow-hidden pt-5 [grid-auto-columns:1.35rem] sm:[grid-auto-columns:1.55rem] 2xl:[grid-auto-columns:1.75rem]">
                           {Array.from({ length: visibleCount }, (_, index) => (
                             <div
                               key={`${upgrade.key}-unit-${index}`}
@@ -1865,7 +1935,7 @@ export function MachoClickerPage() {
                             </div>
                           ))}
                         </div>
-                        <div className="ml-2 shrink-0">
+                        <div className="relative z-10 ml-2 shrink-0">
                           {level > visibleCount ? (
                             <span className="rounded-full bg-white/90 px-2 py-1 text-xs font-black text-[#7C2D12]">
                               +{level - visibleCount}

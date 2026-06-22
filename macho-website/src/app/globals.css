@@ -346,6 +346,18 @@ main {
   }
 }
 
+@keyframes macho-ambient-fall {
+  0% {
+    transform: translate3d(0, -8rem, 0) rotate(0deg) scale(0.86);
+  }
+  45% {
+    transform: translate3d(1.4rem, 48vh, 0) rotate(170deg) scale(1);
+  }
+  100% {
+    transform: translate3d(-1.2rem, 108vh, 0) rotate(360deg) scale(0.92);
+  }
+}
+
 
 .macho-float {
   animation: macho-float 0.95s ease-out forwards;
@@ -415,6 +427,12 @@ main {
   pointer-events: none;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
   animation: macho-shop-sheen 2.4s ease-in-out infinite;
+}
+
+.macho-ambient-fall {
+  animation-name: macho-ambient-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
 }
 
 .macho-game-shell::before {
