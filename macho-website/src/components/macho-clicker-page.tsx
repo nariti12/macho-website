@@ -517,22 +517,22 @@ const manualPowerUpgrades: PowerUpgrade[] = [
   {
     id: "cps-click-1",
     name: "神経伝達強化",
-    description: "クリック時に毎秒生産量の1%が追加されます。",
-    cost: 50_000,
+    description: "クリック時に毎秒生産量の0.1%が追加されます。",
+    cost: 100_000,
     spriteSrc: "/game/macho-clicker/trainer.png",
-    effectLabel: "クリック +CpS 1%",
-    clickCpsPercent: 0.01,
-    unlock: (state) => state.totalMuscle >= 1_000,
+    effectLabel: "クリック +CpS 0.1%",
+    clickCpsPercent: 0.001,
+    unlock: (state) => state.upgrades.pushUp >= 25,
   },
   {
     id: "cps-click-2",
     name: "爆速パンプ",
-    description: "クリック時に毎秒生産量の1%が追加されます。",
-    cost: 5_000_000,
+    description: "クリック時に毎秒生産量の0.1%が追加されます。",
+    cost: 10_000_000,
     spriteSrc: "/game/macho-clicker/golden-protein.png",
-    effectLabel: "クリック +CpS 1%",
-    clickCpsPercent: 0.01,
-    unlock: (state) => state.totalMuscle >= 100_000,
+    effectLabel: "クリック +CpS 0.1%",
+    clickCpsPercent: 0.001,
+    unlock: (state) => state.upgrades.pushUp >= 50,
   },
   {
     id: "protein-blend",
@@ -1793,7 +1793,7 @@ export function MachoClickerPage() {
               }`}
             >
               <Image
-                src="/game/macho-clicker/click-stage-v2.png"
+                src="/game/macho-clicker/click-stage-v3.png"
                 alt=""
                 fill
                 priority
