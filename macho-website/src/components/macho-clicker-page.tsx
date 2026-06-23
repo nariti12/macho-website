@@ -14,7 +14,7 @@ const GAME_TICK_MS = 50;
 const NEWS_INTERVAL_MS = 18_000;
 const OFFLINE_LIMIT_SECONDS = 60 * 60 * 8;
 const MAX_SCORE = 1e300;
-const PRESTIGE_REQUIREMENT = 1_000_000;
+const PRESTIGE_REQUIREMENT = 1_000_000_000_000;
 const PRESTIGE_BONUS_RATE = 0.01;
 const LUCKY_BANK_RATE = 0.15;
 const LUCKY_CPS_SECONDS = 900;
@@ -46,6 +46,7 @@ type UpgradeKey =
   | "proteinPrism"
   | "chanceMachine"
   | "fractalMuscle"
+  | "muscleConsole"
   | "idleverseGym"
   | "cortexTrainer"
   | "finalMacho";
@@ -357,6 +358,18 @@ const upgrades: Upgrade[] = [
     accent: "from-[#FFB45D] to-[#451A03]",
   },
   {
+    key: "muscleConsole",
+    name: "筋肉コンソール",
+    label: "CODE",
+    icon: "JS",
+    spriteSrc: "/game/macho-clicker/muscle-console.svg",
+    description: "筋肉生産をコードで直接書き換える終盤用コンソールです。",
+    baseCost: 71_000_000_000_000_000_000,
+    costRate: 1.15,
+    perSecondBonus: 1_100_000_000_000,
+    accent: "from-[#FCE7F3] to-[#831843]",
+  },
+  {
     key: "idleverseGym",
     name: "アイドルバースジム",
     label: "IDLE",
@@ -424,6 +437,7 @@ const upgradeSceneClasses: Record<UpgradeKey, string> = {
   proteinPrism: "from-[#FEF9C3] via-[#FACC15] to-[#A16207]",
   chanceMachine: "from-[#FFE4E6] via-[#F43F5E] to-[#881337]",
   fractalMuscle: "from-[#FFEDD5] via-[#EA580C] to-[#431407]",
+  muscleConsole: "from-[#FCE7F3] via-[#EC4899] to-[#831843]",
   idleverseGym: "from-[#F8FAFC] via-[#64748B] to-[#0F172A]",
   cortexTrainer: "from-[#FCE7F3] via-[#EC4899] to-[#831843]",
   finalMacho: "from-[#FFF7ED] via-[#FF8A23] to-[#451A03]",
@@ -448,6 +462,7 @@ const upgradeSceneImages: Record<UpgradeKey, string> = {
   proteinPrism: "/game/macho-clicker/scenes/generated-v2/protein-prism-room.png",
   chanceMachine: "/game/macho-clicker/scenes/generated-v2/muscle-gacha-arcade.png",
   fractalMuscle: "/game/macho-clicker/scenes/generated-v2/fractal-reactor-room.png",
+  muscleConsole: "/game/macho-clicker/scenes/generated-v2/muscle-console-room.png",
   idleverseGym: "/game/macho-clicker/scenes/generated-v2/idleverse-gym.png",
   cortexTrainer: "/game/macho-clicker/scenes/generated-v2/cortex-trainer-room.png",
   finalMacho: "/game/macho-clicker/scenes/generated-v2/final-macho-arena.png",
@@ -472,6 +487,7 @@ const emptyUpgrades: Record<UpgradeKey, number> = {
   proteinPrism: 0,
   chanceMachine: 0,
   fractalMuscle: 0,
+  muscleConsole: 0,
   idleverseGym: 0,
   cortexTrainer: 0,
   finalMacho: 0,
@@ -779,7 +795,7 @@ const getClickFrenzyMultiplier = (state: GameState) =>
   getActiveBuffs(state).reduce((total, buff) => (buff.type === "clickFrenzy" ? total * buff.multiplier : total), 1);
 
 const getPendingPrestige = (state: GameState) =>
-  Math.max(0, Math.floor(Math.sqrt(state.totalMuscle / PRESTIGE_REQUIREMENT)) - state.prestigeLevel);
+  Math.max(0, Math.floor(Math.cbrt(state.totalMuscle / PRESTIGE_REQUIREMENT)) - state.prestigeLevel);
 
 const upsertBuff = (buffs: ActiveBuff[], nextBuff: ActiveBuff) => [
   ...buffs.filter((buff) => buff.type !== nextBuff.type && buff.endAt > Date.now()),
@@ -1772,15 +1788,24 @@ export function MachoClickerPage() {
 
           <section className="macho-game-panel grid min-h-[calc(100vh-12rem)] overflow-hidden border-y-4 border-[#7C2D12] bg-[#7C2D12] shadow-2xl xl:grid-cols-[minmax(620px,760px)_minmax(0,1fr)_390px]">
             <aside
-              className={`relative min-h-[calc(100vh-15rem)] flex-col items-center justify-between overflow-hidden border-b-4 border-[#7C2D12] bg-[radial-gradient(circle_at_center,#FFF0D5_0%,#FDBA74_54%,#B45309_100%)] p-4 text-center sm:p-5 xl:flex xl:min-h-[800px] xl:border-b-0 xl:border-r-4 ${
+              className={`relative min-h-[calc(100vh-15rem)] flex-col items-center justify-between overflow-hidden border-b-4 border-[#7C2D12] bg-[#451A03] p-4 text-center sm:p-5 xl:flex xl:min-h-[800px] xl:border-b-0 xl:border-r-4 ${
                 mobilePanel === "click" ? "flex" : "hidden"
               }`}
             >
+              <Image
+                src="/game/macho-clicker/click-stage-v2.png"
+                alt=""
+                fill
+                priority
+                sizes="(min-width: 1280px) 760px, 100vw"
+                className="macho-click-stage-bg z-0 object-cover"
+              />
+              <div className="macho-click-stage-glow pointer-events-none absolute inset-0 z-[1]" />
               <div className="pointer-events-none absolute inset-0 overflow-hidden">
                 {ambientItems.map((item) => (
                   <span
                     key={item.id}
-                    className="macho-ambient-fall absolute -top-20 z-0"
+                    className="macho-ambient-fall absolute -top-20 z-[2]"
                     style={
                       {
                         left: item.left,

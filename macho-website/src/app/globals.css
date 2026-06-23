@@ -358,6 +358,30 @@ main {
   }
 }
 
+@keyframes macho-click-stage-pan {
+  0%,
+  100% {
+    transform: scale(1.04) translate3d(-0.45rem, -0.2rem, 0);
+    filter: saturate(1.08) contrast(1.02);
+  }
+  50% {
+    transform: scale(1.08) translate3d(0.45rem, 0.25rem, 0);
+    filter: saturate(1.2) contrast(1.05);
+  }
+}
+
+@keyframes macho-click-stage-glow {
+  0%,
+  100% {
+    opacity: 0.42;
+    background-position: 48% 42%;
+  }
+  50% {
+    opacity: 0.7;
+    background-position: 52% 46%;
+  }
+}
+
 
 .macho-float {
   animation: macho-float 0.95s ease-out forwards;
@@ -433,6 +457,19 @@ main {
   animation-name: macho-ambient-fall;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
+}
+
+.macho-click-stage-bg {
+  animation: macho-click-stage-pan 16s ease-in-out infinite;
+}
+
+.macho-click-stage-glow {
+  animation: macho-click-stage-glow 5.5s ease-in-out infinite;
+  background:
+    radial-gradient(circle at center, rgba(255, 247, 235, 0.28), transparent 27%),
+    radial-gradient(circle at 50% 54%, rgba(255, 138, 35, 0.34), transparent 38%),
+    linear-gradient(180deg, rgba(42, 20, 11, 0.04), rgba(42, 20, 11, 0.34));
+  background-size: 120% 120%, 125% 125%, 100% 100%;
 }
 
 .macho-game-shell::before {
