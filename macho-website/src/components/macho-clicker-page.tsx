@@ -432,25 +432,25 @@ const upgradeSceneClasses: Record<UpgradeKey, string> = {
 const getUpgradeSceneClass = (key: UpgradeKey) => upgradeSceneClasses[key];
 
 const upgradeSceneImages: Record<UpgradeKey, string> = {
-  pushUp: "/game/macho-clicker/scenes/barbell-zone.svg",
-  abRoller: "/game/macho-clicker/scenes/ab-studio.svg",
-  dumbbell: "/game/macho-clicker/scenes/barbell-zone.svg",
-  protein: "/game/macho-clicker/scenes/protein-workshop.svg",
-  chicken: "/game/macho-clicker/scenes/meal-kitchen.svg",
-  benchPress: "/game/macho-clicker/scenes/barbell-zone.svg",
-  trainer: "/game/macho-clicker/scenes/lab-floor.svg",
-  gym: "/game/macho-clicker/scenes/barbell-zone.svg",
-  supplementStore: "/game/macho-clicker/scenes/cosmic-gym.svg",
-  mealPrepLab: "/game/macho-clicker/scenes/lab-floor.svg",
-  machoPortal: "/game/macho-clicker/scenes/cosmic-gym.svg",
-  timeGym: "/game/macho-clicker/scenes/cosmic-gym.svg",
-  antiGravityGym: "/game/macho-clicker/scenes/cosmic-gym.svg",
-  proteinPrism: "/game/macho-clicker/scenes/protein-workshop.svg",
-  chanceMachine: "/game/macho-clicker/scenes/macho-arena.svg",
-  fractalMuscle: "/game/macho-clicker/scenes/macho-arena.svg",
-  idleverseGym: "/game/macho-clicker/scenes/cosmic-gym.svg",
-  cortexTrainer: "/game/macho-clicker/scenes/lab-floor.svg",
-  finalMacho: "/game/macho-clicker/scenes/macho-arena.svg",
+  pushUp: "/game/macho-clicker/scenes/generated/push-up-stage.png",
+  abRoller: "/game/macho-clicker/scenes/generated/ab-roller-studio.png",
+  dumbbell: "/game/macho-clicker/scenes/generated/barbell-squad-zone.png",
+  protein: "/game/macho-clicker/scenes/generated/protein-workshop.png",
+  chicken: "/game/macho-clicker/scenes/generated/high-protein-cafeteria.png",
+  benchPress: "/game/macho-clicker/scenes/generated/bench-press-arena.png",
+  trainer: "/game/macho-clicker/scenes/generated/trainer-office.png",
+  gym: "/game/macho-clicker/scenes/generated/huge-gym-hall.png",
+  supplementStore: "/game/macho-clicker/scenes/generated/supplement-space-delivery.png",
+  mealPrepLab: "/game/macho-clicker/scenes/generated/nutrition-alchemy-lab.png",
+  machoPortal: "/game/macho-clicker/scenes/generated/macho-portal-chamber.png",
+  timeGym: "/game/macho-clicker/scenes/generated/time-gym.png",
+  antiGravityGym: "/game/macho-clicker/scenes/generated/anti-gravity-gym.png",
+  proteinPrism: "/game/macho-clicker/scenes/generated/protein-prism-room.png",
+  chanceMachine: "/game/macho-clicker/scenes/generated/muscle-gacha-arcade.png",
+  fractalMuscle: "/game/macho-clicker/scenes/generated/fractal-reactor-room.png",
+  idleverseGym: "/game/macho-clicker/scenes/generated/idleverse-gym.png",
+  cortexTrainer: "/game/macho-clicker/scenes/generated/cortex-trainer-room.png",
+  finalMacho: "/game/macho-clicker/scenes/generated/final-macho-arena.png",
 };
 
 const getUpgradeSceneImage = (key: UpgradeKey) => upgradeSceneImages[key];
@@ -1920,15 +1920,15 @@ export function MachoClickerPage() {
               </div>
 
               <div className="absolute inset-x-0 bottom-0 h-40 bg-[linear-gradient(180deg,transparent_0%,rgba(124,45,18,0.7)_90%)]" />
-              <div className="absolute inset-x-4 bottom-5 top-24 overflow-y-auto rounded-[28px] border-4 border-[#7C2D12] bg-[linear-gradient(180deg,rgba(255,247,235,0.92)_0%,rgba(255,237,213,0.76)_62%,rgba(154,52,18,0.72)_100%)] shadow-inner">
-                <div className="grid auto-rows-[7.25rem] divide-y-2 divide-[#B45309]/35">
+              <div className="absolute inset-x-4 bottom-5 top-24 overflow-y-auto rounded-[28px] border-4 border-[#7C2D12] bg-[#2A140B] shadow-inner">
+                <div className="grid auto-rows-[8.5rem] divide-y-2 divide-[#2A140B]">
                   {visualUpgrades.map((upgrade) => {
                     const level = state.upgrades[upgrade.key];
                     const visibleCount = getUpgradeVisibleCount(level);
                     return (
                       <div
                         key={upgrade.key}
-                        className={`relative grid min-h-0 grid-cols-[10rem_minmax(0,1fr)] items-stretch overflow-hidden bg-gradient-to-r ${getUpgradeSceneClass(upgrade.key)}`}
+                        className={`relative grid min-h-0 grid-cols-[10.5rem_minmax(0,1fr)] items-stretch overflow-hidden bg-gradient-to-r ${getUpgradeSceneClass(upgrade.key)}`}
                         onMouseEnter={() => setHoveredGymUpgradeKey(upgrade.key)}
                         onMouseLeave={() => setHoveredGymUpgradeKey(null)}
                         onFocus={() => setHoveredGymUpgradeKey(upgrade.key)}
@@ -1939,10 +1939,10 @@ export function MachoClickerPage() {
                           alt=""
                           fill
                           sizes="(min-width: 1280px) 60vw, 100vw"
-                          className="z-0 object-cover opacity-95"
+                          className="z-0 object-cover opacity-100"
                         />
-                        <div className="absolute inset-0 z-[1] bg-[linear-gradient(90deg,rgba(42,20,11,0.58)_0%,rgba(42,20,11,0.22)_28%,rgba(42,20,11,0.08)_100%)]" />
-                        <div className="relative z-10 flex min-w-0 flex-col justify-between border-r-4 border-[#2A140B]/60 bg-[#2A140B]/72 px-3 py-3 text-[#FFE7C2] shadow-xl">
+                        <div className="absolute inset-0 z-[1] bg-[linear-gradient(90deg,rgba(42,20,11,0.30)_0%,rgba(42,20,11,0.06)_42%,rgba(42,20,11,0.22)_100%)]" />
+                        <div className="relative z-10 m-2 flex min-w-0 flex-col justify-between rounded-2xl border-2 border-[#FFB45D]/45 bg-[#2A140B]/88 px-3 py-3 text-[#FFE7C2] shadow-[0_10px_24px_rgba(42,20,11,0.55)] backdrop-blur-[1px]">
                           <div>
                             <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#FFB45D]">{upgrade.label}</div>
                             <div className="mt-1 break-words text-sm font-black leading-tight">{upgrade.name}</div>
@@ -1952,11 +1952,11 @@ export function MachoClickerPage() {
                             <Image src={upgrade.spriteSrc} alt="" width={34} height={34} className="h-8 w-8 object-contain drop-shadow-lg" />
                           </div>
                         </div>
-                        <div className="relative z-10 grid max-w-full grid-flow-col grid-rows-3 gap-x-1 gap-y-1 overflow-hidden px-3 py-4 [grid-auto-columns:1.55rem] sm:[grid-auto-columns:1.75rem] 2xl:[grid-auto-columns:2rem]">
+                        <div className="relative z-10 grid max-w-full grid-flow-col grid-rows-3 content-center gap-x-2 gap-y-2 overflow-hidden px-4 py-4 [grid-auto-columns:2rem] sm:[grid-auto-columns:2.25rem] 2xl:[grid-auto-columns:2.5rem]">
                           {Array.from({ length: visibleCount }, (_, index) => (
                             <div
                               key={`${upgrade.key}-unit-${index}`}
-                              className="macho-unit flex h-5 w-5 items-center justify-center sm:h-6 sm:w-6"
+                              className="macho-unit flex h-7 w-7 items-center justify-center sm:h-8 sm:w-8"
                               style={{ animationDelay: `${(index % 8) * 0.08}s` }}
                             >
                               <Image
@@ -1964,7 +1964,7 @@ export function MachoClickerPage() {
                                 alt=""
                                 width={32}
                                 height={32}
-                                className="h-5 w-5 object-contain drop-shadow-xl sm:h-6 sm:w-6"
+                                className="h-7 w-7 object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.55)] sm:h-8 sm:w-8"
                               />
                             </div>
                           ))}
