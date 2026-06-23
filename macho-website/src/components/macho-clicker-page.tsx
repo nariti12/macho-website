@@ -1793,7 +1793,7 @@ export function MachoClickerPage() {
               }`}
             >
               <Image
-                src="/game/macho-clicker/click-stage-v3.png"
+                src="/game/macho-clicker/click-gym-stage.png"
                 alt=""
                 fill
                 priority
@@ -1899,19 +1899,18 @@ export function MachoClickerPage() {
                 <button
                   type="button"
                   onClick={handleClick}
-                  className={`macho-breathe group relative z-30 flex aspect-square w-[min(68vw,25rem)] items-center justify-center rounded-full border-[12px] shadow-[0_55px_110px_-35px_rgba(42,20,11,0.95)] transition hover:scale-[1.04] active:scale-95 ${bodyStage.ring} ${
+                  className={`macho-character-button macho-breathe group relative z-30 flex w-[min(58vw,21rem)] items-end justify-center bg-transparent p-0 transition hover:scale-[1.05] active:scale-95 ${
                     clickBurst ? "macho-pop" : ""
                   }`}
+                  aria-label="マチョ田をクリック"
                 >
-                  <span className="macho-shine absolute inset-0 rounded-full" />
-                  <span className={`absolute inset-[-32px] rounded-full bg-white/40 blur-2xl transition ${bodyStage.aura}`} />
                   <Image
                     src={characterImageSrc}
                     alt="マチョ田をクリック"
                     width={280}
                     height={280}
                     priority
-                    className="relative z-10 h-auto w-[min(48vw,19rem)] drop-shadow-2xl transition duration-300 group-hover:scale-105"
+                    className="relative z-10 h-auto w-[min(52vw,21rem)] drop-shadow-[0_28px_30px_rgba(0,0,0,0.65)] transition duration-300 group-hover:scale-105"
                     style={{ transform: `scale(${bodyStage.scale})` }}
                   />
                 </button>
