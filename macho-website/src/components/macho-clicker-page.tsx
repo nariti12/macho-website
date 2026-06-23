@@ -432,25 +432,25 @@ const upgradeSceneClasses: Record<UpgradeKey, string> = {
 const getUpgradeSceneClass = (key: UpgradeKey) => upgradeSceneClasses[key];
 
 const upgradeSceneImages: Record<UpgradeKey, string> = {
-  pushUp: "/game/macho-clicker/scenes/generated-wide/push-up-stage.png",
-  abRoller: "/game/macho-clicker/scenes/generated-wide/ab-roller-studio.png",
-  dumbbell: "/game/macho-clicker/scenes/generated-wide/barbell-squad-zone.png",
-  protein: "/game/macho-clicker/scenes/generated-wide/protein-workshop.png",
-  chicken: "/game/macho-clicker/scenes/generated-wide/high-protein-cafeteria.png",
-  benchPress: "/game/macho-clicker/scenes/generated-wide/bench-press-arena.png",
-  trainer: "/game/macho-clicker/scenes/generated-wide/trainer-office.png",
-  gym: "/game/macho-clicker/scenes/generated-wide/huge-gym-hall.png",
-  supplementStore: "/game/macho-clicker/scenes/generated-wide/supplement-space-delivery.png",
-  mealPrepLab: "/game/macho-clicker/scenes/generated-wide/nutrition-alchemy-lab.png",
-  machoPortal: "/game/macho-clicker/scenes/generated-wide/macho-portal-chamber.png",
-  timeGym: "/game/macho-clicker/scenes/generated-wide/time-gym.png",
-  antiGravityGym: "/game/macho-clicker/scenes/generated-wide/anti-gravity-gym.png",
-  proteinPrism: "/game/macho-clicker/scenes/generated-wide/protein-prism-room.png",
-  chanceMachine: "/game/macho-clicker/scenes/generated-wide/muscle-gacha-arcade.png",
-  fractalMuscle: "/game/macho-clicker/scenes/generated-wide/fractal-reactor-room.png",
-  idleverseGym: "/game/macho-clicker/scenes/generated-wide/idleverse-gym.png",
-  cortexTrainer: "/game/macho-clicker/scenes/generated-wide/cortex-trainer-room.png",
-  finalMacho: "/game/macho-clicker/scenes/generated-wide/final-macho-arena.png",
+  pushUp: "/game/macho-clicker/scenes/generated-hq/push-up-stage.png",
+  abRoller: "/game/macho-clicker/scenes/generated-hq/ab-roller-studio.png",
+  dumbbell: "/game/macho-clicker/scenes/generated-hq/barbell-squad-zone.png",
+  protein: "/game/macho-clicker/scenes/generated-hq/protein-workshop.png",
+  chicken: "/game/macho-clicker/scenes/generated-hq/high-protein-cafeteria.png",
+  benchPress: "/game/macho-clicker/scenes/generated-hq/bench-press-arena.png",
+  trainer: "/game/macho-clicker/scenes/generated-hq/trainer-office.png",
+  gym: "/game/macho-clicker/scenes/generated-hq/huge-gym-hall.png",
+  supplementStore: "/game/macho-clicker/scenes/generated-hq/supplement-space-delivery.png",
+  mealPrepLab: "/game/macho-clicker/scenes/generated-hq/nutrition-alchemy-lab.png",
+  machoPortal: "/game/macho-clicker/scenes/generated-hq/macho-portal-chamber.png",
+  timeGym: "/game/macho-clicker/scenes/generated-hq/time-gym.png",
+  antiGravityGym: "/game/macho-clicker/scenes/generated-hq/anti-gravity-gym.png",
+  proteinPrism: "/game/macho-clicker/scenes/generated-hq/protein-prism-room.png",
+  chanceMachine: "/game/macho-clicker/scenes/generated-hq/muscle-gacha-arcade.png",
+  fractalMuscle: "/game/macho-clicker/scenes/generated-hq/fractal-reactor-room.png",
+  idleverseGym: "/game/macho-clicker/scenes/generated-hq/idleverse-gym.png",
+  cortexTrainer: "/game/macho-clicker/scenes/generated-hq/cortex-trainer-room.png",
+  finalMacho: "/game/macho-clicker/scenes/generated-hq/final-macho-arena.png",
 };
 
 const getUpgradeSceneImage = (key: UpgradeKey) => upgradeSceneImages[key];
@@ -1921,14 +1921,14 @@ export function MachoClickerPage() {
 
               <div className="absolute inset-x-0 bottom-0 h-40 bg-[linear-gradient(180deg,transparent_0%,rgba(124,45,18,0.7)_90%)]" />
               <div className="absolute inset-x-4 bottom-5 top-24 overflow-y-auto rounded-[28px] border-4 border-[#7C2D12] bg-[#2A140B] shadow-inner">
-                <div className="grid auto-rows-[8.5rem] divide-y-2 divide-[#2A140B]">
+                <div className="grid auto-rows-[10.5rem] divide-y-2 divide-[#2A140B]">
                   {visualUpgrades.map((upgrade) => {
                     const level = state.upgrades[upgrade.key];
                     const visibleCount = getUpgradeVisibleCount(level);
                     return (
                       <div
                         key={upgrade.key}
-                        className={`relative grid min-h-0 grid-cols-[10.5rem_minmax(0,1fr)] items-stretch overflow-hidden bg-gradient-to-r ${getUpgradeSceneClass(upgrade.key)}`}
+                        className={`relative grid min-h-0 grid-cols-[11.5rem_minmax(0,1fr)] items-stretch overflow-hidden bg-gradient-to-r ${getUpgradeSceneClass(upgrade.key)}`}
                         onMouseEnter={() => setHoveredGymUpgradeKey(upgrade.key)}
                         onMouseLeave={() => setHoveredGymUpgradeKey(null)}
                         onFocus={() => setHoveredGymUpgradeKey(upgrade.key)}
