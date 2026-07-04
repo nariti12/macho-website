@@ -28,6 +28,9 @@ const BUILDING_FRENZY_MULTIPLIER = 20;
 const GOLDEN_SPAWN_MIN_MS = 5 * 60 * 1000;
 const GOLDEN_SPAWN_MAX_MS = 15 * 60 * 1000;
 const GOLDEN_LIFETIME_MS = 13_000;
+const MUSCLE_CRYSTAL_GROW_MS = 24 * 60 * 60 * 1000;
+const BUILDING_LEVEL_BONUS_RATE = 0.01;
+const GOLDEN_HISTORY_LIMIT = 12;
 
 type UpgradeKey =
   | "pushUp"
@@ -87,6 +90,11 @@ type GameState = {
   handMadeMuscle: number;
   clickCount: number;
   upgrades: Record<UpgradeKey, number>;
+  buildingLevels: Record<UpgradeKey, number>;
+  muscleCrystals: number;
+  nextMuscleCrystalAt: number;
+  goldenClicks: number;
+  goldenHistory: GoldenHistoryEntry[];
   purchasedPowerUps: string[];
   activeBuffs: ActiveBuff[];
   prestigeLevel: number;
@@ -150,6 +158,13 @@ type ActiveBuff = {
   endAt: number;
 };
 
+type GoldenHistoryEntry = {
+  id: string;
+  name: string;
+  detail: string;
+  createdAt: number;
+};
+
 type SeasonalEvent = {
   name: string;
   description: string;
@@ -178,6 +193,11 @@ type BalanceBenchmark = {
   muscle: number;
   perSecond: number;
   upgrades: Record<UpgradeKey, number>;
+};
+
+type GoldenEffect = {
+  id: "lucky" | "frenzy" | "clickFrenzy" | "buildingFrenzy" | "jackpot";
+  weight: number;
 };
 
 const upgrades: Upgrade[] = [
@@ -487,6 +507,29 @@ const upgradeSceneImages: Record<UpgradeKey, string> = {
 const getUpgradeSceneImage = (key: UpgradeKey) => upgradeSceneImages[key];
 
 const emptyUpgrades: Record<UpgradeKey, number> = {
+  pushUp: 0,
+  abRoller: 0,
+  dumbbell: 0,
+  protein: 0,
+  chicken: 0,
+  benchPress: 0,
+  trainer: 0,
+  gym: 0,
+  supplementStore: 0,
+  mealPrepLab: 0,
+  machoPortal: 0,
+  timeGym: 0,
+  antiGravityGym: 0,
+  proteinPrism: 0,
+  chanceMachine: 0,
+  fractalMuscle: 0,
+  muscleConsole: 0,
+  idleverseGym: 0,
+  cortexTrainer: 0,
+  finalMacho: 0,
+};
+
+const emptyBuildingLevels: Record<UpgradeKey, number> = {
   pushUp: 0,
   abRoller: 0,
   dumbbell: 0,
@@ -833,7 +876,21 @@ const generatedAchievements: Achievement[] = [
     category: "ゴールデン",
     title: "ゴールデン初体験",
     description: "ゴールデンプロテイン効果を発動",
-    isUnlocked: (state) => state.activeBuffs.length > 0,
+    isUnlocked: (state) => state.goldenClicks >= 1 || state.activeBuffs.length > 0,
+  },
+  {
+    key: "golden-10",
+    category: "ゴールデン",
+    title: "黄金慣れ",
+    description: "ゴールデンプロテインを10回獲得",
+    isUnlocked: (state) => state.goldenClicks >= 10,
+  },
+  {
+    key: "golden-77",
+    category: "ゴールデン",
+    title: "黄金ハンター",
+    description: "ゴールデンプロテインを77回獲得",
+    isUnlocked: (state) => state.goldenClicks >= 77,
   },
   {
     key: "ascension-3",
@@ -849,6 +906,27 @@ const generatedAchievements: Achievement[] = [
     description: "仕上げ直しを10回実行",
     isUnlocked: (state) => state.ascensionCount >= 10,
   },
+  {
+    key: "first-crystal",
+    category: "隠し",
+    title: "筋肉結晶",
+    description: "筋肉結晶を初めて獲得",
+    isUnlocked: (state) => state.muscleCrystals >= 1 || Object.values(state.buildingLevels).some((level) => level >= 1),
+  },
+  {
+    key: "building-level-1",
+    category: "建物別",
+    title: "設備レベル開始",
+    description: "いずれかの設備レベルを1にした",
+    isUnlocked: (state) => Object.values(state.buildingLevels).some((level) => level >= 1),
+  },
+  {
+    key: "building-level-10",
+    category: "建物別",
+    title: "設備レベル10",
+    description: "いずれかの設備レベルを10にした",
+    isUnlocked: (state) => Object.values(state.buildingLevels).some((level) => level >= 10),
+  },
 ];
 
 const achievements: Achievement[] = [...baseAchievements, ...generatedAchievements].filter(
@@ -861,6 +939,11 @@ const initialState: GameState = {
   handMadeMuscle: 0,
   clickCount: 0,
   upgrades: emptyUpgrades,
+  buildingLevels: emptyBuildingLevels,
+  muscleCrystals: 0,
+  nextMuscleCrystalAt: Date.now() + MUSCLE_CRYSTAL_GROW_MS,
+  goldenClicks: 0,
+  goldenHistory: [],
   purchasedPowerUps: [],
   activeBuffs: [],
   prestigeLevel: 0,
@@ -954,6 +1037,19 @@ const formatRate = (value: number) =>
 
 const getUpgradeCost = (upgrade: Upgrade, level: number) => Math.ceil(upgrade.baseCost * upgrade.costRate ** level);
 
+const getBuildingLevelMultiplier = (state: GameState, key: UpgradeKey) =>
+  1 + (state.buildingLevels[key] ?? 0) * BUILDING_LEVEL_BONUS_RATE;
+
+const getNextMuscleCrystalText = (timestamp: number) => {
+  const remainingMs = timestamp - Date.now();
+  if (remainingMs <= 0) return "収穫できます";
+
+  const totalMinutes = Math.ceil(remainingMs / 60_000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${hours}時間${minutes.toString().padStart(2, "0")}分`;
+};
+
 const getShortage = (muscle: number, cost: number) => Math.max(0, cost - muscle);
 
 const getPurchaseProgress = (muscle: number, cost: number) => Math.min(100, Math.max(0, (muscle / cost) * 100));
@@ -1025,6 +1121,26 @@ const soundFiles: Record<SoundType, string> = {
   golden: "/sounds/macho-clicker/golden.wav",
 };
 
+const goldenEffects: GoldenEffect[] = [
+  { id: "lucky", weight: 45 },
+  { id: "frenzy", weight: 30 },
+  { id: "clickFrenzy", weight: 14 },
+  { id: "buildingFrenzy", weight: 9 },
+  { id: "jackpot", weight: 2 },
+];
+
+const pickGoldenEffect = () => {
+  const totalWeight = goldenEffects.reduce((total, effect) => total + effect.weight, 0);
+  let roll = Math.random() * totalWeight;
+
+  for (const effect of goldenEffects) {
+    roll -= effect.weight;
+    if (roll <= 0) return effect.id;
+  }
+
+  return goldenEffects[0].id;
+};
+
 const getDumbbellOrbitItems = (count: number) => {
   const ringCapacities = [18, 28, 40, 54, 72, 96];
   const items: { index: number; angle: number; radius: string; size: number }[] = [];
@@ -1094,7 +1210,9 @@ const getBuildingMultiplierWithPendingPowerUp = (state: GameState, key: UpgradeK
 };
 
 const getBuildingUnitProduction = (state: GameState, upgrade: Upgrade, pendingPowerUp?: PowerUpgrade) =>
-  (upgrade.perSecondBonus ?? 0) * getBuildingMultiplierWithPendingPowerUp(state, upgrade.key, pendingPowerUp);
+  (upgrade.perSecondBonus ?? 0) *
+  getBuildingMultiplierWithPendingPowerUp(state, upgrade.key, pendingPowerUp) *
+  getBuildingLevelMultiplier(state, upgrade.key);
 
 const getBuildingTotalProduction = (state: GameState, upgrade: Upgrade, pendingPowerUp?: PowerUpgrade) =>
   getBuildingUnitProduction(state, upgrade, pendingPowerUp) * state.upgrades[upgrade.key];
@@ -1343,6 +1461,8 @@ const BuildingProductionDetails = ({
   upgrade: Upgrade;
 }) => {
   const owned = state.upgrades[upgrade.key];
+  const buildingLevel = state.buildingLevels[upgrade.key];
+  const levelMultiplier = getBuildingLevelMultiplier(state, upgrade.key);
   const unitProduction = getBuildingUnitProduction(state, upgrade);
   const totalProduction = getBuildingTotalProduction(state, upgrade);
   const nextTotalProduction = totalProduction + unitProduction;
@@ -1357,6 +1477,9 @@ const BuildingProductionDetails = ({
       </div>
       <div className="col-span-2 rounded-xl bg-[#FFE7C2] px-3 py-2">
         合計生産<br />+{formatRate(totalProduction)}/秒
+      </div>
+      <div className="col-span-2 rounded-xl bg-[#FFE7C2] px-3 py-2">
+        設備レベル<br />Lv.{buildingLevel} / x{levelMultiplier.toLocaleString("ja-JP", { maximumFractionDigits: 2 })}
       </div>
       <div className="col-span-2 rounded-xl bg-[#7C2D12] px-3 py-2 text-white">
         次に買うと +{formatRate(unitProduction)}/秒、合計 +{formatRate(nextTotalProduction)}/秒
@@ -1433,6 +1556,26 @@ const normalizeSavedUpgrades = (value?: Partial<Record<UpgradeKey, number>>) => 
   ),
 });
 
+const normalizeSavedBuildingLevels = (value?: Partial<Record<UpgradeKey, number>>) => ({
+  ...emptyBuildingLevels,
+  ...Object.fromEntries(
+    upgrades.map((upgrade) => [upgrade.key, Math.max(0, Math.floor(value?.[upgrade.key] ?? 0))])
+  ),
+});
+
+const normalizeGoldenHistory = (value?: GoldenHistoryEntry[]) =>
+  Array.isArray(value)
+    ? value
+        .filter(
+          (entry): entry is GoldenHistoryEntry =>
+            typeof entry?.id === "string" &&
+            typeof entry.name === "string" &&
+            typeof entry.detail === "string" &&
+            typeof entry.createdAt === "number"
+        )
+        .slice(0, GOLDEN_HISTORY_LIMIT)
+    : [];
+
 const readSavedState = (): GameState => {
   if (typeof window === "undefined") return initialState;
 
@@ -1447,6 +1590,12 @@ const readSavedState = (): GameState => {
       handMadeMuscle: typeof saved.handMadeMuscle === "number" ? clampScore(saved.handMadeMuscle) : 0,
       clickCount: typeof saved.clickCount === "number" ? Math.max(0, Math.floor(saved.clickCount)) : 0,
       upgrades: normalizeSavedUpgrades(saved.upgrades),
+      buildingLevels: normalizeSavedBuildingLevels(saved.buildingLevels),
+      muscleCrystals: typeof saved.muscleCrystals === "number" ? Math.max(0, Math.floor(saved.muscleCrystals)) : 0,
+      nextMuscleCrystalAt:
+        typeof saved.nextMuscleCrystalAt === "number" ? saved.nextMuscleCrystalAt : Date.now() + MUSCLE_CRYSTAL_GROW_MS,
+      goldenClicks: typeof saved.goldenClicks === "number" ? Math.max(0, Math.floor(saved.goldenClicks)) : 0,
+      goldenHistory: normalizeGoldenHistory(saved.goldenHistory),
       purchasedPowerUps: Array.isArray(saved.purchasedPowerUps)
         ? saved.purchasedPowerUps.filter((id): id is string => typeof id === "string")
         : [],
@@ -1527,6 +1676,7 @@ export function MachoClickerPage() {
   const nextGoal = getNextTitleGoal(state.totalMuscle);
   const titleProgress = Math.min(100, Math.max(0, (state.totalMuscle / nextGoal.value) * 100));
   const ownedUpgradeCount = Object.values(state.upgrades).reduce((total, level) => total + level, 0);
+  const totalBuildingLevel = Object.values(state.buildingLevels).reduce((total, level) => total + level, 0);
   const visualOwnedUpgradeCount = visualUpgrades.reduce((total, upgrade) => total + state.upgrades[upgrade.key], 0);
   const newsLines = getNewsLines(state, title, perSecond);
   const news = newsLines[newsIndex % newsLines.length];
@@ -1542,6 +1692,7 @@ export function MachoClickerPage() {
   const purchasedPowerUps = powerUpgrades.filter((powerUp) => state.purchasedPowerUps.includes(powerUp.id));
   const displayNumber = (value: number) => formatDisplayNumber(value, numberNotation);
   const nextShopGoal = getNextShopGoal(state);
+  const canHarvestMuscleCrystal = state.nextMuscleCrystalAt <= Date.now();
   const achievementCategoryCounts = (["累計", "クリック", "設備数", "建物別", "ゴールデン", "仕上げ直し", "隠し"] as const).map(
     (category) => ({
       category,
@@ -1803,26 +1954,83 @@ export function MachoClickerPage() {
     });
   };
 
+  const harvestMuscleCrystal = () => {
+    const now = Date.now();
+    setState((current) => {
+      if (current.nextMuscleCrystalAt > now) {
+        playSound("blocked");
+        return current;
+      }
+
+      setPurchaseFlash("筋肉結晶 +1");
+      window.setTimeout(() => setPurchaseFlash(null), 1200);
+      playSound("buy");
+
+      return {
+        ...current,
+        muscleCrystals: current.muscleCrystals + 1,
+        nextMuscleCrystalAt: now + MUSCLE_CRYSTAL_GROW_MS,
+        lastSavedAt: now,
+      };
+    });
+  };
+
+  const levelUpBuilding = (upgrade: Upgrade) => {
+    setState((current) => {
+      if (current.muscleCrystals <= 0 || current.upgrades[upgrade.key] <= 0) {
+        playSound("blocked");
+        return current;
+      }
+
+      setPurchaseFlash(`${upgrade.name} レベル +1`);
+      window.setTimeout(() => setPurchaseFlash(null), 1200);
+      playSound("buy");
+
+      return {
+        ...current,
+        muscleCrystals: current.muscleCrystals - 1,
+        buildingLevels: {
+          ...current.buildingLevels,
+          [upgrade.key]: current.buildingLevels[upgrade.key] + 1,
+        },
+        lastSavedAt: Date.now(),
+      };
+    });
+  };
+
   const collectGoldenProtein = () => {
     if (!goldenProtein) return;
-    const roll = Math.random();
+    const effect = pickGoldenEffect();
     const now = Date.now();
+    let historyEntry: GoldenHistoryEntry = {
+      id: `golden-${now}`,
+      name: "ゴールデンプロテイン",
+      detail: "効果を獲得しました。",
+      createdAt: now,
+    };
 
-    if (roll < 0.5) {
+    if (effect === "lucky") {
       const bonus = Math.floor(
         Math.min(state.muscle * LUCKY_BANK_RATE + LUCKY_FLAT_BONUS, perSecond * LUCKY_CPS_SECONDS + LUCKY_FLAT_BONUS) *
           getGoldenMultiplier(state)
       );
       const safeBonus = Math.max(15, bonus);
+      historyEntry = {
+        ...historyEntry,
+        name: "Lucky",
+        detail: `+${formatNumber(safeBonus)} 筋肉`,
+      };
       spawnClickEffects(safeBonus);
       setState((current) => ({
         ...current,
         muscle: clampScore(current.muscle + safeBonus),
         totalMuscle: clampScore(current.totalMuscle + safeBonus),
+        goldenClicks: current.goldenClicks + 1,
+        goldenHistory: [historyEntry, ...current.goldenHistory].slice(0, GOLDEN_HISTORY_LIMIT),
         lastSavedAt: now,
       }));
       setPurchaseFlash(`Lucky! +${formatNumber(safeBonus)}`);
-    } else if (roll < 0.76) {
+    } else if (effect === "frenzy") {
       const buff: ActiveBuff = {
         id: `frenzy-${now}`,
         type: "frenzy",
@@ -1830,13 +2038,20 @@ export function MachoClickerPage() {
         multiplier: FRENZY_MULTIPLIER,
         endAt: now + FRENZY_DURATION_MS,
       };
+      historyEntry = {
+        ...historyEntry,
+        name: "パンプアップ",
+        detail: `${FRENZY_MULTIPLIER}倍 / ${Math.round(FRENZY_DURATION_MS / 1000)}秒`,
+      };
       setState((current) => ({
         ...current,
         activeBuffs: upsertBuff(current.activeBuffs, buff),
+        goldenClicks: current.goldenClicks + 1,
+        goldenHistory: [historyEntry, ...current.goldenHistory].slice(0, GOLDEN_HISTORY_LIMIT),
         lastSavedAt: now,
       }));
       setPurchaseFlash(`パンプアップ: ${FRENZY_MULTIPLIER}倍`);
-    } else if (roll < 0.92) {
+    } else if (effect === "clickFrenzy") {
       const buff: ActiveBuff = {
         id: `click-frenzy-${now}`,
         type: "clickFrenzy",
@@ -1844,13 +2059,20 @@ export function MachoClickerPage() {
         multiplier: CLICK_FRENZY_MULTIPLIER,
         endAt: now + CLICK_FRENZY_DURATION_MS,
       };
+      historyEntry = {
+        ...historyEntry,
+        name: "鬼クリック",
+        detail: `${CLICK_FRENZY_MULTIPLIER}倍 / ${Math.round(CLICK_FRENZY_DURATION_MS / 1000)}秒`,
+      };
       setState((current) => ({
         ...current,
         activeBuffs: upsertBuff(current.activeBuffs, buff),
+        goldenClicks: current.goldenClicks + 1,
+        goldenHistory: [historyEntry, ...current.goldenHistory].slice(0, GOLDEN_HISTORY_LIMIT),
         lastSavedAt: now,
       }));
       setPurchaseFlash(`鬼クリック: ${CLICK_FRENZY_MULTIPLIER}倍`);
-    } else {
+    } else if (effect === "buildingFrenzy") {
       const buff: ActiveBuff = {
         id: `building-frenzy-${now}`,
         type: "buildingFrenzy",
@@ -1858,12 +2080,36 @@ export function MachoClickerPage() {
         multiplier: BUILDING_FRENZY_MULTIPLIER,
         endAt: now + BUILDING_FRENZY_DURATION_MS,
       };
+      historyEntry = {
+        ...historyEntry,
+        name: "設備暴走",
+        detail: `${BUILDING_FRENZY_MULTIPLIER}倍 / ${Math.round(BUILDING_FRENZY_DURATION_MS / 1000)}秒`,
+      };
       setState((current) => ({
         ...current,
         activeBuffs: upsertBuff(current.activeBuffs, buff),
+        goldenClicks: current.goldenClicks + 1,
+        goldenHistory: [historyEntry, ...current.goldenHistory].slice(0, GOLDEN_HISTORY_LIMIT),
         lastSavedAt: now,
       }));
       setPurchaseFlash(`設備暴走: ${BUILDING_FRENZY_MULTIPLIER}倍`);
+    } else {
+      const jackpot = Math.max(777, Math.floor((perSecond * 3600 + state.muscle * 0.07 + 777) * getGoldenMultiplier(state)));
+      historyEntry = {
+        ...historyEntry,
+        name: "レアプロテイン",
+        detail: `+${formatNumber(jackpot)} 筋肉`,
+      };
+      spawnClickEffects(jackpot);
+      setState((current) => ({
+        ...current,
+        muscle: clampScore(current.muscle + jackpot),
+        totalMuscle: clampScore(current.totalMuscle + jackpot),
+        goldenClicks: current.goldenClicks + 1,
+        goldenHistory: [historyEntry, ...current.goldenHistory].slice(0, GOLDEN_HISTORY_LIMIT),
+        lastSavedAt: now,
+      }));
+      setPurchaseFlash(`レアプロテイン! +${formatNumber(jackpot)}`);
     }
     setGoldenProtein(null);
     playSound("golden");
@@ -1875,6 +2121,11 @@ export function MachoClickerPage() {
     const nextState = {
       ...initialState,
       upgrades: { ...emptyUpgrades },
+      buildingLevels: { ...emptyBuildingLevels },
+      muscleCrystals: 0,
+      nextMuscleCrystalAt: Date.now() + MUSCLE_CRYSTAL_GROW_MS,
+      goldenClicks: 0,
+      goldenHistory: [],
       purchasedPowerUps: [],
       activeBuffs: [],
       prestigeLevel: 0,
@@ -1918,6 +2169,12 @@ export function MachoClickerPage() {
         handMadeMuscle: typeof parsed.handMadeMuscle === "number" ? clampScore(parsed.handMadeMuscle) : 0,
         clickCount: typeof parsed.clickCount === "number" ? Math.max(0, Math.floor(parsed.clickCount)) : 0,
         upgrades: normalizeSavedUpgrades(parsed.upgrades),
+        buildingLevels: normalizeSavedBuildingLevels(parsed.buildingLevels),
+        muscleCrystals: typeof parsed.muscleCrystals === "number" ? Math.max(0, Math.floor(parsed.muscleCrystals)) : 0,
+        nextMuscleCrystalAt:
+          typeof parsed.nextMuscleCrystalAt === "number" ? parsed.nextMuscleCrystalAt : Date.now() + MUSCLE_CRYSTAL_GROW_MS,
+        goldenClicks: typeof parsed.goldenClicks === "number" ? Math.max(0, Math.floor(parsed.goldenClicks)) : 0,
+        goldenHistory: normalizeGoldenHistory(parsed.goldenHistory),
         purchasedPowerUps: Array.isArray(parsed.purchasedPowerUps)
           ? parsed.purchasedPowerUps.filter((id): id is string => typeof id === "string")
           : [],
@@ -1946,6 +2203,11 @@ export function MachoClickerPage() {
       totalMuscle: state.totalMuscle,
       clickCount: 0,
       upgrades: { ...emptyUpgrades },
+      buildingLevels: state.buildingLevels,
+      muscleCrystals: state.muscleCrystals,
+      nextMuscleCrystalAt: state.nextMuscleCrystalAt,
+      goldenClicks: state.goldenClicks,
+      goldenHistory: state.goldenHistory,
       purchasedPowerUps: [],
       activeBuffs: [],
       prestigeLevel: state.prestigeLevel + pendingPrestige,
@@ -2020,7 +2282,7 @@ export function MachoClickerPage() {
                 <div className="mt-1 text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">{bodyStage.label}</div>
               </div>
               <div className="bg-[#9A3412] px-5 py-4">
-                <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="grid grid-cols-4 gap-3 text-center">
                   <div>
                     <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#FFB45D]">Current</div>
                     <div className="macho-counter mt-1 text-2xl font-black text-white" title={formatFullNumber(state.muscle)}>
@@ -2036,6 +2298,10 @@ export function MachoClickerPage() {
                     <div className="macho-counter mt-1 text-2xl font-black text-white" title={formatFullNumber(state.totalMuscle)}>
                       {displayNumber(state.totalMuscle)}
                     </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#FFB45D]">Crystal</div>
+                    <div className="macho-counter mt-1 text-2xl font-black text-white">{formatFullNumber(state.muscleCrystals)}</div>
                   </div>
                 </div>
               </div>
@@ -2277,7 +2543,10 @@ export function MachoClickerPage() {
                     <div className="text-xs font-black uppercase tracking-[0.18em] text-[#C2410C]">Machoda Gym</div>
                     <div className="text-xl font-black">ジム設備</div>
                   </div>
-                  <div className="rounded-full bg-[#FF8A23] px-4 py-2 text-sm font-black text-white">設備合計 {visualOwnedUpgradeCount}</div>
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    <div className="rounded-full bg-[#FF8A23] px-4 py-2 text-sm font-black text-white">設備合計 {visualOwnedUpgradeCount}</div>
+                    <div className="rounded-full bg-[#7C2D12] px-4 py-2 text-sm font-black text-white">設備Lv {totalBuildingLevel}</div>
+                  </div>
                 </div>
               </div>
 
@@ -2286,6 +2555,8 @@ export function MachoClickerPage() {
                 <div className="grid auto-rows-[10.5rem] divide-y-2 divide-[#2A140B]">
                   {visualUpgrades.map((upgrade) => {
                     const level = state.upgrades[upgrade.key];
+                    const buildingLevel = state.buildingLevels[upgrade.key];
+                    const canLevelUp = state.muscleCrystals > 0 && level > 0;
                     const visibleCount = getUpgradeVisibleCount(level);
                     return (
                       <div
@@ -2311,9 +2582,17 @@ export function MachoClickerPage() {
                             <div className="mt-1 break-words text-sm font-black leading-tight">{upgrade.name}</div>
                           </div>
                           <div className="flex items-center justify-between gap-2">
-                            <span className="rounded-full bg-[#FF8A23] px-2 py-1 text-xs font-black text-white">Lv.{level}</span>
+                            <span className="rounded-full bg-[#FF8A23] px-2 py-1 text-xs font-black text-white">所持 {level}</span>
                             <Image src={upgrade.spriteSrc} alt="" width={34} height={34} className="h-8 w-8 object-contain drop-shadow-lg" />
                           </div>
+                          <button
+                            type="button"
+                            onClick={() => levelUpBuilding(upgrade)}
+                            disabled={!canLevelUp}
+                            className="mt-2 rounded-xl border border-[#FFB45D]/50 bg-[#FFE7C2] px-2 py-1 text-xs font-black text-[#7C2D12] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-45"
+                          >
+                            設備Lv.{buildingLevel} +1
+                          </button>
                         </div>
                         <div className="relative z-10 grid max-w-full grid-flow-col grid-rows-3 content-center gap-x-2 gap-y-2 overflow-hidden px-4 py-4 [grid-auto-columns:2rem] sm:[grid-auto-columns:2.25rem] 2xl:[grid-auto-columns:2.5rem]">
                           {Array.from({ length: visibleCount }, (_, index) => (
@@ -2453,6 +2732,7 @@ export function MachoClickerPage() {
                 <div className="grid gap-3">
                   {upgrades.map((upgrade) => {
                     const level = state.upgrades[upgrade.key];
+                    const buildingLevel = state.buildingLevels[upgrade.key];
                     const cost = getUpgradeCost(upgrade, level);
                     const canBuy = state.muscle >= cost;
                     const shortage = getShortage(state.muscle, cost);
@@ -2496,7 +2776,7 @@ export function MachoClickerPage() {
                               <span className="rounded-full bg-[#7C2D12] px-2 py-1 text-xs font-black text-white">Lv.{level}</span>
                             </span>
                             <span className="mt-1 block text-xs font-bold text-[#9A3412]">
-                              1個 +{formatRate(unitProduction)}/秒
+                              1個 +{formatRate(unitProduction)}/秒 / 設備Lv.{buildingLevel}
                             </span>
                             <span
                               className={`mt-3 block rounded-xl px-3 py-2 text-sm font-black ${
@@ -2608,6 +2888,8 @@ export function MachoClickerPage() {
                     ["手作り筋肉", displayNumber(state.handMadeMuscle)],
                     ["クリック数", formatFullNumber(state.clickCount)],
                     ["設備数", formatFullNumber(ownedUpgradeCount)],
+                    ["設備レベル", formatFullNumber(totalBuildingLevel)],
+                    ["筋肉結晶", `${formatFullNumber(state.muscleCrystals)}個`],
                     ["実績", `${state.unlockedAchievements.length}/${achievements.length}`],
                     ["季節イベント", seasonalEvent.name],
                   ].map(([label, value]) => (
@@ -2625,6 +2907,22 @@ export function MachoClickerPage() {
                   <div className="mt-2 text-xs font-bold text-[#9A3412]">
                     実績 {state.unlockedAchievements.length}/{achievements.length} / 実績サポート x
                     {achievementSupportMultiplier.toLocaleString("ja-JP", { maximumFractionDigits: 3 })}
+                  </div>
+                </div>
+                <div className="mt-5 rounded-2xl bg-[#FFF4E7] p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-black text-[#7C2D12]">筋肉結晶</div>
+                      <div className="mt-1 text-xs font-bold text-[#9A3412]">次の収穫: {getNextMuscleCrystalText(state.nextMuscleCrystalAt)}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={harvestMuscleCrystal}
+                      disabled={!canHarvestMuscleCrystal}
+                      className="rounded-xl bg-[#FF8A23] px-3 py-2 text-xs font-black text-white disabled:cursor-not-allowed disabled:bg-[#D6A169]"
+                    >
+                      収穫
+                    </button>
                   </div>
                 </div>
                 <div className="mt-5 rounded-2xl bg-[#FFF4E7] p-4">
@@ -2716,6 +3014,28 @@ export function MachoClickerPage() {
               <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Season</div>
               <div className="mt-1 text-lg font-black">{seasonalEvent.name}</div>
             </div>
+            <div className="rounded-2xl bg-white/10 px-4 py-3 md:col-span-2 xl:col-span-2">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Muscle Crystal</div>
+                  <div className="mt-1 text-2xl font-black">{formatFullNumber(state.muscleCrystals)}個</div>
+                  <div className="mt-1 text-xs font-bold text-white/70">次の収穫: {getNextMuscleCrystalText(state.nextMuscleCrystalAt)}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={harvestMuscleCrystal}
+                  disabled={!canHarvestMuscleCrystal}
+                  className="rounded-2xl bg-[#FF8A23] px-4 py-3 text-sm font-black text-white transition hover:bg-[#f57200] disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/35"
+                >
+                  収穫
+                </button>
+              </div>
+            </div>
+            <div className="rounded-2xl bg-white/10 px-4 py-3 md:col-span-2 xl:col-span-2">
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Building Level</div>
+              <div className="mt-1 text-2xl font-black">{formatFullNumber(totalBuildingLevel)}</div>
+              <div className="mt-1 text-xs font-bold text-white/70">設備Lv1ごとに対象設備 +1%</div>
+            </div>
             <div className="rounded-2xl bg-white/10 px-4 py-3">
               <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Unlocked</div>
               <div className="mt-2 flex flex-wrap gap-2">
@@ -2745,6 +3065,75 @@ export function MachoClickerPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+            <div className="rounded-2xl bg-white/10 px-4 py-3 md:col-span-4 xl:col-span-7">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Building Levels</div>
+                  <div className="mt-1 text-sm font-bold text-white/75">
+                    筋肉結晶を1個使って、所有済み設備を1レベル上げられます。
+                  </div>
+                </div>
+                <div className="grid max-h-72 flex-1 gap-2 overflow-y-auto pr-1 md:grid-cols-2 xl:grid-cols-4">
+                  {upgrades.map((upgrade) => {
+                    const canLevelUp = state.muscleCrystals > 0 && state.upgrades[upgrade.key] > 0;
+                    return (
+                      <button
+                        key={`building-level-${upgrade.key}`}
+                        type="button"
+                        onClick={() => levelUpBuilding(upgrade)}
+                        disabled={!canLevelUp}
+                        className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#1E1009] px-3 py-3 text-left transition hover:border-[#FFB45D] disabled:cursor-not-allowed disabled:opacity-45"
+                      >
+                        <Image src={upgrade.spriteSrc} alt="" width={38} height={38} className="h-9 w-9 object-contain" />
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-black">{upgrade.name}</span>
+                          <span className="mt-1 block text-xs font-bold text-white/70">
+                            所持 {state.upgrades[upgrade.key]} / 設備Lv.{state.buildingLevels[upgrade.key]}
+                          </span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+            <div className="rounded-2xl bg-white/10 px-4 py-3 md:col-span-4 xl:col-span-3">
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Golden History</div>
+              <div className="mt-1 text-sm font-bold text-white/70">獲得回数 {formatFullNumber(state.goldenClicks)}回</div>
+              <div className="mt-3 max-h-56 space-y-2 overflow-y-auto pr-1">
+                {state.goldenHistory.length === 0 ? (
+                  <div className="rounded-2xl bg-[#1E1009] px-4 py-3 text-sm font-bold text-white/55">
+                    ゴールデンプロテインを取ると履歴が残ります。
+                  </div>
+                ) : (
+                  state.goldenHistory.map((entry) => (
+                    <div key={entry.id} className="rounded-2xl bg-[#1E1009] px-4 py-3">
+                      <div className="text-sm font-black">{entry.name}</div>
+                      <div className="mt-1 text-xs font-bold text-white/70">{entry.detail}</div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+            <div className="rounded-2xl bg-white/10 px-4 py-3 md:col-span-4 xl:col-span-4">
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Achievement List</div>
+              <div className="mt-3 grid max-h-56 gap-2 overflow-y-auto pr-1 md:grid-cols-2">
+                {achievements.map((achievement) => {
+                  const unlocked = state.unlockedAchievements.includes(achievement.key);
+                  return (
+                    <div
+                      key={`achievement-list-${achievement.key}`}
+                      className={`rounded-2xl border px-4 py-3 ${
+                        unlocked ? "border-[#FFB45D] bg-[#1E1009]" : "border-white/10 bg-[#1E1009]/70 text-white/45"
+                      }`}
+                    >
+                      <div className="text-sm font-black">{unlocked ? achievement.title : "？？？"}</div>
+                      <div className="mt-1 text-xs font-bold">{unlocked ? achievement.description : "条件達成で解放"}</div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
             <div className="rounded-2xl bg-white/10 px-4 py-3 md:col-span-2 xl:col-span-7">
