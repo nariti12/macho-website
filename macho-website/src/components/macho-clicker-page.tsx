@@ -120,6 +120,8 @@ type MobilePanel = "click" | "gym" | "shop" | "stats";
 
 type SoundType = "click" | "buy" | "blocked" | "golden";
 
+type NumberNotation = "short" | "japanese" | "full";
+
 type Achievement = {
   key: string;
   title: string;
@@ -162,6 +164,13 @@ type MysteryShopItem = {
   name: string;
   description: string;
   unlockHint: string;
+};
+
+type BalanceBenchmark = {
+  minutes: number;
+  muscle: number;
+  perSecond: number;
+  upgrades: Record<UpgradeKey, number>;
 };
 
 const upgrades: Upgrade[] = [
@@ -768,6 +777,31 @@ const formatNumber = (value: number) => {
 
 const formatFullNumber = (value: number) => Math.floor(value).toLocaleString("ja-JP");
 
+const japaneseNumberUnits = [
+  { value: 1e16, name: "京" },
+  { value: 1e12, name: "兆" },
+  { value: 1e8, name: "億" },
+  { value: 1e4, name: "万" },
+] as const;
+
+const formatJapaneseNumber = (value: number) => {
+  const safeValue = Math.max(0, value);
+  if (safeValue < 10_000) return Math.floor(safeValue).toLocaleString("ja-JP");
+
+  const unit = japaneseNumberUnits.find((candidate) => safeValue >= candidate.value);
+  if (!unit) return Math.floor(safeValue).toLocaleString("ja-JP");
+
+  const scaled = safeValue / unit.value;
+  const decimals = scaled >= 100 ? 0 : scaled >= 10 ? 1 : 2;
+  return `${scaled.toLocaleString("ja-JP", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  })}${unit.name}`;
+};
+
+const formatDisplayNumber = (value: number, notation: NumberNotation) =>
+  notation === "full" ? formatFullNumber(value) : notation === "japanese" ? formatJapaneseNumber(value) : formatNumber(value);
+
 const formatRate = (value: number) =>
   value >= 1_000_000
     ? formatNumber(value)
@@ -778,6 +812,8 @@ const formatRate = (value: number) =>
 const getUpgradeCost = (upgrade: Upgrade, level: number) => Math.ceil(upgrade.baseCost * upgrade.costRate ** level);
 
 const getShortage = (muscle: number, cost: number) => Math.max(0, cost - muscle);
+
+const getPurchaseProgress = (muscle: number, cost: number) => Math.min(100, Math.max(0, (muscle / cost) * 100));
 
 const getUpgradeVisibleCount = (level: number) => Math.min(180, level);
 
@@ -939,6 +975,59 @@ const getPerSecond = (state: GameState) =>
   getFrenzyMultiplier(state) *
   getBuildingFrenzyMultiplier(state) *
   getSeasonalEvent().multiplier;
+
+const createBenchmarkState = (): GameState => ({
+  ...initialState,
+  upgrades: { ...emptyUpgrades },
+  lastSavedAt: Date.now(),
+});
+
+const simulateBalanceBenchmark = (minutes: number, clicksPerSecond = 1): BalanceBenchmark => {
+  let simulated = createBenchmarkState();
+  const seconds = minutes * 60;
+
+  for (let second = 0; second < seconds; second += 1) {
+    const clickGain = getClickPower(simulated) * clicksPerSecond;
+    const passiveGain = getPerSecond(simulated);
+    simulated = {
+      ...simulated,
+      muscle: clampScore(simulated.muscle + clickGain + passiveGain),
+      totalMuscle: clampScore(simulated.totalMuscle + clickGain + passiveGain),
+      handMadeMuscle: clampScore(simulated.handMadeMuscle + clickGain),
+      clickCount: simulated.clickCount + clicksPerSecond,
+    };
+
+    let purchased = true;
+    while (purchased) {
+      purchased = false;
+      const nextUpgrade = [...upgrades]
+        .reverse()
+        .find((upgrade) => simulated.muscle >= getUpgradeCost(upgrade, simulated.upgrades[upgrade.key]));
+
+      if (!nextUpgrade) continue;
+
+      const cost = getUpgradeCost(nextUpgrade, simulated.upgrades[nextUpgrade.key]);
+      simulated = {
+        ...simulated,
+        muscle: clampScore(simulated.muscle - cost),
+        upgrades: {
+          ...simulated.upgrades,
+          [nextUpgrade.key]: simulated.upgrades[nextUpgrade.key] + 1,
+        },
+      };
+      purchased = true;
+    }
+  }
+
+  return {
+    minutes,
+    muscle: simulated.muscle,
+    perSecond: getPerSecond(simulated),
+    upgrades: simulated.upgrades,
+  };
+};
+
+const balanceBenchmarks = [5, 10, 30, 60].map((minutes) => simulateBalanceBenchmark(minutes));
 
 const getTitle = (totalMuscle: number) => {
   if (totalMuscle >= 10_000_000) return "マチョ神";
@@ -1223,6 +1312,8 @@ export function MachoClickerPage() {
   const [hoveredMysteryId, setHoveredMysteryId] = useState<string | null>(null);
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("click");
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [numberNotation, setNumberNotation] = useState<NumberNotation>("short");
+  const [reducedEffects, setReducedEffects] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const effectIdRef = useRef(0);
   const stateRef = useRef<GameState>(initialState);
@@ -1250,6 +1341,8 @@ export function MachoClickerPage() {
   const unlockedPowerUps = powerUpgrades.filter(
     (powerUp) => powerUp.unlock(state) && !state.purchasedPowerUps.includes(powerUp.id)
   );
+  const purchasedPowerUps = powerUpgrades.filter((powerUp) => state.purchasedPowerUps.includes(powerUp.id));
+  const displayNumber = (value: number) => formatDisplayNumber(value, numberNotation);
 
   useEffect(() => {
     setState(readSavedState());
@@ -1672,7 +1765,12 @@ export function MachoClickerPage() {
   };
 
   return (
-    <div className="macho-game-shell min-h-screen overflow-hidden bg-[#FFF3DF] text-slate-900" onPointerDown={unlockAudio}>
+    <div
+      className={`macho-game-shell min-h-screen overflow-hidden bg-[#FFF3DF] text-slate-900 ${
+        reducedEffects ? "macho-reduced-effects" : ""
+      }`}
+      onPointerDown={unlockAudio}
+    >
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_18%_8%,rgba(255,184,77,0.34),transparent_32%),radial-gradient(circle_at_86%_0%,rgba(251,146,60,0.26),transparent_30%),linear-gradient(180deg,#FFF7EB_0%,#FDBA74_48%,#7C2D12_100%)]" />
       <SiteHeader profileImageSrc={profileImageSrc} />
 
@@ -1702,18 +1800,18 @@ export function MachoClickerPage() {
                 <div className="grid grid-cols-3 gap-3 text-center">
                   <div>
                     <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#FFB45D]">Current</div>
-                    <div className="mt-1 text-2xl font-black text-white" title={formatFullNumber(state.muscle)}>
-                      {formatNumber(state.muscle)}
+                    <div className="macho-counter mt-1 text-2xl font-black text-white" title={formatFullNumber(state.muscle)}>
+                      {displayNumber(state.muscle)}
                     </div>
                   </div>
                   <div>
                     <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#FFB45D]">Per Second</div>
-                    <div className="mt-1 text-2xl font-black text-white">+{formatRate(perSecond)}</div>
+                    <div className="macho-counter mt-1 text-2xl font-black text-white">+{displayNumber(perSecond)}</div>
                   </div>
                   <div>
                     <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#FFB45D]">Total</div>
-                    <div className="mt-1 text-2xl font-black text-white" title={formatFullNumber(state.totalMuscle)}>
-                      {formatNumber(state.totalMuscle)}
+                    <div className="macho-counter mt-1 text-2xl font-black text-white" title={formatFullNumber(state.totalMuscle)}>
+                      {displayNumber(state.totalMuscle)}
                     </div>
                   </div>
                 </div>
@@ -1736,7 +1834,7 @@ export function MachoClickerPage() {
                   <div className="h-full rounded-full bg-gradient-to-r from-[#FFB45D] to-[#FF5A1F]" style={{ width: `${titleProgress}%` }} />
                 </div>
                 <div className="mt-2 flex items-center justify-between gap-2 text-[11px] font-black text-[#FFE7C2]">
-                  <span>基礎CPS +{formatRate(basePerSecond)}</span>
+                  <span>基礎CPS +{displayNumber(basePerSecond)}</span>
                   <button
                     type="button"
                     onClick={ascend}
@@ -1786,9 +1884,9 @@ export function MachoClickerPage() {
             ))}
           </nav>
 
-          <section className="macho-game-panel grid min-h-[calc(100vh-12rem)] overflow-hidden border-y-4 border-[#7C2D12] bg-[#7C2D12] shadow-2xl xl:grid-cols-[minmax(620px,760px)_minmax(0,1fr)_390px]">
+            <section className="macho-game-panel grid min-h-[calc(100vh-12rem)] overflow-hidden border-y-4 border-[#7C2D12] bg-[#7C2D12] shadow-2xl xl:grid-cols-[minmax(700px,860px)_minmax(0,1fr)_400px] 2xl:grid-cols-[minmax(780px,980px)_minmax(0,1fr)_420px]">
             <aside
-              className={`relative min-h-[calc(100vh-15rem)] flex-col items-center justify-between overflow-hidden border-b-4 border-[#7C2D12] bg-[#451A03] p-4 text-center sm:p-5 xl:flex xl:min-h-[800px] xl:border-b-0 xl:border-r-4 ${
+              className={`relative min-h-[calc(100vh-15rem)] flex-col items-center justify-between overflow-hidden border-b-4 border-[#7C2D12] bg-[#451A03] p-4 text-center sm:p-5 xl:flex xl:min-h-[850px] xl:border-b-0 xl:border-r-4 ${
                 mobilePanel === "click" ? "flex" : "hidden"
               }`}
             >
@@ -1801,6 +1899,7 @@ export function MachoClickerPage() {
                 className="macho-click-stage-bg z-0 object-cover"
               />
               <div className="macho-click-stage-glow pointer-events-none absolute inset-0 z-[1]" />
+              <div className="macho-gym-light pointer-events-none absolute inset-x-0 top-0 z-[2] h-48" />
               <div className="pointer-events-none absolute inset-0 overflow-hidden">
                 {ambientItems.map((item) => (
                   <span
@@ -1823,10 +1922,14 @@ export function MachoClickerPage() {
               </div>
               <div className="relative z-10 w-full rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB]/95 px-4 py-4 text-[#7C2D12] shadow-xl">
                 <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Muscle Points</div>
-                <div className="mt-1 break-words text-4xl font-black sm:text-5xl" title={formatFullNumber(state.muscle)}>
-                  {formatNumber(state.muscle)}
+                <div className="macho-counter mt-1 break-words text-4xl font-black sm:text-5xl" title={formatFullNumber(state.muscle)}>
+                  {displayNumber(state.muscle)}
                 </div>
-                <div className="mt-2 text-sm font-bold text-[#9A3412]">クリック: +{formatNumber(clickPower)} / COMBO {combo}</div>
+                <div className="mt-2 grid gap-2 text-sm font-bold text-[#9A3412] sm:grid-cols-3">
+                  <span>クリック +{displayNumber(clickPower)}</span>
+                  <span>毎秒 +{displayNumber(perSecond)}</span>
+                  <span>COMBO {combo}</span>
+                </div>
               </div>
 
               {floatingGains.map((item) => (
@@ -1835,7 +1938,7 @@ export function MachoClickerPage() {
                   className="macho-float pointer-events-none absolute z-40 text-4xl font-black text-white drop-shadow-[0_4px_0_rgba(124,45,18,0.85)]"
                   style={{ left: `${item.x}%`, top: `${item.y}%` }}
                 >
-                  +{formatNumber(item.value)}
+                  +{displayNumber(item.value)}
                 </div>
               ))}
 
@@ -1871,7 +1974,7 @@ export function MachoClickerPage() {
                 </button>
               ) : null}
 
-              <div className="relative z-20 my-4 flex aspect-square w-full max-w-[760px] items-center justify-center overflow-visible sm:my-5">
+              <div className="relative z-20 my-4 flex aspect-square w-full max-w-[860px] items-center justify-center overflow-visible sm:my-5">
                 {dumbbellOrbitItems.map((item) => (
                   <span
                     key={`dumbbell-orbit-${item.index}`}
@@ -1899,7 +2002,7 @@ export function MachoClickerPage() {
                 <button
                   type="button"
                   onClick={handleClick}
-                  className={`macho-character-button macho-breathe group relative z-30 flex w-[min(58vw,21rem)] items-end justify-center bg-transparent p-0 transition hover:scale-[1.05] active:scale-95 ${
+                  className={`macho-character-button macho-breathe group relative z-30 flex w-[min(66vw,24rem)] items-end justify-center bg-transparent p-0 transition hover:scale-[1.05] active:scale-95 ${
                     clickBurst ? "macho-pop" : ""
                   }`}
                   aria-label="マチョ田をクリック"
@@ -1910,7 +2013,7 @@ export function MachoClickerPage() {
                     width={280}
                     height={280}
                     priority
-                    className="relative z-10 h-auto w-[min(52vw,21rem)] drop-shadow-[0_28px_30px_rgba(0,0,0,0.65)] transition duration-300 group-hover:scale-105"
+                    className="relative z-10 h-auto w-[min(60vw,24rem)] drop-shadow-[0_28px_30px_rgba(0,0,0,0.65)] transition duration-300 group-hover:scale-105"
                     style={{ transform: `scale(${bodyStage.scale})` }}
                   />
                 </button>
@@ -2073,6 +2176,22 @@ export function MachoClickerPage() {
                       })}
                     </div>
                   )}
+                  {purchasedPowerUps.length > 0 ? (
+                    <div className="mt-4 border-t border-[#FED7AA] pt-3">
+                      <div className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-[#C2410C]">取得済み</div>
+                      <div className="grid grid-cols-6 gap-2">
+                        {purchasedPowerUps.slice(0, 18).map((powerUp) => (
+                          <span
+                            key={`owned-${powerUp.id}`}
+                            title={`${powerUp.name}: ${powerUp.effectLabel}`}
+                            className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#FDBA74] bg-[#FFE7C2] shadow-inner"
+                          >
+                            <Image src={powerUp.spriteSrc} alt="" width={34} height={34} className="h-8 w-8 object-contain" />
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
                 <div className="grid gap-3">
                   {upgrades.map((upgrade) => {
@@ -2080,6 +2199,8 @@ export function MachoClickerPage() {
                     const cost = getUpgradeCost(upgrade, level);
                     const canBuy = state.muscle >= cost;
                     const shortage = getShortage(state.muscle, cost);
+                    const purchaseProgress = getPurchaseProgress(state.muscle, cost);
+                    const unitProduction = getBuildingUnitProduction(state, upgrade);
 
                     return (
                       <button
@@ -2091,15 +2212,23 @@ export function MachoClickerPage() {
                         onMouseLeave={() => setHoveredShopUpgradeKey(null)}
                         onFocus={() => setHoveredShopUpgradeKey(upgrade.key)}
                         onBlur={() => setHoveredShopUpgradeKey(null)}
-                        className={`group relative overflow-hidden rounded-2xl border p-3 text-left transition ${
+                        className={`group relative overflow-hidden rounded-2xl border-2 p-3 text-left transition ${
                           canBuy
                             ? "macho-shop-ready border-[#C2410C] bg-white text-[#7C2D12] shadow-[0_0_0_3px_rgba(255,138,35,0.18),0_10px_24px_rgba(194,65,12,0.16)] hover:-translate-y-0.5 hover:shadow-[0_0_0_4px_rgba(255,138,35,0.32),0_16px_32px_rgba(194,65,12,0.26)]"
-                            : "cursor-not-allowed border-[#FED7AA] bg-[#FFF4E7] text-[#9A3412]/45 grayscale"
+                            : "border-[#FED7AA] bg-[#FFF4E7] text-[#9A3412]/62"
                         }`}
                       >
+                        <span className="absolute inset-x-0 bottom-0 h-1.5 bg-[#E7B374]">
+                          <span
+                            className={`block h-full ${canBuy ? "bg-[#22C55E]" : "bg-[#FF8A23]"}`}
+                            style={{ width: `${purchaseProgress}%` }}
+                          />
+                        </span>
                         <div className="flex items-start gap-3">
                           <span
-                            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border-2 border-[#FED7AA] bg-[#FFF4E7] shadow-inner"
+                            className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border-2 shadow-inner ${
+                              canBuy ? "border-[#C2410C] bg-[#FFE7C2]" : "border-[#FED7AA] bg-[#FFF4E7] grayscale"
+                            }`}
                           >
                             <Image src={upgrade.spriteSrc} alt="" width={58} height={58} className="h-14 w-14 object-contain" />
                           </span>
@@ -2108,12 +2237,15 @@ export function MachoClickerPage() {
                               <span className="font-black">{upgrade.name}</span>
                               <span className="rounded-full bg-[#7C2D12] px-2 py-1 text-xs font-black text-white">Lv.{level}</span>
                             </span>
+                            <span className="mt-1 block text-xs font-bold text-[#9A3412]">
+                              1個 +{formatRate(unitProduction)}/秒
+                            </span>
                             <span
                               className={`mt-3 block rounded-xl px-3 py-2 text-sm font-black ${
                                 canBuy ? "bg-[#7C2D12] text-white" : "bg-[#D6A169] text-[#7C2D12]"
                               }`}
                             >
-                              {canBuy ? "必要" : "あと"}: {formatNumber(canBuy ? cost : shortage)} 筋肉
+                              {canBuy ? "必要" : "あと"}: {displayNumber(canBuy ? cost : shortage)} 筋肉
                             </span>
                           </span>
                         </div>
@@ -2174,7 +2306,7 @@ export function MachoClickerPage() {
                     </div>
                     <div className="mt-3 text-sm font-semibold leading-6">{hoveredPowerUp.description}</div>
                     <div className="mt-3 rounded-xl bg-[#FFE7C2] px-3 py-2 text-xs font-black">
-                      必要: {formatNumber(hoveredPowerUp.cost)} 筋肉
+                      必要: {displayNumber(hoveredPowerUp.cost)} 筋肉
                     </div>
                     <PowerUpgradeDetails state={state} powerUp={hoveredPowerUp} />
                   </div>
@@ -2201,11 +2333,11 @@ export function MachoClickerPage() {
                 <h2 className="text-2xl font-black">統計・セーブ</h2>
                 <div className="mt-4 grid gap-3">
                   {[
-                    ["現在", formatNumber(state.muscle)],
-                    ["累計", formatNumber(state.totalMuscle)],
+                    ["現在", displayNumber(state.muscle)],
+                    ["累計", displayNumber(state.totalMuscle)],
                     ["毎秒", `+${formatRate(perSecond)}`],
-                    ["クリック", `+${formatNumber(clickPower)}`],
-                    ["手作り筋肉", formatNumber(state.handMadeMuscle)],
+                    ["クリック", `+${displayNumber(clickPower)}`],
+                    ["手作り筋肉", displayNumber(state.handMadeMuscle)],
                     ["クリック数", formatFullNumber(state.clickCount)],
                     ["設備数", formatFullNumber(ownedUpgradeCount)],
                     ["実績", `${state.unlockedAchievements.length}/${achievements.length}`],
@@ -2216,6 +2348,47 @@ export function MachoClickerPage() {
                       <div className="mt-1 break-words text-lg font-black">{value}</div>
                     </div>
                   ))}
+                </div>
+                <div className="mt-5 rounded-2xl bg-[#FFF4E7] p-4">
+                  <div className="text-sm font-black text-[#7C2D12]">表示設定</div>
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setNumberNotation("short")}
+                      className={`rounded-xl px-3 py-2 text-xs font-black ${
+                        numberNotation === "short" ? "bg-[#FF8A23] text-white" : "bg-white text-[#7C2D12]"
+                      }`}
+                    >
+                      英語
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNumberNotation("japanese")}
+                      className={`rounded-xl px-3 py-2 text-xs font-black ${
+                        numberNotation === "japanese" ? "bg-[#FF8A23] text-white" : "bg-white text-[#7C2D12]"
+                      }`}
+                    >
+                      日本語
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNumberNotation("full")}
+                      className={`rounded-xl px-3 py-2 text-xs font-black ${
+                        numberNotation === "full" ? "bg-[#FF8A23] text-white" : "bg-white text-[#7C2D12]"
+                      }`}
+                    >
+                      全桁
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setReducedEffects((current) => !current)}
+                      className={`col-span-3 rounded-xl px-3 py-2 text-xs font-black ${
+                        reducedEffects ? "bg-[#7C2D12] text-white" : "bg-white text-[#7C2D12]"
+                      }`}
+                    >
+                      軽量モード {reducedEffects ? "ON" : "OFF"}
+                    </button>
+                  </div>
                 </div>
                 <div className="mt-5 grid grid-cols-3 gap-2">
                   <button type="button" onClick={manualSave} className="rounded-2xl bg-[#7C2D12] px-3 py-3 text-xs font-black text-white">
@@ -2248,7 +2421,7 @@ export function MachoClickerPage() {
             </div>
             <div className="rounded-2xl bg-white/10 px-4 py-3">
               <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Hand-made</div>
-              <div className="mt-1 text-2xl font-black">{formatNumber(state.handMadeMuscle)}</div>
+              <div className="mt-1 text-2xl font-black">{displayNumber(state.handMadeMuscle)}</div>
             </div>
             <div className="rounded-2xl bg-white/10 px-4 py-3">
               <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Ascensions</div>
@@ -2279,13 +2452,29 @@ export function MachoClickerPage() {
             <div className="rounded-2xl bg-white/10 px-4 py-3 md:col-span-2 xl:col-span-7">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                  <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Save Data</div>
+                  <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Options / Save Data</div>
                   <div className="mt-1 text-sm font-bold text-white/80">
                     オートセーブ対応。必要なら手動保存・エクスポート・インポートできます。
                   </div>
                   {saveMessage ? <div className="mt-2 text-sm font-black text-[#FFE7C2]">{saveMessage}</div> : null}
                 </div>
-                <div className="grid grid-cols-3 gap-2 lg:w-[26rem]">
+                <div className="grid grid-cols-2 gap-2 lg:w-[38rem] xl:grid-cols-5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setNumberNotation((current) => (current === "short" ? "japanese" : current === "japanese" ? "full" : "short"))
+                    }
+                    className="rounded-2xl bg-white/10 px-4 py-3 text-sm font-black text-white transition hover:bg-white/20"
+                  >
+                    表示 {numberNotation === "short" ? "英語" : numberNotation === "japanese" ? "日本語" : "全桁"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReducedEffects((current) => !current)}
+                    className="rounded-2xl bg-white/10 px-4 py-3 text-sm font-black text-white transition hover:bg-white/20"
+                  >
+                    軽量 {reducedEffects ? "ON" : "OFF"}
+                  </button>
                   <button type="button" onClick={manualSave} className="rounded-2xl bg-[#7C2D12] px-4 py-3 text-sm font-black text-white transition hover:bg-[#9A3412]">
                     保存
                   </button>
@@ -2296,6 +2485,25 @@ export function MachoClickerPage() {
                     Import
                   </button>
                 </div>
+              </div>
+            </div>
+            <div className="rounded-2xl bg-white/10 px-4 py-3 md:col-span-4 xl:col-span-7">
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Balance Benchmarks</div>
+              <div className="mt-2 text-sm font-bold text-white/75">
+                1秒1クリックで自動購入した場合の目安です。Cookie Clicker 実測値と比較して難易度調整に使います。
+              </div>
+              <div className="mt-4 grid gap-2 md:grid-cols-4">
+                {balanceBenchmarks.map((benchmark) => {
+                  const owned = Object.values(benchmark.upgrades).reduce((total, level) => total + level, 0);
+                  return (
+                    <div key={benchmark.minutes} className="rounded-2xl border border-white/10 bg-[#1E1009] px-4 py-3">
+                      <div className="text-xs font-black text-[#FFB45D]">{benchmark.minutes}分</div>
+                      <div className="mt-1 text-lg font-black">{displayNumber(benchmark.muscle)}</div>
+                      <div className="mt-1 text-xs font-bold text-white/70">毎秒 +{displayNumber(benchmark.perSecond)}</div>
+                      <div className="mt-1 text-xs font-bold text-white/70">設備 {owned}個</div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </section>
@@ -2339,7 +2547,7 @@ export function MachoClickerPage() {
                           </span>
                           <span className="font-semibold text-slate-700">{entry.nickname}</span>
                         </div>
-                        <span className="text-sm font-black text-[#7C2D12]">{formatNumber(entry.score)}</span>
+                        <span className="text-sm font-black text-[#7C2D12]">{displayNumber(entry.score)}</span>
                       </li>
                     ))}
                   </ol>

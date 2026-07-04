@@ -382,6 +382,44 @@ main {
   }
 }
 
+@keyframes macho-counter-pulse {
+  0%,
+  100% {
+    text-shadow: 0 0 0 rgba(255, 231, 194, 0);
+    transform: translateY(0);
+  }
+  50% {
+    text-shadow: 0 0 18px rgba(255, 231, 194, 0.55);
+    transform: translateY(-0.04rem);
+  }
+}
+
+@keyframes macho-gym-light {
+  0%,
+  100% {
+    opacity: 0.34;
+    transform: translateX(-6%);
+  }
+  50% {
+    opacity: 0.72;
+    transform: translateX(6%);
+  }
+}
+
+@keyframes macho-stage-dust {
+  0% {
+    transform: translate3d(-4%, 0, 0);
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.42;
+  }
+  100% {
+    transform: translate3d(4%, -1.2rem, 0);
+    opacity: 0.18;
+  }
+}
+
 
 .macho-float {
   animation: macho-float 0.95s ease-out forwards;
@@ -472,6 +510,32 @@ main {
   background-size: 160% 100%, 100% 100%, 100% 100%;
 }
 
+.macho-gym-light {
+  animation: macho-gym-light 4.8s ease-in-out infinite;
+  background:
+    radial-gradient(ellipse at 24% 0%, rgba(255, 247, 214, 0.64), transparent 42%),
+    radial-gradient(ellipse at 72% 0%, rgba(255, 180, 93, 0.34), transparent 46%),
+    linear-gradient(180deg, rgba(255, 247, 214, 0.24), transparent);
+  mix-blend-mode: screen;
+}
+
+.macho-gym-light::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  animation: macho-stage-dust 7s ease-in-out infinite alternate;
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.28) 0 1px, transparent 2px),
+    radial-gradient(circle at 70% 42%, rgba(255, 255, 255, 0.18) 0 1px, transparent 2px),
+    radial-gradient(circle at 44% 68%, rgba(255, 255, 255, 0.16) 0 1px, transparent 2px);
+  background-size: 92px 92px, 128px 128px, 160px 160px;
+}
+
+.macho-counter {
+  animation: macho-counter-pulse 1.6s ease-in-out infinite;
+  font-variant-numeric: tabular-nums;
+}
+
 .macho-character-button {
   filter: drop-shadow(0 28px 34px rgba(0, 0, 0, 0.62));
 }
@@ -509,4 +573,27 @@ main {
     inset 0 0 0 2px rgba(255, 231, 194, 0.35),
     inset 0 -10px 0 rgba(42, 20, 11, 0.18),
     0 28px 80px rgba(69, 26, 3, 0.28);
+}
+
+.macho-reduced-effects .macho-click-stage-bg,
+.macho-reduced-effects .macho-click-stage-glow,
+.macho-reduced-effects .macho-gym-light,
+.macho-reduced-effects .macho-ambient-fall,
+.macho-reduced-effects .macho-breathe,
+.macho-reduced-effects .macho-cursor,
+.macho-reduced-effects .macho-unit,
+.macho-reduced-effects .macho-counter,
+.macho-reduced-effects .macho-shop-ready,
+.macho-reduced-effects .macho-shop-ready::after {
+  animation: none !important;
+}
+
+@media (max-width: 767px) {
+  .macho-news {
+    animation-duration: 22s;
+  }
+
+  .macho-shop-ready::after {
+    display: none;
+  }
 }
