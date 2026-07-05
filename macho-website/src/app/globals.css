@@ -1067,6 +1067,106 @@ main {
     linear-gradient(180deg, rgba(255, 247, 235, 0.96), rgba(255, 231, 194, 0.92));
 }
 
+.macho-ui-label {
+  color: #ffb45d;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  line-height: 1.1;
+  text-transform: uppercase;
+  text-shadow: 0 2px 0 rgba(42, 20, 11, 0.38);
+}
+
+.macho-ui-number {
+  color: #fff7eb;
+  font-variant-numeric: tabular-nums;
+  font-weight: 950;
+  letter-spacing: -0.04em;
+  line-height: 0.98;
+  text-shadow:
+    0 4px 0 rgba(42, 20, 11, 0.58),
+    0 0 24px rgba(255, 180, 93, 0.34);
+}
+
+.macho-paper-card {
+  border: 2px solid rgba(253, 186, 116, 0.86);
+  background:
+    linear-gradient(180deg, rgba(255, 247, 235, 0.96), rgba(255, 231, 194, 0.94)),
+    repeating-linear-gradient(0deg, rgba(124, 45, 18, 0.04) 0 1px, transparent 1px 7px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    inset 0 -5px 0 rgba(124, 45, 18, 0.08),
+    0 10px 22px rgba(69, 26, 3, 0.12);
+}
+
+.macho-dark-card {
+  border: 1px solid rgba(255, 180, 93, 0.22);
+  background:
+    linear-gradient(180deg, rgba(255, 180, 93, 0.12), rgba(42, 20, 11, 0.38)),
+    #1e1009;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 247, 235, 0.12),
+    inset 0 -5px 0 rgba(0, 0, 0, 0.18);
+}
+
+.macho-game-button {
+  border: 2px solid rgba(253, 186, 116, 0.74);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 247, 235, 0.28),
+    0 5px 0 rgba(69, 26, 3, 0.5),
+    0 12px 22px rgba(69, 26, 3, 0.14);
+}
+
+.macho-game-button:hover:not(:disabled) {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+.macho-game-button:active:not(:disabled) {
+  box-shadow:
+    inset 0 2px 8px rgba(42, 20, 11, 0.32),
+    0 2px 0 rgba(69, 26, 3, 0.5);
+  transform: translateY(3px);
+}
+
+.macho-game-button:disabled,
+.macho-game-button[aria-disabled="true"] {
+  cursor: not-allowed;
+  filter: saturate(0.7);
+}
+
+.macho-shop-card {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 247, 235, 0.58),
+    inset 0 -5px 0 rgba(124, 45, 18, 0.1),
+    0 10px 24px rgba(69, 26, 3, 0.16);
+}
+
+.macho-shop-card[data-shop-state="purchasable"] {
+  background:
+    radial-gradient(circle at 85% 18%, rgba(34, 197, 94, 0.16), transparent 9rem),
+    linear-gradient(180deg, #fffdf7 0%, #ffe7c2 100%);
+}
+
+.macho-shop-card[data-shop-state="unavailable"] {
+  background:
+    linear-gradient(180deg, rgba(255, 244, 231, 0.9), rgba(214, 161, 105, 0.72));
+}
+
+.macho-shop-card[data-shop-state="locked"] {
+  background:
+    radial-gradient(circle at 18% 12%, rgba(255, 180, 93, 0.12), transparent 8rem),
+    linear-gradient(180deg, #3b1d0f, #1e1009);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 231, 194, 0.12),
+    0 10px 24px rgba(0, 0, 0, 0.22);
+}
+
+.macho-shop-card[data-shop-state="owned"] {
+  background:
+    linear-gradient(180deg, rgba(255, 231, 194, 0.95), rgba(255, 180, 93, 0.7));
+}
+
 .macho-shop-shelf {
   background:
     linear-gradient(180deg, rgba(255, 247, 235, 0.72), rgba(255, 231, 194, 0.76)),

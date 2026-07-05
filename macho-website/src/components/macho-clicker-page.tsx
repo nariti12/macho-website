@@ -2586,24 +2586,24 @@ export function MachoClickerPage() {
               <div className="bg-[#9A3412] px-5 py-4">
                 <div className="grid grid-cols-4 gap-3 text-center">
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#FFB45D]">Current</div>
-                    <div className="macho-counter mt-1 text-2xl font-black text-white" title={formatFullNumber(state.muscle)}>
+                    <div className="macho-ui-label">Current</div>
+                    <div className="macho-counter macho-ui-number mt-1 text-2xl" title={formatFullNumber(state.muscle)}>
                       {displayNumber(state.muscle)}
                     </div>
                   </div>
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#FFB45D]">Per Second</div>
-                    <div className="macho-counter mt-1 text-2xl font-black text-white">+{displayNumber(perSecond)}</div>
+                    <div className="macho-ui-label">Per Second</div>
+                    <div className="macho-counter macho-ui-number mt-1 text-2xl">+{displayNumber(perSecond)}</div>
                   </div>
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#FFB45D]">Total</div>
-                    <div className="macho-counter mt-1 text-2xl font-black text-white" title={formatFullNumber(state.totalMuscle)}>
+                    <div className="macho-ui-label">Total</div>
+                    <div className="macho-counter macho-ui-number mt-1 text-2xl" title={formatFullNumber(state.totalMuscle)}>
                       {displayNumber(state.totalMuscle)}
                     </div>
                   </div>
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#FFB45D]">Crystal</div>
-                    <div className="macho-counter mt-1 text-2xl font-black text-white">{formatFullNumber(state.muscleCrystals)}</div>
+                    <div className="macho-ui-label">Crystal</div>
+                    <div className="macho-counter macho-ui-number mt-1 text-2xl">{formatFullNumber(state.muscleCrystals)}</div>
                   </div>
                 </div>
               </div>
@@ -2615,7 +2615,7 @@ export function MachoClickerPage() {
                   <button
                     type="button"
                     onClick={() => setSoundEnabled((current) => !current)}
-                    className="rounded-full border border-[#FED7AA]/60 px-3 py-1 text-[11px] font-black text-[#FFE7C2] transition hover:bg-[#7C2D12]"
+                    className="macho-game-button rounded-full bg-[#7C2D12] px-3 py-1 text-[11px] font-black text-[#FFE7C2] transition"
                     aria-pressed={soundEnabled}
                   >
                     効果音 {soundEnabled ? "ON" : "OFF"}
@@ -2630,7 +2630,7 @@ export function MachoClickerPage() {
                     type="button"
                     onClick={ascend}
                     disabled={pendingPrestige <= 0}
-                    className="rounded-full bg-[#FF8A23] px-3 py-1 text-white transition hover:bg-[#f57200] disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/45"
+                    className="macho-game-button rounded-full bg-[#FF8A23] px-3 py-1 text-white transition disabled:bg-white/20 disabled:text-white/45"
                   >
                     仕上げ直し +{pendingPrestige}%
                   </button>
@@ -2731,12 +2731,12 @@ export function MachoClickerPage() {
               </div>
               ) : null}
               <div
-                className={`relative z-10 w-full rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB]/95 px-4 py-4 text-[#7C2D12] shadow-xl ${
+                className={`macho-paper-card relative z-10 w-full rounded-2xl px-4 py-4 text-[#7C2D12] ${
                   purchasePulse ? "macho-counter-purchase" : ""
                 }`}
               >
-                <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Muscle Points</div>
-                <div className="macho-counter mt-1 break-words text-4xl font-black sm:text-5xl" title={formatFullNumber(state.muscle)}>
+                <div className="text-xs font-black uppercase tracking-[0.18em] text-[#C2410C]">Muscle Points</div>
+                <div className="macho-counter mt-1 break-words text-4xl font-black tracking-tight sm:text-5xl" title={formatFullNumber(state.muscle)}>
                   {displayNumber(animatedMuscle)}
                 </div>
                 <div className="mt-2 grid gap-2 text-sm font-bold text-[#9A3412] sm:grid-cols-3">
@@ -2852,11 +2852,11 @@ export function MachoClickerPage() {
               </div>
 
               <div className="relative z-10 grid w-full grid-cols-2 gap-3 text-left">
-                <div className="rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB]/95 px-4 py-3 text-[#7C2D12] shadow-lg">
+                <div className="macho-paper-card rounded-2xl px-4 py-3 text-[#7C2D12]">
                   <div className="text-xs font-black text-[#C2410C]">称号</div>
                   <div className="mt-1 text-xl font-black">{title}</div>
                 </div>
-                <div className="rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB]/95 px-4 py-3 text-[#7C2D12] shadow-lg">
+                <div className="macho-paper-card rounded-2xl px-4 py-3 text-[#7C2D12]">
                   <div className="text-xs font-black text-[#C2410C]">クリック数</div>
                   <div className="mt-1 text-xl font-black">{formatFullNumber(state.clickCount)}</div>
                 </div>
@@ -2994,7 +2994,7 @@ export function MachoClickerPage() {
                     リセット
                   </button>
                 </div>
-                <div className="mb-5 rounded-2xl border-2 border-[#FDBA74] bg-white p-3">
+                <div className="macho-paper-card mb-5 rounded-2xl p-3">
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <h3 className="text-base font-black text-[#7C2D12]">アップグレード</h3>
                     <span className="rounded-full bg-[#FFE7C2] px-2 py-1 text-xs font-black text-[#C2410C]">
@@ -3017,12 +3017,13 @@ export function MachoClickerPage() {
                               if (canBuyPowerUp) buyPowerUpgrade(powerUp, event);
                             }}
                             aria-disabled={!canBuyPowerUp}
+                            data-shop-state={canBuyPowerUp ? "purchasable" : "unavailable"}
                             onMouseEnter={() => setHoveredPowerUpId(powerUp.id)}
                             onMouseMove={updateTooltipPosition}
                             onMouseLeave={() => setHoveredPowerUpId(null)}
                             onFocus={() => setHoveredPowerUpId(powerUp.id)}
                             onBlur={() => setHoveredPowerUpId(null)}
-                            className={`macho-upgrade-slot relative flex h-16 items-center justify-center overflow-hidden rounded-2xl border-2 transition ${
+                            className={`macho-shop-card macho-upgrade-slot relative flex h-16 items-center justify-center overflow-hidden rounded-2xl border-2 transition ${
                               canBuyPowerUp
                                 ? "macho-shop-ready border-[#C2410C] bg-[#FFF4E7] shadow-[0_0_0_3px_rgba(255,138,35,0.22),0_10px_24px_rgba(194,65,12,0.2)] hover:-translate-y-0.5 hover:shadow-[0_0_0_4px_rgba(255,138,35,0.35),0_16px_30px_rgba(194,65,12,0.28)]"
                                 : "cursor-not-allowed border-[#FED7AA] bg-[#FFF4E7] grayscale opacity-45"
@@ -3042,7 +3043,8 @@ export function MachoClickerPage() {
                           <span
                             key={`owned-${powerUp.id}`}
                             title={`${powerUp.name}: ${powerUp.effectLabel}`}
-                            className={`macho-upgrade-slot flex h-11 w-11 items-center justify-center rounded-xl border border-[#FDBA74] bg-[#FFE7C2] shadow-inner ${
+                            data-shop-state="owned"
+                            className={`macho-shop-card macho-upgrade-slot flex h-11 w-11 items-center justify-center rounded-xl border border-[#FDBA74] bg-[#FFE7C2] shadow-inner ${
                               recentlyPurchasedPowerUpId === powerUp.id ? "macho-powerup-owned-new" : ""
                             }`}
                           >
@@ -3054,7 +3056,7 @@ export function MachoClickerPage() {
                   ) : null}
                 </div>
                 {nextShopGoal ? (
-                  <div className="mb-4 rounded-2xl border-2 border-[#FDBA74] bg-[#FFF4E7] p-3 shadow-inner">
+                  <div className="macho-paper-card mb-4 rounded-2xl p-3">
                     <div className="text-xs font-black uppercase tracking-[0.16em] text-[#C2410C]">次の目標</div>
                     <div className="mt-1 text-sm font-black">{nextShopGoal.upgrade.name}</div>
                     <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#E7B374]">
@@ -3085,12 +3087,13 @@ export function MachoClickerPage() {
                         type="button"
                         onClick={(event) => buyUpgrade(upgrade, event)}
                         aria-disabled={!canBuy}
+                        data-shop-state={canBuy ? "purchasable" : "unavailable"}
                         onMouseEnter={() => setHoveredShopUpgradeKey(upgrade.key)}
                         onMouseMove={updateTooltipPosition}
                         onMouseLeave={() => setHoveredShopUpgradeKey(null)}
                         onFocus={() => setHoveredShopUpgradeKey(upgrade.key)}
                         onBlur={() => setHoveredShopUpgradeKey(null)}
-                        className={`group relative overflow-hidden rounded-2xl border-2 p-3 text-left transition ${
+                        className={`macho-shop-card group relative overflow-hidden rounded-2xl border-2 p-3 text-left transition ${
                           isBuildingFrenzyTarget ? "macho-building-boost" : ""
                         } ${recentlyPurchasedKey === upgrade.key ? "macho-shop-purchased" : ""} ${
                           canBuy
@@ -3137,12 +3140,13 @@ export function MachoClickerPage() {
                       key={item.id}
                       type="button"
                       aria-disabled="true"
+                      data-shop-state="locked"
                       onMouseEnter={() => setHoveredMysteryId(item.id)}
                       onMouseMove={updateTooltipPosition}
                       onMouseLeave={() => setHoveredMysteryId(null)}
                       onFocus={() => setHoveredMysteryId(item.id)}
                       onBlur={() => setHoveredMysteryId(null)}
-                      className="group relative rounded-2xl border border-[#FED7AA] bg-[#3B1D0F] p-3 text-left text-[#FFE7C2]/70 transition"
+                      className="macho-shop-card group relative rounded-2xl border border-[#FED7AA] bg-[#3B1D0F] p-3 text-left text-[#FFE7C2]/70 transition"
                     >
                       <div className="flex items-start gap-3">
                         <span className="macho-locked-slot flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border-2 border-[#9A3412] bg-[#2A140B] text-3xl font-black shadow-inner">
@@ -3326,66 +3330,66 @@ export function MachoClickerPage() {
           </section>
 
           <section className="macho-stats-panel hidden gap-4 rounded-[28px] border border-[#FCD27B]/60 bg-[#2A140B]/90 p-4 text-white shadow-2xl md:mx-2 md:grid md:grid-cols-4 xl:mx-3 xl:grid-cols-7">
-            <div className="rounded-2xl bg-white/10 px-4 py-3">
-              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Achievements</div>
-              <div className="mt-1 text-2xl font-black">{state.unlockedAchievements.length}/{achievements.length}</div>
+            <div className="macho-dark-card rounded-2xl px-4 py-3">
+              <div className="macho-ui-label">Achievements</div>
+              <div className="macho-ui-number mt-1 text-2xl">{state.unlockedAchievements.length}/{achievements.length}</div>
             </div>
-            <div className="rounded-2xl bg-white/10 px-4 py-3">
-              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Protein Shake</div>
+            <div className="macho-dark-card rounded-2xl px-4 py-3">
+              <div className="macho-ui-label">Protein Shake</div>
               <div className="mt-1 text-lg font-black">{proteinShakeName}</div>
               <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/15">
                 <div className="h-full rounded-full bg-[#FFB45D]" style={{ width: `${proteinShakeLevel}%` }} />
               </div>
             </div>
-            <div className="rounded-2xl bg-white/10 px-4 py-3">
-              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Upgrades</div>
-              <div className="mt-1 text-2xl font-black">{ownedUpgradeCount}</div>
+            <div className="macho-dark-card rounded-2xl px-4 py-3">
+              <div className="macho-ui-label">Upgrades</div>
+              <div className="macho-ui-number mt-1 text-2xl">{ownedUpgradeCount}</div>
             </div>
-            <div className="rounded-2xl bg-white/10 px-4 py-3">
-              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Prestige</div>
-              <div className="mt-1 text-2xl font-black">+{state.prestigeLevel}%</div>
+            <div className="macho-dark-card rounded-2xl px-4 py-3">
+              <div className="macho-ui-label">Prestige</div>
+              <div className="macho-ui-number mt-1 text-2xl">+{state.prestigeLevel}%</div>
               <div className="mt-1 text-xs font-bold text-white/70">未使用 {formatFullNumber(availableLegacyPoints)}</div>
             </div>
-            <div className="rounded-2xl bg-white/10 px-4 py-3">
-              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Hand-made</div>
-              <div className="mt-1 text-2xl font-black">{displayNumber(state.handMadeMuscle)}</div>
+            <div className="macho-dark-card rounded-2xl px-4 py-3">
+              <div className="macho-ui-label">Hand-made</div>
+              <div className="macho-ui-number mt-1 text-2xl">{displayNumber(state.handMadeMuscle)}</div>
             </div>
-            <div className="rounded-2xl bg-white/10 px-4 py-3">
-              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Ascensions</div>
-              <div className="mt-1 text-2xl font-black">{formatFullNumber(state.ascensionCount)}</div>
+            <div className="macho-dark-card rounded-2xl px-4 py-3">
+              <div className="macho-ui-label">Ascensions</div>
+              <div className="macho-ui-number mt-1 text-2xl">{formatFullNumber(state.ascensionCount)}</div>
             </div>
-            <div className="rounded-2xl bg-white/10 px-4 py-3">
-              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Season</div>
+            <div className="macho-dark-card rounded-2xl px-4 py-3">
+              <div className="macho-ui-label">Season</div>
               <div className="mt-1 flex items-center gap-2 text-lg font-black">
                 <span className="rounded-lg bg-[#FF8A23] px-2 py-1 text-xs text-white">{seasonalEvent.icon}</span>
                 <span>{seasonalEvent.name}</span>
               </div>
               <div className="mt-1 text-xs font-bold text-white/70">{seasonalEvent.bonusLabel}</div>
             </div>
-            <div className="rounded-2xl bg-white/10 px-4 py-3 md:col-span-2 xl:col-span-2">
+            <div className="macho-dark-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-2">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Muscle Crystal</div>
-                  <div className="mt-1 text-2xl font-black">{formatFullNumber(state.muscleCrystals)}個</div>
+                  <div className="macho-ui-label">Muscle Crystal</div>
+                  <div className="macho-ui-number mt-1 text-2xl">{formatFullNumber(state.muscleCrystals)}個</div>
                   <div className="mt-1 text-xs font-bold text-white/70">次の収穫: {getNextMuscleCrystalText(state.nextMuscleCrystalAt)}</div>
                 </div>
                 <button
                   type="button"
                   onClick={harvestMuscleCrystal}
                   disabled={!canHarvestMuscleCrystal}
-                  className="rounded-2xl bg-[#FF8A23] px-4 py-3 text-sm font-black text-white transition hover:bg-[#f57200] disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/35"
+                  className="macho-game-button rounded-2xl bg-[#FF8A23] px-4 py-3 text-sm font-black text-white transition disabled:bg-white/10 disabled:text-white/35"
                 >
                   収穫
                 </button>
               </div>
             </div>
-            <div className="rounded-2xl bg-white/10 px-4 py-3 md:col-span-2 xl:col-span-2">
-              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Building Level</div>
-              <div className="mt-1 text-2xl font-black">{formatFullNumber(totalBuildingLevel)}</div>
+            <div className="macho-dark-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-2">
+              <div className="macho-ui-label">Building Level</div>
+              <div className="macho-ui-number mt-1 text-2xl">{formatFullNumber(totalBuildingLevel)}</div>
               <div className="mt-1 text-xs font-bold text-white/70">設備Lv1ごとに対象設備 +1%</div>
             </div>
-            <div className="rounded-2xl bg-white/10 px-4 py-3">
-              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Unlocked</div>
+            <div className="macho-dark-card rounded-2xl px-4 py-3">
+              <div className="macho-ui-label">Unlocked</div>
               <div className="mt-2 flex flex-wrap gap-2">
                 {achievements.slice(0, 6).map((achievement) => {
                   const unlocked = state.unlockedAchievements.includes(achievement.key);
@@ -3402,28 +3406,28 @@ export function MachoClickerPage() {
                 })}
               </div>
             </div>
-            <div className="rounded-2xl bg-white/10 px-4 py-3 md:col-span-4 xl:col-span-7">
-              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Achievement Categories</div>
+            <div className="macho-dark-card rounded-2xl px-4 py-3 md:col-span-4 xl:col-span-7">
+              <div className="macho-ui-label">Achievement Categories</div>
               <div className="mt-3 grid gap-2 md:grid-cols-4 xl:grid-cols-7">
                 {achievementCategoryCounts.map((item) => (
-                  <div key={item.category} className="rounded-2xl bg-[#1E1009] px-3 py-3">
-                    <div className="text-xs font-black text-[#FFB45D]">{item.category}</div>
-                    <div className="mt-1 text-lg font-black">
+                  <div key={item.category} className="macho-dark-card rounded-2xl px-3 py-3">
+                    <div className="macho-ui-label">{item.category}</div>
+                    <div className="macho-ui-number mt-1 text-lg">
                       {item.unlocked}/{item.total}
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="rounded-2xl bg-white/10 px-4 py-3 md:col-span-4 xl:col-span-7">
+            <div className="macho-dark-card rounded-2xl px-4 py-3 md:col-span-4 xl:col-span-7">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div>
-                  <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Machoda Legacy</div>
+                  <div className="macho-ui-label">Machoda Legacy</div>
                   <div className="mt-1 text-sm font-bold text-white/75">
                     仕上げ直しで得た永久倍率を使って、周回後も残る便利効果を解放します。
                   </div>
                 </div>
-                <div className="rounded-2xl bg-[#1E1009] px-4 py-3 text-sm font-black text-[#FFE7C2]">
+                <div className="macho-dark-card rounded-2xl px-4 py-3 text-sm font-black text-[#FFE7C2]">
                   使用可能 {formatFullNumber(availableLegacyPoints)} / 合計 {formatFullNumber(state.prestigeLevel)}
                 </div>
               </div>
@@ -3438,7 +3442,8 @@ export function MachoClickerPage() {
                       type="button"
                       onClick={() => buyLegacyUpgrade(legacy)}
                       disabled={!canBuy}
-                      className={`rounded-2xl border px-4 py-4 text-left transition ${
+                      data-shop-state={purchased ? "owned" : canBuy ? "purchasable" : "unavailable"}
+                      className={`macho-game-button macho-shop-card rounded-2xl border px-4 py-4 text-left transition ${
                         purchased
                           ? "border-[#FFB45D] bg-[#FF8A23] text-white shadow-[0_0_24px_rgba(255,138,35,0.32)]"
                           : canBuy
@@ -3459,10 +3464,10 @@ export function MachoClickerPage() {
                 })}
               </div>
             </div>
-            <div className="rounded-2xl bg-white/10 px-4 py-3 md:col-span-4 xl:col-span-7">
+            <div className="macho-dark-card rounded-2xl px-4 py-3 md:col-span-4 xl:col-span-7">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div>
-                  <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Building Levels</div>
+                  <div className="macho-ui-label">Building Levels</div>
                   <div className="mt-1 text-sm font-bold text-white/75">
                     筋肉結晶を1個使って、所有済み設備を1レベル上げられます。
                   </div>
@@ -3476,7 +3481,8 @@ export function MachoClickerPage() {
                         type="button"
                         onClick={() => levelUpBuilding(upgrade)}
                         disabled={!canLevelUp}
-                        className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#1E1009] px-3 py-3 text-left transition hover:border-[#FFB45D] disabled:cursor-not-allowed disabled:opacity-45"
+                        data-shop-state={canLevelUp ? "purchasable" : "unavailable"}
+                        className="macho-game-button macho-shop-card flex items-center gap-3 rounded-2xl border border-white/10 bg-[#1E1009] px-3 py-3 text-left transition hover:border-[#FFB45D] disabled:cursor-not-allowed disabled:opacity-45"
                       >
                         <Image src={upgrade.spriteSrc} alt="" width={38} height={38} className="h-9 w-9 object-contain" />
                         <span className="min-w-0">
@@ -3491,17 +3497,17 @@ export function MachoClickerPage() {
                 </div>
               </div>
             </div>
-            <div className="rounded-2xl bg-white/10 px-4 py-3 md:col-span-4 xl:col-span-3">
-              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Golden History</div>
+            <div className="macho-dark-card rounded-2xl px-4 py-3 md:col-span-4 xl:col-span-3">
+              <div className="macho-ui-label">Golden History</div>
               <div className="mt-1 text-sm font-bold text-white/70">獲得回数 {formatFullNumber(state.goldenClicks)}回</div>
               <div className="mt-3 max-h-56 space-y-2 overflow-y-auto pr-1">
                 {state.goldenHistory.length === 0 ? (
-                  <div className="rounded-2xl bg-[#1E1009] px-4 py-3 text-sm font-bold text-white/55">
+                  <div className="macho-dark-card rounded-2xl px-4 py-3 text-sm font-bold text-white/55">
                     ゴールデンプロテインを取ると履歴が残ります。
                   </div>
                 ) : (
                   state.goldenHistory.map((entry) => (
-                    <div key={entry.id} className="rounded-2xl bg-[#1E1009] px-4 py-3">
+                    <div key={entry.id} className="macho-dark-card rounded-2xl px-4 py-3">
                       <div className="text-sm font-black">{entry.name}</div>
                       <div className="mt-1 text-xs font-bold text-white/70">{entry.detail}</div>
                     </div>
@@ -3509,15 +3515,16 @@ export function MachoClickerPage() {
                 )}
               </div>
             </div>
-            <div className="rounded-2xl bg-white/10 px-4 py-3 md:col-span-4 xl:col-span-4">
-              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Achievement List</div>
+            <div className="macho-dark-card rounded-2xl px-4 py-3 md:col-span-4 xl:col-span-4">
+              <div className="macho-ui-label">Achievement List</div>
               <div className="mt-3 grid max-h-56 gap-2 overflow-y-auto pr-1 md:grid-cols-2">
                 {achievements.map((achievement) => {
                   const unlocked = state.unlockedAchievements.includes(achievement.key);
                   return (
                     <div
                       key={`achievement-list-${achievement.key}`}
-                      className={`rounded-2xl border px-4 py-3 ${
+                      data-shop-state={unlocked ? "owned" : "locked"}
+                      className={`macho-shop-card rounded-2xl border px-4 py-3 ${
                         unlocked ? "border-[#FFB45D] bg-[#1E1009]" : "border-white/10 bg-[#1E1009]/70 text-white/45"
                       }`}
                     >
@@ -3528,10 +3535,10 @@ export function MachoClickerPage() {
                 })}
               </div>
             </div>
-            <div className="rounded-2xl bg-white/10 px-4 py-3 md:col-span-2 xl:col-span-7">
+            <div className="macho-dark-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-7">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                  <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Options / Save Data</div>
+                  <div className="macho-ui-label">Options / Save Data</div>
                   <div className="mt-1 text-sm font-bold text-white/80">
                     オートセーブ対応。必要なら手動保存・エクスポート・インポートできます。
                   </div>
@@ -3543,31 +3550,31 @@ export function MachoClickerPage() {
                     onClick={() =>
                       setNumberNotation((current) => (current === "short" ? "japanese" : current === "japanese" ? "full" : "short"))
                     }
-                    className="rounded-2xl bg-white/10 px-4 py-3 text-sm font-black text-white transition hover:bg-white/20"
+                    className="macho-game-button rounded-2xl bg-white/10 px-4 py-3 text-sm font-black text-white transition hover:bg-white/20"
                   >
                     表示 {numberNotation === "short" ? "英語" : numberNotation === "japanese" ? "日本語" : "全桁"}
                   </button>
                   <button
                     type="button"
                     onClick={() => setReducedEffects((current) => !current)}
-                    className="rounded-2xl bg-white/10 px-4 py-3 text-sm font-black text-white transition hover:bg-white/20"
+                    className="macho-game-button rounded-2xl bg-white/10 px-4 py-3 text-sm font-black text-white transition hover:bg-white/20"
                   >
                     軽量 {reducedEffects ? "ON" : "OFF"}
                   </button>
-                  <button type="button" onClick={manualSave} className="rounded-2xl bg-[#7C2D12] px-4 py-3 text-sm font-black text-white transition hover:bg-[#9A3412]">
+                  <button type="button" onClick={manualSave} className="macho-game-button rounded-2xl bg-[#7C2D12] px-4 py-3 text-sm font-black text-white transition hover:bg-[#9A3412]">
                     保存
                   </button>
-                  <button type="button" onClick={exportSave} className="rounded-2xl bg-[#FF8A23] px-4 py-3 text-sm font-black text-white transition hover:bg-[#f57200]">
+                  <button type="button" onClick={exportSave} className="macho-game-button rounded-2xl bg-[#FF8A23] px-4 py-3 text-sm font-black text-white transition hover:bg-[#f57200]">
                     Export
                   </button>
-                  <button type="button" onClick={importSave} className="rounded-2xl bg-[#C2410C] px-4 py-3 text-sm font-black text-white transition hover:bg-[#9A3412]">
+                  <button type="button" onClick={importSave} className="macho-game-button rounded-2xl bg-[#C2410C] px-4 py-3 text-sm font-black text-white transition hover:bg-[#9A3412]">
                     Import
                   </button>
                 </div>
               </div>
             </div>
-            <div className="rounded-2xl bg-white/10 px-4 py-3 md:col-span-4 xl:col-span-7">
-              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Balance Benchmarks</div>
+            <div className="macho-dark-card rounded-2xl px-4 py-3 md:col-span-4 xl:col-span-7">
+              <div className="macho-ui-label">Balance Benchmarks</div>
               <div className="mt-2 text-sm font-bold text-white/75">
                 1秒1クリックで自動購入した場合の目安です。Cookie Clicker 実測値と比較して難易度調整に使います。
               </div>
@@ -3575,7 +3582,7 @@ export function MachoClickerPage() {
                 {balanceBenchmarks.map((benchmark) => {
                   const owned = Object.values(benchmark.upgrades).reduce((total, level) => total + level, 0);
                   return (
-                    <div key={benchmark.minutes} className="rounded-2xl border border-white/10 bg-[#1E1009] px-4 py-3">
+                    <div key={benchmark.minutes} className="macho-dark-card rounded-2xl px-4 py-3">
                       <div className="text-xs font-black text-[#FFB45D]">{benchmark.minutes}分</div>
                       <div className="mt-1 text-lg font-black">{displayNumber(benchmark.muscle)}</div>
                       <div className="mt-1 text-xs font-bold text-white/70">毎秒 +{displayNumber(benchmark.perSecond)}</div>
