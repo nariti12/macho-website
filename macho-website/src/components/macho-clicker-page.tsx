@@ -135,7 +135,6 @@ type Spark = {
 
 type PurchaseFlight = {
   id: number;
-  key: UpgradeKey;
   src: string;
   fromX: number;
   fromY: number;
@@ -1832,6 +1831,7 @@ export function MachoClickerPage() {
   const [purchaseFlash, setPurchaseFlash] = useState<string | null>(null);
   const [purchasePulse, setPurchasePulse] = useState(false);
   const [purchaseFlights, setPurchaseFlights] = useState<PurchaseFlight[]>([]);
+  const [recentlyPurchasedPowerUpId, setRecentlyPurchasedPowerUpId] = useState<string | null>(null);
   const [achievementToast, setAchievementToast] = useState<Achievement | null>(null);
   const [goldenProtein, setGoldenProtein] = useState<GoldenProtein | null>(null);
   const [newsIndex, setNewsIndex] = useState(0);
@@ -2049,7 +2049,7 @@ export function MachoClickerPage() {
     ]);
     setSparks((current) => [
       ...current,
-      ...Array.from({ length: 7 }, (_, index) => ({
+      ...Array.from({ length: reducedEffects ? 0 : 7 }, (_, index) => ({
         id: baseId + index + 1,
         x: 20 + Math.random() * 60,
         y: 18 + Math.random() * 62,
@@ -2075,7 +2075,6 @@ export function MachoClickerPage() {
       ...current,
       {
         id,
-        key: upgrade.key,
         src: upgrade.spriteSrc,
         fromX,
         fromY,
@@ -2086,6 +2085,33 @@ export function MachoClickerPage() {
 
     window.setTimeout(() => setPurchasePulse(false), 720);
     window.setTimeout(() => setRecentlyPurchasedKey(null), 950);
+    window.setTimeout(() => setPurchaseFlights((current) => current.filter((flight) => flight.id !== id)), 900);
+  };
+
+  const spawnPowerUpgradeEffects = (powerUp: PowerUpgrade, event?: MouseEvent<HTMLElement>) => {
+    const id = effectIdRef.current;
+    effectIdRef.current += 1;
+    const fromX = event?.clientX ?? window.innerWidth - 180;
+    const fromY = event?.clientY ?? window.innerHeight * 0.28;
+    const dx = Math.round(window.innerWidth * 0.78 - fromX);
+    const dy = Math.round(window.innerHeight * 0.22 - fromY);
+
+    setPurchasePulse(true);
+    setRecentlyPurchasedPowerUpId(powerUp.id);
+    setPurchaseFlights((current) => [
+      ...current,
+      {
+        id,
+        src: powerUp.spriteSrc,
+        fromX,
+        fromY,
+        dx,
+        dy,
+      },
+    ]);
+
+    window.setTimeout(() => setPurchasePulse(false), 720);
+    window.setTimeout(() => setRecentlyPurchasedPowerUpId(null), 1100);
     window.setTimeout(() => setPurchaseFlights((current) => current.filter((flight) => flight.id !== id)), 900);
   };
 
@@ -2165,7 +2191,7 @@ export function MachoClickerPage() {
     });
   };
 
-  const buyPowerUpgrade = (powerUp: PowerUpgrade) => {
+  const buyPowerUpgrade = (powerUp: PowerUpgrade, event?: MouseEvent<HTMLElement>) => {
     setState((current) => {
       if (current.purchasedPowerUps.includes(powerUp.id) || current.muscle < powerUp.cost || !powerUp.unlock(current)) {
         playSound("blocked");
@@ -2173,6 +2199,7 @@ export function MachoClickerPage() {
       }
 
       setPurchaseFlash(`${powerUp.name}: ${getPowerUpgradeSummary(powerUp, current)}`);
+      spawnPowerUpgradeEffects(powerUp, event);
       window.setTimeout(() => setPurchaseFlash(null), 1100);
       playSound("buy");
 
@@ -2667,6 +2694,7 @@ export function MachoClickerPage() {
                 <span className="macho-gym-floor-line macho-gym-floor-line-1" />
                 <span className="macho-gym-floor-line macho-gym-floor-line-2" />
               </div>
+              {!reducedEffects ? (
               <div className="pointer-events-none absolute inset-0 overflow-hidden">
                 {ambientItems.map((item) => (
                   <span
@@ -2687,6 +2715,7 @@ export function MachoClickerPage() {
                   </span>
                 ))}
               </div>
+              ) : null}
               <div
                 className={`relative z-10 w-full rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB]/95 px-4 py-4 text-[#7C2D12] shadow-xl ${
                   purchasePulse ? "macho-counter-purchase" : ""
@@ -2970,8 +2999,8 @@ export function MachoClickerPage() {
                           <button
                             key={powerUp.id}
                             type="button"
-                            onClick={() => {
-                              if (canBuyPowerUp) buyPowerUpgrade(powerUp);
+                            onClick={(event) => {
+                              if (canBuyPowerUp) buyPowerUpgrade(powerUp, event);
                             }}
                             aria-disabled={!canBuyPowerUp}
                             onMouseEnter={() => setHoveredPowerUpId(powerUp.id)}
@@ -2999,7 +3028,9 @@ export function MachoClickerPage() {
                           <span
                             key={`owned-${powerUp.id}`}
                             title={`${powerUp.name}: ${powerUp.effectLabel}`}
-                            className="macho-upgrade-slot flex h-11 w-11 items-center justify-center rounded-xl border border-[#FDBA74] bg-[#FFE7C2] shadow-inner"
+                            className={`macho-upgrade-slot flex h-11 w-11 items-center justify-center rounded-xl border border-[#FDBA74] bg-[#FFE7C2] shadow-inner ${
+                              recentlyPurchasedPowerUpId === powerUp.id ? "macho-powerup-owned-new" : ""
+                            }`}
                           >
                             <Image src={powerUp.spriteSrc} alt="" width={34} height={34} className="h-8 w-8 object-contain" />
                           </span>

@@ -377,7 +377,7 @@ main {
     background-position: -40% 0, 50% 0, 0 0;
   }
   50% {
-    opacity: 0.76;
+    opacity: 0.62;
     background-position: 140% 0, 56% 0, 0 0;
   }
 }
@@ -515,6 +515,26 @@ main {
   100% {
     opacity: 0;
     transform: translate(calc(-50% + var(--flight-dx)), calc(-50% + var(--flight-dy))) scale(0.42) rotate(28deg);
+  }
+}
+
+@keyframes macho-powerup-owned-new {
+  0% {
+    filter: brightness(1.8) saturate(1.5);
+    transform: scale(0.72) rotate(-10deg);
+    box-shadow: 0 0 0 0 rgba(255, 138, 35, 0);
+  }
+  44% {
+    filter: brightness(1.5) saturate(1.35);
+    transform: scale(1.18) rotate(4deg);
+    box-shadow:
+      0 0 0 4px rgba(255, 138, 35, 0.24),
+      0 0 26px rgba(255, 180, 93, 0.46);
+  }
+  100% {
+    filter: brightness(1) saturate(1);
+    transform: scale(1) rotate(0deg);
+    box-shadow: 0 0 0 0 rgba(255, 138, 35, 0);
   }
 }
 
@@ -661,11 +681,11 @@ main {
 }
 
 .macho-cursor {
-  animation: macho-cursor 1.4s ease-in-out infinite;
+  animation: macho-cursor 2.2s ease-in-out infinite;
 }
 
 .macho-unit {
-  animation: macho-unit 2.4s ease-in-out infinite;
+  animation: macho-unit 3.8s ease-in-out infinite;
 }
 
 .macho-unit-new {
@@ -673,7 +693,7 @@ main {
 }
 
 .macho-shop-ready {
-  animation: macho-shop-ready 1.8s ease-in-out infinite;
+  animation: macho-shop-ready 2.6s ease-in-out infinite;
 }
 
 .macho-shop-ready::after {
@@ -683,7 +703,7 @@ main {
   width: 40%;
   pointer-events: none;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
-  animation: macho-shop-sheen 2.4s ease-in-out infinite;
+  animation: macho-shop-sheen 3.4s ease-in-out infinite;
 }
 
 .macho-ambient-fall {
@@ -902,7 +922,7 @@ main {
 }
 
 .macho-counter {
-  animation: macho-counter-pulse 1.6s ease-in-out infinite;
+  animation: macho-counter-pulse 2.8s ease-in-out infinite;
   font-variant-numeric: tabular-nums;
 }
 
@@ -931,6 +951,10 @@ main {
 
 .macho-purchase-flight {
   animation: macho-purchase-flight 0.86s cubic-bezier(0.18, 0.96, 0.22, 1.12) forwards;
+}
+
+.macho-powerup-owned-new {
+  animation: macho-powerup-owned-new 0.92s cubic-bezier(0.18, 0.96, 0.22, 1.12);
 }
 
 .macho-character-button {
@@ -1014,6 +1038,14 @@ main {
 .macho-reduced-effects .macho-click-stage-bg,
 .macho-reduced-effects .macho-click-stage-glow,
 .macho-reduced-effects .macho-gym-light,
+.macho-reduced-effects .macho-news,
+.macho-reduced-effects .macho-golden,
+.macho-reduced-effects .macho-float,
+.macho-reduced-effects .macho-spark,
+.macho-reduced-effects .macho-pop,
+.macho-reduced-effects .macho-shine::after,
+.macho-reduced-effects .macho-orbit,
+.macho-reduced-effects .macho-helper,
 .macho-reduced-effects .macho-click-foreground::after,
 .macho-reduced-effects .macho-stage-floor-glow,
 .macho-reduced-effects .macho-stage-dust-cloud,
@@ -1028,6 +1060,7 @@ main {
 .macho-reduced-effects .macho-building-purchased,
 .macho-reduced-effects .macho-building-purchased::after,
 .macho-reduced-effects .macho-purchase-flight,
+.macho-reduced-effects .macho-powerup-owned-new,
 .macho-reduced-effects .macho-shop-ready,
 .macho-reduced-effects .macho-shop-ready::after,
 .macho-reduced-effects .macho-click-ripple,
