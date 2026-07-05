@@ -156,6 +156,7 @@ type ActiveBuff = {
   name: string;
   multiplier: number;
   endAt: number;
+  target?: UpgradeKey;
 };
 
 type GoldenHistoryEntry = {
@@ -166,9 +167,12 @@ type GoldenHistoryEntry = {
 };
 
 type SeasonalEvent = {
+  id: "winter" | "spring" | "summer" | "autumn";
   name: string;
   description: string;
   multiplier: number;
+  icon: string;
+  bonusLabel: string;
 };
 
 type AmbientItem = {
@@ -927,6 +931,34 @@ const generatedAchievements: Achievement[] = [
     description: "いずれかの設備レベルを10にした",
     isUnlocked: (state) => Object.values(state.buildingLevels).some((level) => level >= 10),
   },
+  {
+    key: "season-winter",
+    category: "隠し",
+    title: "冬の増量期",
+    description: "冬の増量期にプレイした",
+    isUnlocked: () => getSeasonalEvent().id === "winter",
+  },
+  {
+    key: "season-spring",
+    category: "隠し",
+    title: "春の入会キャンペーン",
+    description: "春の入会キャンペーン中にプレイした",
+    isUnlocked: () => getSeasonalEvent().id === "spring",
+  },
+  {
+    key: "season-summer",
+    category: "隠し",
+    title: "夏の仕上げ期",
+    description: "夏の仕上げ期にプレイした",
+    isUnlocked: () => getSeasonalEvent().id === "summer",
+  },
+  {
+    key: "season-autumn",
+    category: "隠し",
+    title: "秋のバルク期",
+    description: "秋のバルク期にプレイした",
+    isUnlocked: () => getSeasonalEvent().id === "autumn",
+  },
 ];
 
 const achievements: Achievement[] = [...baseAchievements, ...generatedAchievements].filter(
@@ -1063,8 +1095,11 @@ const getPrestigeMultiplier = (state: GameState) => 1 + state.prestigeLevel * PR
 const getFrenzyMultiplier = (state: GameState) =>
   getActiveBuffs(state).reduce((total, buff) => (buff.type === "frenzy" ? total * buff.multiplier : total), 1);
 
-const getBuildingFrenzyMultiplier = (state: GameState) =>
-  getActiveBuffs(state).reduce((total, buff) => (buff.type === "buildingFrenzy" ? total * buff.multiplier : total), 1);
+const getBuildingFrenzyMultiplier = (state: GameState, key: UpgradeKey) =>
+  getActiveBuffs(state).reduce(
+    (total, buff) => (buff.type === "buildingFrenzy" && (!buff.target || buff.target === key) ? total * buff.multiplier : total),
+    1
+  );
 
 const getClickFrenzyMultiplier = (state: GameState) =>
   getActiveBuffs(state).reduce((total, buff) => (buff.type === "clickFrenzy" ? total * buff.multiplier : total), 1);
@@ -1081,29 +1116,41 @@ const getSeasonalEvent = (date = new Date()): SeasonalEvent => {
   const month = date.getMonth() + 1;
   if (month === 12 || month <= 2) {
     return {
+      id: "winter",
       name: "冬の増量期",
       description: "食べて鍛える季節。全体生産が少し上がります。",
       multiplier: 1.08,
+      icon: "WIN",
+      bonusLabel: "全体生産 +8%",
     };
   }
   if (month >= 3 && month <= 5) {
     return {
+      id: "spring",
       name: "春の入会キャンペーン",
       description: "新規トレーニーが増える季節。設備生産が少し上がります。",
       multiplier: 1.05,
+      icon: "SPR",
+      bonusLabel: "全体生産 +5%",
     };
   }
   if (month >= 6 && month <= 8) {
     return {
+      id: "summer",
       name: "夏の仕上げ期",
       description: "絞りの季節。クリック効率と生産が少し上がります。",
       multiplier: 1.07,
+      icon: "SUM",
+      bonusLabel: "全体生産 +7%",
     };
   }
   return {
+    id: "autumn",
     name: "秋のバルク期",
     description: "じっくり重量を伸ばす季節。全体生産が少し上がります。",
     multiplier: 1.06,
+    icon: "AUT",
+    bonusLabel: "全体生産 +6%",
   };
 };
 
@@ -1212,7 +1259,8 @@ const getBuildingMultiplierWithPendingPowerUp = (state: GameState, key: UpgradeK
 const getBuildingUnitProduction = (state: GameState, upgrade: Upgrade, pendingPowerUp?: PowerUpgrade) =>
   (upgrade.perSecondBonus ?? 0) *
   getBuildingMultiplierWithPendingPowerUp(state, upgrade.key, pendingPowerUp) *
-  getBuildingLevelMultiplier(state, upgrade.key);
+  getBuildingLevelMultiplier(state, upgrade.key) *
+  getBuildingFrenzyMultiplier(state, upgrade.key);
 
 const getBuildingTotalProduction = (state: GameState, upgrade: Upgrade, pendingPowerUp?: PowerUpgrade) =>
   getBuildingUnitProduction(state, upgrade, pendingPowerUp) * state.upgrades[upgrade.key];
@@ -1254,7 +1302,6 @@ const getPerSecond = (state: GameState) =>
   getBasePerSecond(state) *
   getPrestigeMultiplier(state) *
   getFrenzyMultiplier(state) *
-  getBuildingFrenzyMultiplier(state) *
   getAchievementSupportMultiplier(state) *
   getSeasonalEvent().multiplier;
 
@@ -1403,6 +1450,10 @@ const getNewsLines = (state: GameState, title: string, perSecond: number) => {
   if (state.totalMuscle >= 1_000_000_000_000) lines.push("筋肉ポイントが trillion に到達。もはや単位が現実離れしています。");
   if (state.prestigeLevel > 0) lines.push(`仕上げ直しの効果で永久倍率が +${state.prestigeLevel}% になっています。`);
   if (state.activeBuffs.length > 0) lines.push("ゴールデン効果発動中。今すぐクリックする価値があります。");
+  if (seasonalEvent.id === "winter") lines.push("冬の増量期。食べて鍛えて、筋肉ポイントの土台を作る時期です。");
+  if (seasonalEvent.id === "spring") lines.push("春の入会キャンペーンで、ジムに新しいトレーニーが増えています。");
+  if (seasonalEvent.id === "summer") lines.push("夏の仕上げ期。クリックにも少し気合いが入っています。");
+  if (seasonalEvent.id === "autumn") lines.push("秋のバルク期。重量を伸ばすにはちょうどいい季節です。");
   if (state.upgrades.finalMacho > 0) lines.push("マチョ田本人が稼働開始。ゲームの概念が少し壊れました。");
   if (Object.values(state.upgrades).reduce((total, level) => total + level, 0) >= 10) {
     lines.push("強化メニューの購入履歴が完全に筋トレ沼です。");
@@ -1667,6 +1718,9 @@ export function MachoClickerPage() {
   const perSecond = useMemo(() => getPerSecond(state), [state]);
   const basePerSecond = useMemo(() => getBasePerSecond(state), [state]);
   const activeBuffs = getActiveBuffs(state);
+  const activeBuildingFrenzyTargets = activeBuffs.flatMap((buff) =>
+    buff.type === "buildingFrenzy" && buff.target ? [buff.target] : []
+  );
   const pendingPrestige = getPendingPrestige(state);
   const seasonalEvent = getSeasonalEvent();
   const proteinShakeLevel = getProteinShakeLevel(state.unlockedAchievements.length);
@@ -1828,8 +1882,16 @@ export function MachoClickerPage() {
       ],
     }));
     setAchievementToast(newlyUnlocked[0]);
+    if (soundEnabled) {
+      const audio = soundRefs.current.buy;
+      if (audio) {
+        const sound = audio.cloneNode(true) as HTMLAudioElement;
+        sound.volume = audio.volume;
+        void sound.play();
+      }
+    }
     window.setTimeout(() => setAchievementToast(null), 3200);
-  }, [state]);
+  }, [state, soundEnabled]);
 
   const spawnClickEffects = (value: number) => {
     const baseId = effectIdRef.current;
@@ -2073,17 +2135,20 @@ export function MachoClickerPage() {
       }));
       setPurchaseFlash(`鬼クリック: ${CLICK_FRENZY_MULTIPLIER}倍`);
     } else if (effect === "buildingFrenzy") {
+      const ownedBuildings = upgrades.filter((upgrade) => state.upgrades[upgrade.key] > 0);
+      const target = ownedBuildings.length > 0 ? ownedBuildings[Math.floor(Math.random() * ownedBuildings.length)] : upgrades[0];
       const buff: ActiveBuff = {
         id: `building-frenzy-${now}`,
         type: "buildingFrenzy",
-        name: "設備暴走",
+        name: `${target.name}暴走`,
         multiplier: BUILDING_FRENZY_MULTIPLIER,
         endAt: now + BUILDING_FRENZY_DURATION_MS,
+        target: target.key,
       };
       historyEntry = {
         ...historyEntry,
-        name: "設備暴走",
-        detail: `${BUILDING_FRENZY_MULTIPLIER}倍 / ${Math.round(BUILDING_FRENZY_DURATION_MS / 1000)}秒`,
+        name: `${target.name}暴走`,
+        detail: `${target.name} ${BUILDING_FRENZY_MULTIPLIER}倍 / ${Math.round(BUILDING_FRENZY_DURATION_MS / 1000)}秒`,
       };
       setState((current) => ({
         ...current,
@@ -2092,7 +2157,7 @@ export function MachoClickerPage() {
         goldenHistory: [historyEntry, ...current.goldenHistory].slice(0, GOLDEN_HISTORY_LIMIT),
         lastSavedAt: now,
       }));
-      setPurchaseFlash(`設備暴走: ${BUILDING_FRENZY_MULTIPLIER}倍`);
+      setPurchaseFlash(`${target.name}暴走: ${BUILDING_FRENZY_MULTIPLIER}倍`);
     } else {
       const jackpot = Math.max(777, Math.floor((perSecond * 3600 + state.muscle * 0.07 + 777) * getGoldenMultiplier(state)));
       historyEntry = {
@@ -2260,10 +2325,15 @@ export function MachoClickerPage() {
       <SiteHeader profileImageSrc={profileImageSrc} />
 
       {achievementToast ? (
-        <div className="macho-toast fixed right-4 top-24 z-50 max-w-xs rounded-3xl border border-[#FCD27B] bg-white px-5 py-4 shadow-2xl">
-          <div className="text-xs font-bold uppercase tracking-[0.18em] text-[#C2410C]">Achievement</div>
-          <div className="mt-1 text-lg font-bold text-[#7C2D12]">{achievementToast.title}</div>
-          <div className="mt-1 text-sm text-slate-600">{achievementToast.description}</div>
+        <div className="macho-toast macho-achievement-flash fixed right-4 top-24 z-50 max-w-xs rounded-3xl border-2 border-[#FCD27B] bg-[#FFF7EB] px-5 py-4 text-[#7C2D12] shadow-2xl">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FF8A23] text-2xl shadow-inner">★</div>
+            <div>
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#C2410C]">Achievement</div>
+              <div className="mt-1 text-lg font-black">{achievementToast.title}</div>
+            </div>
+          </div>
+          <div className="mt-3 text-sm font-bold leading-6 text-[#9A3412]">{achievementToast.description}</div>
         </div>
       ) : null}
 
@@ -2460,7 +2530,7 @@ export function MachoClickerPage() {
                 <button
                   type="button"
                   onClick={collectGoldenProtein}
-                  className="macho-golden absolute z-50 flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-gradient-to-br from-yellow-100 via-yellow-300 to-orange-500 shadow-2xl"
+                  className="macho-golden macho-golden-alert absolute z-50 flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-gradient-to-br from-yellow-100 via-yellow-300 to-orange-500 shadow-2xl"
                   style={{ left: `${goldenProtein.x}%`, top: `${goldenProtein.y}%` }}
                   aria-label="ゴールデンプロテインを獲得"
                 >
@@ -2557,11 +2627,14 @@ export function MachoClickerPage() {
                     const level = state.upgrades[upgrade.key];
                     const buildingLevel = state.buildingLevels[upgrade.key];
                     const canLevelUp = state.muscleCrystals > 0 && level > 0;
+                    const isBuildingFrenzyTarget = activeBuildingFrenzyTargets.includes(upgrade.key);
                     const visibleCount = getUpgradeVisibleCount(level);
                     return (
                       <div
                         key={upgrade.key}
-                        className={`relative grid min-h-0 grid-cols-[11.5rem_minmax(0,1fr)] items-stretch overflow-hidden bg-gradient-to-r ${getUpgradeSceneClass(upgrade.key)}`}
+                        className={`relative grid min-h-0 grid-cols-[11.5rem_minmax(0,1fr)] items-stretch overflow-hidden bg-gradient-to-r ${
+                          isBuildingFrenzyTarget ? "macho-building-boost" : ""
+                        } ${getUpgradeSceneClass(upgrade.key)}`}
                         onMouseEnter={() => setHoveredGymUpgradeKey(upgrade.key)}
                         onMouseMove={updateTooltipPosition}
                         onMouseLeave={() => setHoveredGymUpgradeKey(null)}
@@ -2576,6 +2649,9 @@ export function MachoClickerPage() {
                           className="z-0 object-cover opacity-100"
                         />
                         <div className="absolute inset-0 z-[1] bg-[linear-gradient(90deg,rgba(42,20,11,0.30)_0%,rgba(42,20,11,0.06)_42%,rgba(42,20,11,0.22)_100%)]" />
+                        {isBuildingFrenzyTarget ? (
+                          <div className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(circle_at_72%_50%,rgba(255,247,214,0.42),transparent_34%),linear-gradient(90deg,transparent,rgba(255,180,93,0.24),transparent)]" />
+                        ) : null}
                         <div className="relative z-10 m-2 flex min-w-0 flex-col justify-between rounded-2xl border-2 border-[#FFB45D]/45 bg-[#2A140B]/88 px-3 py-3 text-[#FFE7C2] shadow-[0_10px_24px_rgba(42,20,11,0.55)] backdrop-blur-[1px]">
                           <div>
                             <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#FFB45D]">{upgrade.label}</div>
@@ -2645,7 +2721,7 @@ export function MachoClickerPage() {
               ) : null}
             </section>
 
-            <aside className={`${mobilePanel === "shop" ? "block" : "hidden"} bg-[#FFF7EB] text-[#7C2D12] xl:block`}>
+            <aside className={`${mobilePanel === "shop" ? "block" : "hidden"} macho-shop-shelf text-[#7C2D12] xl:block`}>
               <div className="max-h-none overflow-y-visible p-4 xl:sticky xl:top-20 xl:max-h-[calc(100vh-5rem)] xl:overflow-y-auto">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <h2 className="text-2xl font-black text-[#7C2D12]">ショップ</h2>
@@ -2738,6 +2814,7 @@ export function MachoClickerPage() {
                     const shortage = getShortage(state.muscle, cost);
                     const purchaseProgress = getPurchaseProgress(state.muscle, cost);
                     const unitProduction = getBuildingUnitProduction(state, upgrade);
+                    const isBuildingFrenzyTarget = activeBuildingFrenzyTargets.includes(upgrade.key);
 
                     return (
                       <button
@@ -2751,6 +2828,8 @@ export function MachoClickerPage() {
                         onFocus={() => setHoveredShopUpgradeKey(upgrade.key)}
                         onBlur={() => setHoveredShopUpgradeKey(null)}
                         className={`group relative overflow-hidden rounded-2xl border-2 p-3 text-left transition ${
+                          isBuildingFrenzyTarget ? "macho-building-boost" : ""
+                        } ${
                           canBuy
                             ? "macho-shop-ready border-[#C2410C] bg-white text-[#7C2D12] shadow-[0_0_0_3px_rgba(255,138,35,0.18),0_10px_24px_rgba(194,65,12,0.16)] hover:-translate-y-0.5 hover:shadow-[0_0_0_4px_rgba(255,138,35,0.32),0_16px_32px_rgba(194,65,12,0.26)]"
                             : "border-[#FED7AA] bg-[#FFF4E7] text-[#9A3412]/62"
@@ -3012,7 +3091,11 @@ export function MachoClickerPage() {
             </div>
             <div className="rounded-2xl bg-white/10 px-4 py-3">
               <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Season</div>
-              <div className="mt-1 text-lg font-black">{seasonalEvent.name}</div>
+              <div className="mt-1 flex items-center gap-2 text-lg font-black">
+                <span className="rounded-lg bg-[#FF8A23] px-2 py-1 text-xs text-white">{seasonalEvent.icon}</span>
+                <span>{seasonalEvent.name}</span>
+              </div>
+              <div className="mt-1 text-xs font-bold text-white/70">{seasonalEvent.bonusLabel}</div>
             </div>
             <div className="rounded-2xl bg-white/10 px-4 py-3 md:col-span-2 xl:col-span-2">
               <div className="flex items-start justify-between gap-3">
