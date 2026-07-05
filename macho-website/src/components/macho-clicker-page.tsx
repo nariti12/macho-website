@@ -1872,6 +1872,20 @@ export function MachoClickerPage() {
   const news = newsLines[newsIndex % newsLines.length];
   const bodyStage = getBodyStage(state.totalMuscle);
   const dumbbellOrbitItems = useMemo(() => getDumbbellOrbitItems(state.upgrades.pushUp), [state.upgrades.pushUp]);
+  const visibleAmbientItems = useMemo(() => {
+    if (reducedEffects) return [];
+
+    const count =
+      state.totalMuscle >= 100_000_000
+        ? ambientItems.length
+        : state.totalMuscle >= 1_000_000
+        ? 6
+        : state.totalMuscle >= 50_000
+        ? 5
+        : 4;
+
+    return ambientItems.slice(0, count);
+  }, [reducedEffects, state.totalMuscle]);
   const hoveredGymUpgrade = hoveredGymUpgradeKey ? upgrades.find((upgrade) => upgrade.key === hoveredGymUpgradeKey) ?? null : null;
   const hoveredShopUpgrade = hoveredShopUpgradeKey ? upgrades.find((upgrade) => upgrade.key === hoveredShopUpgradeKey) ?? null : null;
   const hoveredPowerUp = hoveredPowerUpId ? powerUpgrades.find((powerUp) => powerUp.id === hoveredPowerUpId) ?? null : null;
@@ -2562,8 +2576,8 @@ export function MachoClickerPage() {
       ) : null}
 
       <main className="relative z-10 px-0 pb-12 pt-16">
-        <div className="flex w-full max-w-none flex-col gap-2">
-          <section className="macho-game-panel overflow-hidden border-y-4 border-[#7C2D12] bg-[#7C2D12] text-white shadow-2xl">
+        <div className="flex w-full max-w-none flex-col gap-2 md:gap-3">
+          <section className="macho-game-topbar macho-game-panel overflow-hidden border-y-4 border-[#7C2D12] bg-[#7C2D12] text-white shadow-2xl md:mx-2 md:rounded-[28px] md:border-4 xl:mx-3">
             <div className="grid gap-px bg-[#FED7AA] lg:grid-cols-[420px_minmax(0,1fr)_390px]">
               <div className="bg-[#9A3412] px-5 py-4">
                 <h1 className="text-3xl font-black tracking-tight text-[#FFE7C2]">マチョクリッカー</h1>
@@ -2645,7 +2659,7 @@ export function MachoClickerPage() {
           </section>
 
           <nav
-            className="sticky top-16 z-40 grid grid-cols-4 gap-2 border-x-4 border-[#7C2D12] bg-[#2A140B] p-2 shadow-2xl xl:hidden"
+            className="macho-mobile-tabs sticky top-16 z-40 grid grid-cols-4 gap-2 border-x-4 border-[#7C2D12] bg-[#2A140B] p-2 shadow-2xl md:hidden"
             aria-label="マチョクリッカー画面切り替え"
           >
             {mobilePanels.map((panel) => (
@@ -2653,9 +2667,9 @@ export function MachoClickerPage() {
                 key={panel.key}
                 type="button"
                 onClick={() => setMobilePanel(panel.key)}
-                className={`rounded-2xl border-2 px-3 py-3 text-sm font-black transition ${
+                className={`macho-mobile-tab rounded-2xl border-2 px-3 py-3 text-sm font-black transition ${
                   mobilePanel === panel.key
-                    ? "border-[#FFE7C2] bg-[#FF8A23] text-white shadow-[0_0_0_3px_rgba(255,138,35,0.28)]"
+                    ? "macho-mobile-tab-active border-[#FFE7C2] bg-[#FF8A23] text-white shadow-[0_0_0_3px_rgba(255,138,35,0.28)]"
                     : "border-[#9A3412] bg-[#7C2D12] text-[#FFE7C2]"
                 }`}
               >
@@ -2664,9 +2678,9 @@ export function MachoClickerPage() {
             ))}
           </nav>
 
-          <section className="macho-game-panel grid min-h-[calc(100vh-12rem)] overflow-hidden border-y-4 border-[#7C2D12] bg-[#7C2D12] shadow-2xl xl:grid-cols-[minmax(700px,860px)_minmax(0,1fr)_400px] 2xl:grid-cols-[minmax(780px,980px)_minmax(0,1fr)_420px]">
+          <section className="macho-game-panel macho-main-grid grid min-h-[calc(100vh-12rem)] overflow-hidden border-y-4 border-[#7C2D12] bg-[#7C2D12] shadow-2xl md:mx-2 md:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)] md:rounded-[30px] md:border-4 xl:mx-3 xl:grid-cols-[minmax(700px,860px)_minmax(0,1fr)_400px] 2xl:grid-cols-[minmax(780px,980px)_minmax(0,1fr)_420px]">
             <aside
-              className={`relative min-h-[calc(100vh-15rem)] flex-col items-center justify-between overflow-hidden border-b-4 border-[#7C2D12] bg-[#451A03] p-4 text-center sm:p-5 xl:flex xl:min-h-[850px] xl:border-b-0 xl:border-r-4 ${
+              className={`relative min-h-[calc(100vh-15rem)] flex-col items-center justify-between overflow-hidden border-b-4 border-[#7C2D12] bg-[#451A03] p-4 text-center sm:p-5 md:col-start-1 md:row-span-2 md:flex md:min-h-[calc(100vh-14rem)] md:border-b-0 md:border-r-4 xl:col-auto xl:row-auto xl:flex xl:min-h-[850px] xl:border-b-0 xl:border-r-4 ${
                 mobilePanel === "click" ? "flex" : "hidden"
               }`}
             >
@@ -2694,9 +2708,9 @@ export function MachoClickerPage() {
                 <span className="macho-gym-floor-line macho-gym-floor-line-1" />
                 <span className="macho-gym-floor-line macho-gym-floor-line-2" />
               </div>
-              {!reducedEffects ? (
+              {visibleAmbientItems.length > 0 ? (
               <div className="pointer-events-none absolute inset-0 overflow-hidden">
-                {ambientItems.map((item) => (
+                {visibleAmbientItems.map((item) => (
                   <span
                     key={item.id}
                     className="macho-ambient-fall absolute -top-20 z-[2]"
@@ -2850,7 +2864,7 @@ export function MachoClickerPage() {
             </aside>
 
             <section
-              className={`relative min-h-[calc(100vh-15rem)] overflow-hidden border-b-4 border-[#7C2D12] bg-[linear-gradient(180deg,#FFF0D5_0%,#FDBA74_48%,#C2410C_100%)] xl:block xl:min-h-[560px] xl:border-b-0 xl:border-r-4 ${
+              className={`relative min-h-[calc(100vh-15rem)] overflow-hidden border-b-4 border-[#7C2D12] bg-[linear-gradient(180deg,#FFF0D5_0%,#FDBA74_48%,#C2410C_100%)] md:col-start-2 md:row-start-1 md:block md:min-h-[calc(50vh-7rem)] xl:col-auto xl:row-auto xl:block xl:min-h-[560px] xl:border-b-0 xl:border-r-4 ${
                 mobilePanel === "gym" ? "block" : "hidden"
               }`}
             >
@@ -2968,8 +2982,8 @@ export function MachoClickerPage() {
               ) : null}
             </section>
 
-            <aside className={`${mobilePanel === "shop" ? "block" : "hidden"} macho-shop-shelf text-[#7C2D12] xl:block`}>
-              <div className="max-h-none overflow-y-visible p-4 xl:sticky xl:top-20 xl:max-h-[calc(100vh-5rem)] xl:overflow-y-auto">
+            <aside className={`${mobilePanel === "shop" ? "block" : "hidden"} macho-shop-shelf text-[#7C2D12] md:col-start-2 md:row-start-2 md:block xl:col-auto xl:row-auto xl:block`}>
+              <div className="max-h-none overflow-y-visible p-4 md:max-h-[calc(50vh-7rem)] md:overflow-y-auto xl:sticky xl:top-20 xl:max-h-[calc(100vh-5rem)]">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <h2 className="text-2xl font-black text-[#7C2D12]">ショップ</h2>
                   <button
@@ -3204,7 +3218,7 @@ export function MachoClickerPage() {
               </div>
             </aside>
 
-            <section className={`${mobilePanel === "stats" ? "block" : "hidden"} bg-[#FFF7EB] p-4 text-[#7C2D12] xl:hidden`}>
+            <section className={`${mobilePanel === "stats" ? "block" : "hidden"} bg-[#FFF7EB] p-4 text-[#7C2D12] md:hidden`}>
               <div className="rounded-3xl border-2 border-[#FDBA74] bg-white p-4 shadow-xl">
                 <h2 className="text-2xl font-black">統計・セーブ</h2>
                 <div className="mt-4 grid gap-3">
@@ -3311,7 +3325,7 @@ export function MachoClickerPage() {
             </section>
           </section>
 
-          <section className="grid gap-4 rounded-[28px] border border-[#FCD27B]/60 bg-[#2A140B]/90 p-4 text-white shadow-2xl md:grid-cols-4 xl:grid-cols-7">
+          <section className="macho-stats-panel hidden gap-4 rounded-[28px] border border-[#FCD27B]/60 bg-[#2A140B]/90 p-4 text-white shadow-2xl md:mx-2 md:grid md:grid-cols-4 xl:mx-3 xl:grid-cols-7">
             <div className="rounded-2xl bg-white/10 px-4 py-3">
               <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Achievements</div>
               <div className="mt-1 text-2xl font-black">{state.unlockedAchievements.length}/{achievements.length}</div>
@@ -3573,7 +3587,7 @@ export function MachoClickerPage() {
             </div>
           </section>
 
-          <section className="grid gap-6 rounded-[36px] border border-white/40 bg-white/90 p-6 shadow-2xl backdrop-blur lg:grid-cols-[360px_1fr] sm:p-8">
+          <section className="macho-ranking-panel mx-0 grid gap-6 rounded-[30px] border border-white/40 bg-white/90 p-5 shadow-2xl backdrop-blur md:mx-2 lg:grid-cols-[360px_1fr] xl:mx-3 sm:p-8">
             <div>
               <h2 className="text-2xl font-black text-[#7C2D12]">ランキング登録</h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">累計筋肉ポイントをランキングに登録できます。</p>
