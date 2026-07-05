@@ -498,11 +498,11 @@ const getUpgradeSceneClass = (key: UpgradeKey) => upgradeSceneClasses[key];
 
 const upgradeSceneImages: Record<UpgradeKey, string> = {
   pushUp: "/game/macho-clicker/scenes/generated-v2/push-up-stage.png",
-  abRoller: "/game/macho-clicker/scenes/generated-v2/ab-roller-studio.png",
-  dumbbell: "/game/macho-clicker/scenes/generated-v2/barbell-squad-zone.png",
-  protein: "/game/macho-clicker/scenes/generated-v2/protein-workshop.png",
-  chicken: "/game/macho-clicker/scenes/generated-v2/high-protein-cafeteria.png",
-  benchPress: "/game/macho-clicker/scenes/generated-v2/bench-press-arena.png",
+  abRoller: "/game/macho-clicker/scenes/generated-v3/ab-roller-studio.png",
+  dumbbell: "/game/macho-clicker/scenes/generated-v3/barbell-squad-zone.png",
+  protein: "/game/macho-clicker/scenes/generated-v3/protein-workshop.png",
+  chicken: "/game/macho-clicker/scenes/generated-v3/high-protein-cafeteria.png",
+  benchPress: "/game/macho-clicker/scenes/generated-v3/bench-press-arena.png",
   trainer: "/game/macho-clicker/scenes/generated-v2/trainer-office.png",
   gym: "/game/macho-clicker/scenes/generated-v2/huge-gym-hall.png",
   supplementStore: "/game/macho-clicker/scenes/generated-v2/supplement-space-delivery.png",
