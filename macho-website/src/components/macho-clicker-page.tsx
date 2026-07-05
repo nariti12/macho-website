@@ -11,6 +11,7 @@ const characterImageSrc = "/picture/man.png";
 const STORAGE_KEY = "machoda:macho-clicker:v3";
 const SAVE_INTERVAL_MS = 1000;
 const GAME_TICK_MS = 50;
+const NUMBER_ANIMATION_MS = 420;
 const NEWS_INTERVAL_MS = 18_000;
 const OFFLINE_LIMIT_SECONDS = 60 * 60 * 8;
 const MAX_SCORE = 1e300;
@@ -130,6 +131,16 @@ type Spark = {
   y: number;
   size: number;
   rotate: number;
+};
+
+type PurchaseFlight = {
+  id: number;
+  key: UpgradeKey;
+  src: string;
+  fromX: number;
+  fromY: number;
+  dx: number;
+  dy: number;
 };
 
 type MobilePanel = "click" | "gym" | "shop" | "stats";
@@ -1115,6 +1126,49 @@ const formatJapaneseNumber = (value: number) => {
 const formatDisplayNumber = (value: number, notation: NumberNotation) =>
   notation === "full" ? formatFullNumber(value) : notation === "japanese" ? formatJapaneseNumber(value) : formatNumber(value);
 
+const useAnimatedNumber = (target: number) => {
+  const [displayValue, setDisplayValue] = useState(target);
+  const frameRef = useRef<number | null>(null);
+  const previousTargetRef = useRef(target);
+
+  useEffect(() => {
+    const from = previousTargetRef.current;
+    const to = target;
+    previousTargetRef.current = target;
+
+    if (!Number.isFinite(from) || !Number.isFinite(to) || Math.abs(to - from) < 0.001) {
+      setDisplayValue(to);
+      return;
+    }
+
+    const startedAt = performance.now();
+    if (frameRef.current !== null) {
+      window.cancelAnimationFrame(frameRef.current);
+    }
+
+    const tick = (now: number) => {
+      const progress = Math.min(1, (now - startedAt) / NUMBER_ANIMATION_MS);
+      const eased = 1 - (1 - progress) ** 3;
+      setDisplayValue(from + (to - from) * eased);
+
+      if (progress < 1) {
+        frameRef.current = window.requestAnimationFrame(tick);
+      }
+    };
+
+    frameRef.current = window.requestAnimationFrame(tick);
+
+    return () => {
+      if (frameRef.current !== null) {
+        window.cancelAnimationFrame(frameRef.current);
+        frameRef.current = null;
+      }
+    };
+  }, [target]);
+
+  return displayValue;
+};
+
 const formatRate = (value: number) =>
   value >= 1_000_000
     ? formatNumber(value)
@@ -1776,6 +1830,8 @@ export function MachoClickerPage() {
   const [lastClickAt, setLastClickAt] = useState(0);
   const [clickBurst, setClickBurst] = useState(false);
   const [purchaseFlash, setPurchaseFlash] = useState<string | null>(null);
+  const [purchasePulse, setPurchasePulse] = useState(false);
+  const [purchaseFlights, setPurchaseFlights] = useState<PurchaseFlight[]>([]);
   const [achievementToast, setAchievementToast] = useState<Achievement | null>(null);
   const [goldenProtein, setGoldenProtein] = useState<GoldenProtein | null>(null);
   const [newsIndex, setNewsIndex] = useState(0);
@@ -1825,6 +1881,9 @@ export function MachoClickerPage() {
   );
   const purchasedPowerUps = powerUpgrades.filter((powerUp) => state.purchasedPowerUps.includes(powerUp.id));
   const displayNumber = (value: number) => formatDisplayNumber(value, numberNotation);
+  const animatedMuscle = useAnimatedNumber(state.muscle);
+  const animatedPerSecond = useAnimatedNumber(perSecond);
+  const animatedClickPower = useAnimatedNumber(clickPower);
   const nextShopGoal = getNextShopGoal(state);
   const canHarvestMuscleCrystal = state.nextMuscleCrystalAt <= Date.now();
   const availableLegacyPoints = getAvailableLegacyPoints(state);
@@ -2002,6 +2061,34 @@ export function MachoClickerPage() {
     window.setTimeout(() => setSparks((current) => current.filter((item) => item.id < baseId || item.id > baseId + 7)), 760);
   };
 
+  const spawnPurchaseEffects = (upgrade: Upgrade, event?: MouseEvent<HTMLElement>) => {
+    const id = effectIdRef.current;
+    effectIdRef.current += 1;
+    const fromX = event?.clientX ?? window.innerWidth - 180;
+    const fromY = event?.clientY ?? window.innerHeight * 0.62;
+    const dx = Math.round(window.innerWidth * 0.46 - fromX);
+    const dy = Math.round(window.innerHeight * 0.5 - fromY);
+
+    setPurchasePulse(true);
+    setRecentlyPurchasedKey(upgrade.key);
+    setPurchaseFlights((current) => [
+      ...current,
+      {
+        id,
+        key: upgrade.key,
+        src: upgrade.spriteSrc,
+        fromX,
+        fromY,
+        dx,
+        dy,
+      },
+    ]);
+
+    window.setTimeout(() => setPurchasePulse(false), 720);
+    window.setTimeout(() => setRecentlyPurchasedKey(null), 950);
+    window.setTimeout(() => setPurchaseFlights((current) => current.filter((flight) => flight.id !== id)), 900);
+  };
+
   const unlockAudio = () => {
     if (!soundEnabled) return;
     const clickSound = soundRefs.current.click;
@@ -2051,7 +2138,7 @@ export function MachoClickerPage() {
     setTooltipPosition({ x: event.clientX, y: event.clientY });
   };
 
-  const buyUpgrade = (upgrade: Upgrade) => {
+  const buyUpgrade = (upgrade: Upgrade, event?: MouseEvent<HTMLElement>) => {
     setState((current) => {
       const level = current.upgrades[upgrade.key];
       const cost = getUpgradeCost(upgrade, level);
@@ -2062,9 +2149,8 @@ export function MachoClickerPage() {
 
       const increase = getBuildingUnitProduction(current, upgrade);
       setPurchaseFlash(`${upgrade.name} +${formatRate(increase)}/秒`);
-      setRecentlyPurchasedKey(upgrade.key);
+      spawnPurchaseEffects(upgrade, event);
       window.setTimeout(() => setPurchaseFlash(null), 1100);
-      window.setTimeout(() => setRecentlyPurchasedKey(null), 900);
       playSound("buy");
 
       return {
@@ -2601,14 +2687,18 @@ export function MachoClickerPage() {
                   </span>
                 ))}
               </div>
-              <div className="relative z-10 w-full rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB]/95 px-4 py-4 text-[#7C2D12] shadow-xl">
+              <div
+                className={`relative z-10 w-full rounded-2xl border-2 border-[#7C2D12] bg-[#FFF7EB]/95 px-4 py-4 text-[#7C2D12] shadow-xl ${
+                  purchasePulse ? "macho-counter-purchase" : ""
+                }`}
+              >
                 <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Muscle Points</div>
                 <div className="macho-counter mt-1 break-words text-4xl font-black sm:text-5xl" title={formatFullNumber(state.muscle)}>
-                  {displayNumber(state.muscle)}
+                  {displayNumber(animatedMuscle)}
                 </div>
                 <div className="mt-2 grid gap-2 text-sm font-bold text-[#9A3412] sm:grid-cols-3">
-                  <span>クリック +{displayNumber(clickPower)}</span>
-                  <span>毎秒 +{displayNumber(perSecond)}</span>
+                  <span>クリック +{displayNumber(animatedClickPower)}</span>
+                  <span>毎秒 +{displayNumber(animatedPerSecond)}</span>
                   <span>COMBO {combo}</span>
                 </div>
               </div>
@@ -2635,6 +2725,23 @@ export function MachoClickerPage() {
                     transform: `rotate(${spark.rotate}deg)`,
                   }}
                 />
+              ))}
+
+              {purchaseFlights.map((flight) => (
+                <span
+                  key={flight.id}
+                  className="macho-purchase-flight pointer-events-none fixed z-[80] flex h-16 w-16 items-center justify-center"
+                  style={
+                    {
+                      left: flight.fromX,
+                      top: flight.fromY,
+                      "--flight-dx": `${flight.dx}px`,
+                      "--flight-dy": `${flight.dy}px`,
+                    } as CSSProperties
+                  }
+                >
+                  <Image src={flight.src} alt="" width={64} height={64} className="h-16 w-16 object-contain drop-shadow-2xl" />
+                </span>
               ))}
 
               {goldenProtein ? (
@@ -2745,7 +2852,7 @@ export function MachoClickerPage() {
                         key={upgrade.key}
                         className={`relative grid min-h-0 grid-cols-[11.5rem_minmax(0,1fr)] items-stretch overflow-hidden bg-gradient-to-r ${
                           isBuildingFrenzyTarget ? "macho-building-boost" : ""
-                        } ${getUpgradeSceneClass(upgrade.key)}`}
+                        } ${recentlyPurchasedKey === upgrade.key ? "macho-building-purchased" : ""} ${getUpgradeSceneClass(upgrade.key)}`}
                         onMouseEnter={() => setHoveredGymUpgradeKey(upgrade.key)}
                         onMouseMove={updateTooltipPosition}
                         onMouseLeave={() => setHoveredGymUpgradeKey(null)}
@@ -2931,7 +3038,7 @@ export function MachoClickerPage() {
                       <button
                         key={upgrade.key}
                         type="button"
-                        onClick={() => buyUpgrade(upgrade)}
+                        onClick={(event) => buyUpgrade(upgrade, event)}
                         aria-disabled={!canBuy}
                         onMouseEnter={() => setHoveredShopUpgradeKey(upgrade.key)}
                         onMouseMove={updateTooltipPosition}
@@ -2940,7 +3047,7 @@ export function MachoClickerPage() {
                         onBlur={() => setHoveredShopUpgradeKey(null)}
                         className={`group relative overflow-hidden rounded-2xl border-2 p-3 text-left transition ${
                           isBuildingFrenzyTarget ? "macho-building-boost" : ""
-                        } ${
+                        } ${recentlyPurchasedKey === upgrade.key ? "macho-shop-purchased" : ""} ${
                           canBuy
                             ? "macho-shop-ready border-[#C2410C] bg-white text-[#7C2D12] shadow-[0_0_0_3px_rgba(255,138,35,0.18),0_10px_24px_rgba(194,65,12,0.16)] hover:-translate-y-0.5 hover:shadow-[0_0_0_4px_rgba(255,138,35,0.32),0_16px_32px_rgba(194,65,12,0.26)]"
                             : "border-[#FED7AA] bg-[#FFF4E7] text-[#9A3412]/62"
