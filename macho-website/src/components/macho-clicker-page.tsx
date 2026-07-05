@@ -221,7 +221,7 @@ const upgrades: Upgrade[] = [
     name: "ダンベル",
     label: "DB",
     icon: "➤",
-    spriteSrc: "/game/macho-clicker/dumbbell.png",
+    spriteSrc: "/game/macho-clicker/icons/generated-v1/dumbbell.png",
     description: "10秒に1回、ダンベルが筋肉ポイントを生みます。",
     baseCost: 15,
     costRate: 1.15,
@@ -233,7 +233,7 @@ const upgrades: Upgrade[] = [
     name: "腹筋ローラー職人",
     label: "ABS",
     icon: "◎",
-    spriteSrc: "/game/macho-clicker/ab-roller.png",
+    spriteSrc: "/game/macho-clicker/icons/generated-v1/ab-roller.png",
     description: "腹筋ローラーを転がし続ける職人です。",
     baseCost: 100,
     costRate: 1.15,
@@ -245,7 +245,7 @@ const upgrades: Upgrade[] = [
     name: "バーベル部隊",
     label: "BAR",
     icon: "B",
-    spriteSrc: "/game/macho-clicker/barbell-team.svg",
+    spriteSrc: "/game/macho-clicker/icons/generated-v1/barbell-rack.png",
     description: "黙々とバーベルを上げ続ける部隊です。",
     baseCost: 1100,
     costRate: 1.15,
@@ -257,7 +257,7 @@ const upgrades: Upgrade[] = [
     name: "プロテイン工房",
     label: "PRO",
     icon: "P",
-    spriteSrc: "/game/macho-clicker/protein.png",
+    spriteSrc: "/game/macho-clicker/icons/generated-v1/protein-workshop.png",
     description: "筋肉の材料を大量に作る工房です。",
     baseCost: 12000,
     costRate: 1.15,
@@ -269,7 +269,7 @@ const upgrades: Upgrade[] = [
     name: "高たんぱく食堂",
     label: "MEAL",
     icon: "肉",
-    spriteSrc: "/game/macho-clicker/meal.png",
+    spriteSrc: "/game/macho-clicker/icons/generated-v1/high-protein-meal.png",
     description: "鶏むね肉を大量提供する食堂です。",
     baseCost: 130000,
     costRate: 1.15,
@@ -281,7 +281,7 @@ const upgrades: Upgrade[] = [
     name: "ベンチプレス軍団",
     label: "BENCH",
     icon: "B",
-    spriteSrc: "/game/macho-clicker/bench-press-team.svg",
+    spriteSrc: "/game/macho-clicker/icons/generated-v1/bench-press.png",
     description: "胸トレで筋肉ポイントを量産します。",
     baseCost: 1400000,
     costRate: 1.15,
@@ -461,12 +461,12 @@ const upgrades: Upgrade[] = [
 const visualUpgrades = upgrades.filter((upgrade) => upgrade.key !== "pushUp");
 
 const ambientItems: AmbientItem[] = [
-  { id: "amb-dumbbell-1", src: "/game/macho-clicker/dumbbell.png", left: "7%", size: 36, delay: "-2s", duration: "15s", opacity: 0.42 },
-  { id: "amb-protein-1", src: "/game/macho-clicker/protein.png", left: "17%", size: 44, delay: "-11s", duration: "21s", opacity: 0.34 },
-  { id: "amb-roller-1", src: "/game/macho-clicker/ab-roller.png", left: "29%", size: 40, delay: "-7s", duration: "18s", opacity: 0.38 },
-  { id: "amb-meal-1", src: "/game/macho-clicker/meal.png", left: "41%", size: 46, delay: "-16s", duration: "24s", opacity: 0.3 },
-  { id: "amb-bench-1", src: "/game/macho-clicker/bench.png", left: "54%", size: 52, delay: "-5s", duration: "22s", opacity: 0.28 },
-  { id: "amb-golden-1", src: "/game/macho-clicker/golden-protein.png", left: "66%", size: 40, delay: "-13s", duration: "19s", opacity: 0.34 },
+  { id: "amb-dumbbell-1", src: "/game/macho-clicker/icons/generated-v1/dumbbell.png", left: "7%", size: 42, delay: "-2s", duration: "15s", opacity: 0.42 },
+  { id: "amb-protein-1", src: "/game/macho-clicker/icons/generated-v1/protein-workshop.png", left: "17%", size: 48, delay: "-11s", duration: "21s", opacity: 0.34 },
+  { id: "amb-roller-1", src: "/game/macho-clicker/icons/generated-v1/ab-roller.png", left: "29%", size: 44, delay: "-7s", duration: "18s", opacity: 0.38 },
+  { id: "amb-meal-1", src: "/game/macho-clicker/icons/generated-v1/high-protein-meal.png", left: "41%", size: 50, delay: "-16s", duration: "24s", opacity: 0.3 },
+  { id: "amb-bench-1", src: "/game/macho-clicker/icons/generated-v1/bench-press.png", left: "54%", size: 54, delay: "-5s", duration: "22s", opacity: 0.28 },
+  { id: "amb-golden-1", src: "/game/macho-clicker/icons/generated-v1/golden-protein.png", left: "66%", size: 46, delay: "-13s", duration: "19s", opacity: 0.34 },
   { id: "amb-trainer-1", src: "/game/macho-clicker/trainer.png", left: "78%", size: 42, delay: "-9s", duration: "23s", opacity: 0.28 },
   { id: "amb-gym-1", src: "/game/macho-clicker/gym.png", left: "90%", size: 50, delay: "-18s", duration: "26s", opacity: 0.24 },
 ];
@@ -573,7 +573,7 @@ const manualPowerUpgrades: PowerUpgrade[] = [
     name: "握力強化グローブ",
     description: "クリック時の筋肉ポイントが2倍になります。",
     cost: 100,
-    spriteSrc: "/game/macho-clicker/dumbbell.png",
+    spriteSrc: "/game/macho-clicker/icons/generated-v1/dumbbell.png",
     effectLabel: "クリック x2",
     clickMultiplier: 2,
     unlock: (state) => state.totalMuscle >= 50,
@@ -583,7 +583,7 @@ const manualPowerUpgrades: PowerUpgrade[] = [
     name: "両手クリック",
     description: "クリック時の筋肉ポイントがさらに2倍になります。",
     cost: 500,
-    spriteSrc: "/game/macho-clicker/dumbbell.png",
+    spriteSrc: "/game/macho-clicker/icons/generated-v1/dumbbell.png",
     effectLabel: "クリック x2",
     clickMultiplier: 2,
     unlock: (state) => state.upgrades.pushUp >= 1,
@@ -603,7 +603,7 @@ const manualPowerUpgrades: PowerUpgrade[] = [
     name: "爆速パンプ",
     description: "クリック時に毎秒生産量の0.1%が追加されます。",
     cost: 10_000_000,
-    spriteSrc: "/game/macho-clicker/golden-protein.png",
+    spriteSrc: "/game/macho-clicker/icons/generated-v1/golden-protein.png",
     effectLabel: "クリック +CpS 0.1%",
     clickCpsPercent: 0.001,
     unlock: (state) => state.upgrades.pushUp >= 50,
@@ -613,7 +613,7 @@ const manualPowerUpgrades: PowerUpgrade[] = [
     name: "黄金プロテイン配合",
     description: "ゴールデンプロテインの獲得ボーナスが2倍になります。",
     cost: 50_000,
-    spriteSrc: "/game/macho-clicker/golden-protein.png",
+    spriteSrc: "/game/macho-clicker/icons/generated-v1/golden-protein.png",
     effectLabel: "黄金 x2",
     goldenMultiplier: 2,
     unlock: (state) => state.totalMuscle >= 10_000,
@@ -2567,6 +2567,12 @@ export function MachoClickerPage() {
               />
               <div className="macho-click-stage-glow pointer-events-none absolute inset-0 z-[1]" />
               <div className="macho-gym-light pointer-events-none absolute inset-x-0 top-0 z-[2] h-48" />
+              <div className={`macho-click-foreground pointer-events-none absolute inset-0 z-[4] ${clickBurst ? "macho-click-foreground-hit" : ""}`}>
+                <span className="macho-stage-floor-glow" />
+                <span className="macho-stage-dust-cloud macho-stage-dust-cloud-1" />
+                <span className="macho-stage-dust-cloud macho-stage-dust-cloud-2" />
+                <span className="macho-stage-dust-cloud macho-stage-dust-cloud-3" />
+              </div>
               <div className="macho-gym-structure pointer-events-none absolute inset-0 z-[3]">
                 <span className="macho-gym-mirror" />
                 <span className="macho-gym-rack macho-gym-rack-left" />
@@ -2640,7 +2646,7 @@ export function MachoClickerPage() {
                   aria-label="ゴールデンプロテインを獲得"
                 >
                   <Image
-                    src="/game/macho-clicker/golden-protein.png"
+                    src="/game/macho-clicker/icons/generated-v1/golden-protein.png"
                     alt=""
                     width={86}
                     height={86}
@@ -2666,7 +2672,7 @@ export function MachoClickerPage() {
                     }
                   >
                     <Image
-                      src="/game/macho-clicker/dumbbell.png"
+                      src="/game/macho-clicker/icons/generated-v1/dumbbell.png"
                       alt=""
                       width={48}
                       height={48}
