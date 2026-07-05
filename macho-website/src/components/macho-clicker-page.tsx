@@ -2558,7 +2558,7 @@ export function MachoClickerPage() {
               }`}
             >
               <Image
-                src="/game/macho-clicker/click-gym-stage.png"
+                src="/game/macho-clicker/backgrounds/click-gym-stage-v2.png"
                 alt=""
                 fill
                 priority
@@ -2866,7 +2866,7 @@ export function MachoClickerPage() {
                             onMouseLeave={() => setHoveredPowerUpId(null)}
                             onFocus={() => setHoveredPowerUpId(powerUp.id)}
                             onBlur={() => setHoveredPowerUpId(null)}
-                            className={`relative flex h-16 items-center justify-center overflow-hidden rounded-2xl border-2 transition ${
+                            className={`macho-upgrade-slot relative flex h-16 items-center justify-center overflow-hidden rounded-2xl border-2 transition ${
                               canBuyPowerUp
                                 ? "macho-shop-ready border-[#C2410C] bg-[#FFF4E7] shadow-[0_0_0_3px_rgba(255,138,35,0.22),0_10px_24px_rgba(194,65,12,0.2)] hover:-translate-y-0.5 hover:shadow-[0_0_0_4px_rgba(255,138,35,0.35),0_16px_30px_rgba(194,65,12,0.28)]"
                                 : "cursor-not-allowed border-[#FED7AA] bg-[#FFF4E7] grayscale opacity-45"
@@ -2886,7 +2886,7 @@ export function MachoClickerPage() {
                           <span
                             key={`owned-${powerUp.id}`}
                             title={`${powerUp.name}: ${powerUp.effectLabel}`}
-                            className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#FDBA74] bg-[#FFE7C2] shadow-inner"
+                            className="macho-upgrade-slot flex h-11 w-11 items-center justify-center rounded-xl border border-[#FDBA74] bg-[#FFE7C2] shadow-inner"
                           >
                             <Image src={powerUp.spriteSrc} alt="" width={34} height={34} className="h-8 w-8 object-contain" />
                           </span>
@@ -2987,7 +2987,7 @@ export function MachoClickerPage() {
                       className="group relative rounded-2xl border border-[#FED7AA] bg-[#3B1D0F] p-3 text-left text-[#FFE7C2]/70 transition"
                     >
                       <div className="flex items-start gap-3">
-                        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border-2 border-[#9A3412] bg-[#2A140B] text-3xl font-black shadow-inner">
+                        <span className="macho-locked-slot flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border-2 border-[#9A3412] bg-[#2A140B] text-3xl font-black shadow-inner">
                           ?
                         </span>
                         <span className="min-w-0 flex-1">
