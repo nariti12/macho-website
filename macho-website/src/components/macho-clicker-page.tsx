@@ -31,6 +31,7 @@ const GOLDEN_LIFETIME_MS = 13_000;
 const MUSCLE_CRYSTAL_GROW_MS = 24 * 60 * 60 * 1000;
 const BUILDING_LEVEL_BONUS_RATE = 0.01;
 const GOLDEN_HISTORY_LIMIT = 12;
+const LEGACY_STARTING_MUSCLE = 100;
 
 type UpgradeKey =
   | "pushUp"
@@ -95,6 +96,7 @@ type GameState = {
   nextMuscleCrystalAt: number;
   goldenClicks: number;
   goldenHistory: GoldenHistoryEntry[];
+  legacyUpgrades: string[];
   purchasedPowerUps: string[];
   activeBuffs: ActiveBuff[];
   prestigeLevel: number;
@@ -202,6 +204,15 @@ type BalanceBenchmark = {
 type GoldenEffect = {
   id: "lucky" | "frenzy" | "clickFrenzy" | "buildingFrenzy" | "jackpot";
   weight: number;
+};
+
+type LegacyUpgrade = {
+  id: string;
+  name: string;
+  description: string;
+  cost: number;
+  effectLabel: string;
+  unlock: (state: GameState) => boolean;
 };
 
 const upgrades: Upgrade[] = [
@@ -976,6 +987,7 @@ const initialState: GameState = {
   nextMuscleCrystalAt: Date.now() + MUSCLE_CRYSTAL_GROW_MS,
   goldenClicks: 0,
   goldenHistory: [],
+  legacyUpgrades: [],
   purchasedPowerUps: [],
   activeBuffs: [],
   prestigeLevel: 0,
@@ -983,6 +995,49 @@ const initialState: GameState = {
   lastSavedAt: Date.now(),
   unlockedAchievements: [],
 };
+
+const legacyUpgrades: LegacyUpgrade[] = [
+  {
+    id: "starter-dumbbell",
+    name: "スターターダンベル",
+    description: "仕上げ直し後、最初から少しだけ筋肉ポイントを持った状態で再開できます。",
+    cost: 1,
+    effectLabel: `周回開始 +${LEGACY_STARTING_MUSCLE} 筋肉`,
+    unlock: (state) => state.prestigeLevel >= 1,
+  },
+  {
+    id: "offline-coach",
+    name: "留守番トレーナー",
+    description: "オフライン中に貯められる筋肉ポイントの上限時間が伸びます。",
+    cost: 3,
+    effectLabel: "オフライン上限 +4時間",
+    unlock: (state) => state.prestigeLevel >= 3,
+  },
+  {
+    id: "golden-beacon",
+    name: "黄金ビーコン",
+    description: "ゴールデンプロテインが少し出現しやすくなります。",
+    cost: 5,
+    effectLabel: "ゴールデン出現間隔 -15%",
+    unlock: (state) => state.prestigeLevel >= 5,
+  },
+  {
+    id: "crystal-gym",
+    name: "結晶ジム",
+    description: "筋肉結晶の成長時間を短縮します。",
+    cost: 7,
+    effectLabel: "筋肉結晶 20時間化",
+    unlock: (state) => state.prestigeLevel >= 7,
+  },
+  {
+    id: "permanent-pump",
+    name: "永久パンプ炉",
+    description: "仕上げ直しとは別枠で、全体生産を底上げします。",
+    cost: 10,
+    effectLabel: "全体生産 +5%",
+    unlock: (state) => state.prestigeLevel >= 10,
+  },
+];
 
 const clampScore = (value: number) => Math.min(MAX_SCORE, Math.max(0, value));
 
@@ -1068,6 +1123,28 @@ const formatRate = (value: number) =>
     : Math.floor(value).toLocaleString("ja-JP");
 
 const getUpgradeCost = (upgrade: Upgrade, level: number) => Math.ceil(upgrade.baseCost * upgrade.costRate ** level);
+
+const hasLegacyUpgrade = (state: GameState, id: string) => state.legacyUpgrades.includes(id);
+
+const getLegacySpent = (state: GameState) =>
+  legacyUpgrades.reduce((total, legacy) => (state.legacyUpgrades.includes(legacy.id) ? total + legacy.cost : total), 0);
+
+const getAvailableLegacyPoints = (state: GameState) => Math.max(0, state.prestigeLevel - getLegacySpent(state));
+
+const getLegacyProductionMultiplier = (state: GameState) => (hasLegacyUpgrade(state, "permanent-pump") ? 1.05 : 1);
+
+const getOfflineLimitSeconds = (state: GameState) =>
+  OFFLINE_LIMIT_SECONDS + (hasLegacyUpgrade(state, "offline-coach") ? 60 * 60 * 4 : 0);
+
+const getCrystalGrowMs = (state: GameState) => (hasLegacyUpgrade(state, "crystal-gym") ? 20 * 60 * 60 * 1000 : MUSCLE_CRYSTAL_GROW_MS);
+
+const getGoldenSpawnMinMs = (state: GameState) =>
+  hasLegacyUpgrade(state, "golden-beacon") ? GOLDEN_SPAWN_MIN_MS * 0.85 : GOLDEN_SPAWN_MIN_MS;
+
+const getGoldenSpawnMaxMs = (state: GameState) =>
+  hasLegacyUpgrade(state, "golden-beacon") ? GOLDEN_SPAWN_MAX_MS * 0.85 : GOLDEN_SPAWN_MAX_MS;
+
+const getAscensionStartingMuscle = (state: GameState) => (hasLegacyUpgrade(state, "starter-dumbbell") ? LEGACY_STARTING_MUSCLE : 0);
 
 const getBuildingLevelMultiplier = (state: GameState, key: UpgradeKey) =>
   1 + (state.buildingLevels[key] ?? 0) * BUILDING_LEVEL_BONUS_RATE;
@@ -1292,15 +1369,12 @@ const getAchievementSupportMultiplier = (state: GameState) => {
 };
 
 const getBasePerSecond = (state: GameState) =>
-  upgrades.reduce(
-    (total, upgrade) =>
-      total + (upgrade.perSecondBonus ?? 0) * state.upgrades[upgrade.key] * getBuildingMultiplier(state, upgrade.key),
-    0
-  );
+  upgrades.reduce((total, upgrade) => total + getBuildingUnitProduction(state, upgrade) * state.upgrades[upgrade.key], 0);
 
 const getPerSecond = (state: GameState) =>
   getBasePerSecond(state) *
   getPrestigeMultiplier(state) *
+  getLegacyProductionMultiplier(state) *
   getFrenzyMultiplier(state) *
   getAchievementSupportMultiplier(state) *
   getSeasonalEvent().multiplier;
@@ -1627,6 +1701,11 @@ const normalizeGoldenHistory = (value?: GoldenHistoryEntry[]) =>
         .slice(0, GOLDEN_HISTORY_LIMIT)
     : [];
 
+const normalizeLegacyUpgrades = (value?: string[]) =>
+  Array.isArray(value)
+    ? value.filter((id) => legacyUpgrades.some((legacy) => legacy.id === id))
+    : [];
+
 const readSavedState = (): GameState => {
   if (typeof window === "undefined") return initialState;
 
@@ -1647,6 +1726,7 @@ const readSavedState = (): GameState => {
         typeof saved.nextMuscleCrystalAt === "number" ? saved.nextMuscleCrystalAt : Date.now() + MUSCLE_CRYSTAL_GROW_MS,
       goldenClicks: typeof saved.goldenClicks === "number" ? Math.max(0, Math.floor(saved.goldenClicks)) : 0,
       goldenHistory: normalizeGoldenHistory(saved.goldenHistory),
+      legacyUpgrades: normalizeLegacyUpgrades(saved.legacyUpgrades),
       purchasedPowerUps: Array.isArray(saved.purchasedPowerUps)
         ? saved.purchasedPowerUps.filter((id): id is string => typeof id === "string")
         : [],
@@ -1668,7 +1748,7 @@ const readSavedState = (): GameState => {
     };
 
     const offlineSeconds = Math.min(
-      OFFLINE_LIMIT_SECONDS,
+      getOfflineLimitSeconds(normalized),
       Math.max(0, Math.floor((Date.now() - normalized.lastSavedAt) / 1000))
     );
     const offlineGain = getPerSecond(normalized) * offlineSeconds;
@@ -1747,6 +1827,9 @@ export function MachoClickerPage() {
   const displayNumber = (value: number) => formatDisplayNumber(value, numberNotation);
   const nextShopGoal = getNextShopGoal(state);
   const canHarvestMuscleCrystal = state.nextMuscleCrystalAt <= Date.now();
+  const availableLegacyPoints = getAvailableLegacyPoints(state);
+  const goldenSpawnMinMs = getGoldenSpawnMinMs(state);
+  const goldenSpawnMaxMs = getGoldenSpawnMaxMs(state);
   const achievementCategoryCounts = (["累計", "クリック", "設備数", "建物別", "ゴールデン", "仕上げ直し", "隠し"] as const).map(
     (category) => ({
       category,
@@ -1853,7 +1936,7 @@ export function MachoClickerPage() {
     };
 
     const scheduleNext = () => {
-      const delay = GOLDEN_SPAWN_MIN_MS + Math.random() * (GOLDEN_SPAWN_MAX_MS - GOLDEN_SPAWN_MIN_MS);
+      const delay = goldenSpawnMinMs + Math.random() * (goldenSpawnMaxMs - goldenSpawnMinMs);
       spawnTimer = window.setTimeout(spawn, delay);
     };
 
@@ -1863,7 +1946,7 @@ export function MachoClickerPage() {
       if (hideTimer !== null) window.clearTimeout(hideTimer);
       if (spawnTimer !== null) window.clearTimeout(spawnTimer);
     };
-  }, []);
+  }, [goldenSpawnMaxMs, goldenSpawnMinMs]);
 
   useEffect(() => {
     const newlyUnlocked = achievements.filter(
@@ -2031,8 +2114,27 @@ export function MachoClickerPage() {
       return {
         ...current,
         muscleCrystals: current.muscleCrystals + 1,
-        nextMuscleCrystalAt: now + MUSCLE_CRYSTAL_GROW_MS,
+        nextMuscleCrystalAt: now + getCrystalGrowMs(current),
         lastSavedAt: now,
+      };
+    });
+  };
+
+  const buyLegacyUpgrade = (legacy: LegacyUpgrade) => {
+    setState((current) => {
+      if (current.legacyUpgrades.includes(legacy.id) || !legacy.unlock(current) || getAvailableLegacyPoints(current) < legacy.cost) {
+        playSound("blocked");
+        return current;
+      }
+
+      setPurchaseFlash(`${legacy.name}: ${legacy.effectLabel}`);
+      window.setTimeout(() => setPurchaseFlash(null), 1400);
+      playSound("buy");
+
+      return {
+        ...current,
+        legacyUpgrades: [...current.legacyUpgrades, legacy.id],
+        lastSavedAt: Date.now(),
       };
     });
   };
@@ -2191,6 +2293,7 @@ export function MachoClickerPage() {
       nextMuscleCrystalAt: Date.now() + MUSCLE_CRYSTAL_GROW_MS,
       goldenClicks: 0,
       goldenHistory: [],
+      legacyUpgrades: [],
       purchasedPowerUps: [],
       activeBuffs: [],
       prestigeLevel: 0,
@@ -2240,6 +2343,7 @@ export function MachoClickerPage() {
           typeof parsed.nextMuscleCrystalAt === "number" ? parsed.nextMuscleCrystalAt : Date.now() + MUSCLE_CRYSTAL_GROW_MS,
         goldenClicks: typeof parsed.goldenClicks === "number" ? Math.max(0, Math.floor(parsed.goldenClicks)) : 0,
         goldenHistory: normalizeGoldenHistory(parsed.goldenHistory),
+        legacyUpgrades: normalizeLegacyUpgrades(parsed.legacyUpgrades),
         purchasedPowerUps: Array.isArray(parsed.purchasedPowerUps)
           ? parsed.purchasedPowerUps.filter((id): id is string => typeof id === "string")
           : [],
@@ -2264,7 +2368,7 @@ export function MachoClickerPage() {
 
     const nextState: GameState = {
       ...initialState,
-      muscle: 0,
+      muscle: getAscensionStartingMuscle(state),
       totalMuscle: state.totalMuscle,
       clickCount: 0,
       upgrades: { ...emptyUpgrades },
@@ -2273,6 +2377,7 @@ export function MachoClickerPage() {
       nextMuscleCrystalAt: state.nextMuscleCrystalAt,
       goldenClicks: state.goldenClicks,
       goldenHistory: state.goldenHistory,
+      legacyUpgrades: state.legacyUpgrades,
       purchasedPowerUps: [],
       activeBuffs: [],
       prestigeLevel: state.prestigeLevel + pendingPrestige,
@@ -2969,6 +3074,7 @@ export function MachoClickerPage() {
                     ["設備数", formatFullNumber(ownedUpgradeCount)],
                     ["設備レベル", formatFullNumber(totalBuildingLevel)],
                     ["筋肉結晶", `${formatFullNumber(state.muscleCrystals)}個`],
+                    ["遺産ポイント", `${formatFullNumber(availableLegacyPoints)} / ${formatFullNumber(state.prestigeLevel)}`],
                     ["実績", `${state.unlockedAchievements.length}/${achievements.length}`],
                     ["季節イベント", seasonalEvent.name],
                   ].map(([label, value]) => (
@@ -3080,6 +3186,7 @@ export function MachoClickerPage() {
             <div className="rounded-2xl bg-white/10 px-4 py-3">
               <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Prestige</div>
               <div className="mt-1 text-2xl font-black">+{state.prestigeLevel}%</div>
+              <div className="mt-1 text-xs font-bold text-white/70">未使用 {formatFullNumber(availableLegacyPoints)}</div>
             </div>
             <div className="rounded-2xl bg-white/10 px-4 py-3">
               <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Hand-made</div>
@@ -3148,6 +3255,50 @@ export function MachoClickerPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+            <div className="rounded-2xl bg-white/10 px-4 py-3 md:col-span-4 xl:col-span-7">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <div className="text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">Machoda Legacy</div>
+                  <div className="mt-1 text-sm font-bold text-white/75">
+                    仕上げ直しで得た永久倍率を使って、周回後も残る便利効果を解放します。
+                  </div>
+                </div>
+                <div className="rounded-2xl bg-[#1E1009] px-4 py-3 text-sm font-black text-[#FFE7C2]">
+                  使用可能 {formatFullNumber(availableLegacyPoints)} / 合計 {formatFullNumber(state.prestigeLevel)}
+                </div>
+              </div>
+              <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                {legacyUpgrades.map((legacy) => {
+                  const purchased = state.legacyUpgrades.includes(legacy.id);
+                  const unlocked = legacy.unlock(state);
+                  const canBuy = !purchased && unlocked && availableLegacyPoints >= legacy.cost;
+                  return (
+                    <button
+                      key={legacy.id}
+                      type="button"
+                      onClick={() => buyLegacyUpgrade(legacy)}
+                      disabled={!canBuy}
+                      className={`rounded-2xl border px-4 py-4 text-left transition ${
+                        purchased
+                          ? "border-[#FFB45D] bg-[#FF8A23] text-white shadow-[0_0_24px_rgba(255,138,35,0.32)]"
+                          : canBuy
+                          ? "border-[#FFB45D] bg-[#1E1009] text-white hover:-translate-y-0.5 hover:border-white"
+                          : "border-white/10 bg-[#1E1009]/70 text-white/45"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="text-base font-black">{purchased ? `${legacy.name} 済` : legacy.name}</div>
+                        <div className="rounded-full bg-white/10 px-2 py-1 text-xs font-black">{legacy.cost}</div>
+                      </div>
+                      <div className="mt-2 text-xs font-black text-[#FFE7C2]">{legacy.effectLabel}</div>
+                      <div className="mt-2 text-xs font-bold leading-5 opacity-80">
+                        {unlocked ? legacy.description : "永久倍率が足りると解放されます。"}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
             <div className="rounded-2xl bg-white/10 px-4 py-3 md:col-span-4 xl:col-span-7">
