@@ -156,6 +156,8 @@ type Achievement = {
   isUnlocked: (state: GameState) => boolean;
 };
 
+type AchievementCategory = NonNullable<Achievement["category"]>;
+
 type GoldenProtein = {
   id: number;
   x: number;
@@ -693,6 +695,18 @@ const buildingPowerUpgrades: PowerUpgrade[] = upgrades.flatMap((upgrade) =>
 );
 
 const powerUpgrades: PowerUpgrade[] = [...manualPowerUpgrades, ...buildingPowerUpgrades];
+
+const achievementCategories = ["累計", "クリック", "設備数", "建物別", "ゴールデン", "仕上げ直し", "隠し"] as const;
+
+const achievementCategoryIcons: Record<AchievementCategory, string> = {
+  累計: "Σ",
+  クリック: "＋",
+  設備数: "器",
+  建物別: "館",
+  ゴールデン: "金",
+  仕上げ直し: "転",
+  隠し: "?",
+};
 
 const mysteryShopItems: MysteryShopItem[] = [
   {
@@ -1912,15 +1926,15 @@ export function MachoClickerPage() {
   const availableLegacyPoints = getAvailableLegacyPoints(state);
   const goldenSpawnMinMs = getGoldenSpawnMinMs(state);
   const goldenSpawnMaxMs = getGoldenSpawnMaxMs(state);
-  const achievementCategoryCounts = (["累計", "クリック", "設備数", "建物別", "ゴールデン", "仕上げ直し", "隠し"] as const).map(
-    (category) => ({
-      category,
-      unlocked: achievements.filter(
-        (achievement) => (achievement.category ?? "隠し") === category && state.unlockedAchievements.includes(achievement.key)
-      ).length,
-      total: achievements.filter((achievement) => (achievement.category ?? "隠し") === category).length,
-    })
-  );
+  const achievementCategoryCounts = achievementCategories.map((category) => ({
+    category,
+    icon: achievementCategoryIcons[category],
+    unlocked: achievements.filter(
+      (achievement) => (achievement.category ?? "隠し") === category && state.unlockedAchievements.includes(achievement.key)
+    ).length,
+    total: achievements.filter((achievement) => (achievement.category ?? "隠し") === category).length,
+  }));
+  const purchasedSupportPowerUps = purchasedPowerUps.filter((powerUp) => powerUp.achievementSupportRate);
   const tooltipStyle: CSSProperties = {
     left: Math.max(16, tooltipPosition.x - 360),
     top: Math.max(96, tooltipPosition.y - 28),
@@ -3259,8 +3273,8 @@ export function MachoClickerPage() {
                 </div>
                 <div className="mt-5 rounded-2xl bg-[#FFF4E7] p-4">
                   <div className="text-sm font-black text-[#7C2D12]">{proteinShakeName}</div>
-                  <div className="mt-2 h-3 overflow-hidden rounded-full bg-white">
-                    <div className="h-full rounded-full bg-gradient-to-r from-[#FFB45D] to-[#FF5A1F]" style={{ width: `${proteinShakeLevel}%` }} />
+                  <div className="macho-shake-meter mt-3" style={{ "--shake-level": `${proteinShakeLevel}%` } as CSSProperties}>
+                    <div className="macho-shake-fill" />
                   </div>
                   <div className="mt-2 text-xs font-bold text-[#9A3412]">
                     実績 {state.unlockedAchievements.length}/{achievements.length} / 実績サポート x
@@ -3348,8 +3362,8 @@ export function MachoClickerPage() {
             <div className="macho-dark-card rounded-2xl px-4 py-3">
               <div className="macho-ui-label">Protein Shake</div>
               <div className="mt-1 text-lg font-black">{proteinShakeName}</div>
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/15">
-                <div className="h-full rounded-full bg-[#FFB45D]" style={{ width: `${proteinShakeLevel}%` }} />
+              <div className="macho-shake-meter mt-3" style={{ "--shake-level": `${proteinShakeLevel}%` } as CSSProperties}>
+                <div className="macho-shake-fill" />
               </div>
             </div>
             <div className="macho-dark-card rounded-2xl px-4 py-3">
@@ -3417,14 +3431,35 @@ export function MachoClickerPage() {
                 })}
               </div>
             </div>
+            <div className="macho-cat-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-2">
+              <div className="flex items-start gap-3">
+                <div className="macho-cat-icon" aria-hidden="true">
+                  <span />
+                </div>
+                <div className="min-w-0">
+                  <div className="macho-ui-label">Macho Cat Support</div>
+                  <div className="mt-1 text-lg font-black text-[#FFE7C2]">
+                    x{achievementSupportMultiplier.toLocaleString("ja-JP", { maximumFractionDigits: 3 })}
+                  </div>
+                  <div className="mt-1 text-xs font-bold text-white/70">
+                    取得済み {purchasedSupportPowerUps.length}/3 / 実績で毎秒生産を強化
+                  </div>
+                </div>
+              </div>
+            </div>
             <div className="macho-dark-card rounded-2xl px-4 py-3 md:col-span-4 xl:col-span-7">
               <div className="macho-ui-label">Achievement Categories</div>
               <div className="mt-3 grid gap-2 md:grid-cols-4 xl:grid-cols-7">
                 {achievementCategoryCounts.map((item) => (
-                  <div key={item.category} className="macho-dark-card rounded-2xl px-3 py-3">
-                    <div className="macho-ui-label">{item.category}</div>
-                    <div className="macho-ui-number mt-1 text-lg">
-                      {item.unlocked}/{item.total}
+                  <div key={item.category} className="macho-achievement-category rounded-2xl px-3 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="macho-achievement-icon">{item.icon}</span>
+                      <div>
+                        <div className="macho-ui-label">{item.category}</div>
+                        <div className="macho-ui-number mt-1 text-lg">
+                          {item.unlocked}/{item.total}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))}
