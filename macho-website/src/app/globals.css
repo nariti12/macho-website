@@ -593,6 +593,47 @@ main {
   }
 }
 
+@keyframes macho-tier-aura {
+  0%,
+  100% {
+    opacity: 0.34;
+    transform: translateX(-2%) scale(1);
+  }
+  50% {
+    opacity: 0.74;
+    transform: translateX(2%) scale(1.04);
+  }
+}
+
+@keyframes macho-cosmic-scan {
+  0% {
+    opacity: 0;
+    transform: translateX(-120%) skewX(-12deg);
+  }
+  32% {
+    opacity: 0.48;
+  }
+  72% {
+    opacity: 0.16;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(160%) skewX(-12deg);
+  }
+}
+
+@keyframes macho-unit-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.55));
+  }
+  50% {
+    filter:
+      drop-shadow(0 4px 8px rgba(0, 0, 0, 0.55))
+      drop-shadow(0 0 10px rgba(255, 180, 93, 0.58));
+  }
+}
+
 @keyframes macho-achievement-flash {
   0% {
     filter: brightness(1.25);
@@ -949,6 +990,74 @@ main {
   animation: macho-shop-sheen 0.82s ease-out;
 }
 
+.macho-building-row {
+  isolation: isolate;
+}
+
+.macho-building-row::before,
+.macho-building-row::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.macho-building-row::before {
+  z-index: 2;
+  opacity: 0;
+  background:
+    radial-gradient(circle at 72% 46%, rgba(255, 247, 214, 0.36), transparent 28%),
+    linear-gradient(90deg, transparent, rgba(255, 180, 93, 0.12), transparent);
+}
+
+.macho-building-row::after {
+  z-index: 3;
+  width: 30%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
+  opacity: 0;
+}
+
+.macho-building-row[data-upgrade-tier="advanced"]::before {
+  opacity: 0.46;
+}
+
+.macho-building-row[data-upgrade-tier="mythic"]::before,
+.macho-building-row[data-upgrade-tier="cosmic"]::before {
+  animation: macho-tier-aura 6.5s ease-in-out infinite;
+  opacity: 0.62;
+}
+
+.macho-building-row[data-upgrade-tier="cosmic"]::after {
+  animation: macho-cosmic-scan 7.5s ease-in-out infinite;
+}
+
+.macho-building-row[data-upgrade-tier="advanced"] .macho-building-icon {
+  height: 2.35rem;
+  width: 2.35rem;
+}
+
+.macho-building-row[data-upgrade-tier="mythic"] .macho-building-icon,
+.macho-building-row[data-upgrade-tier="cosmic"] .macho-building-icon {
+  height: 2.65rem;
+  width: 2.65rem;
+  filter:
+    drop-shadow(0 5px 10px rgba(0, 0, 0, 0.58))
+    drop-shadow(0 0 12px rgba(255, 180, 93, 0.48));
+}
+
+.macho-building-row[data-upgrade-tier="mythic"] .macho-unit,
+.macho-building-row[data-upgrade-tier="cosmic"] .macho-unit {
+  animation:
+    macho-unit 3.8s ease-in-out infinite,
+    macho-unit-glow 4.6s ease-in-out infinite;
+}
+
+.macho-building-row[data-upgrade-tier="cosmic"] .macho-unit-field {
+  background:
+    radial-gradient(circle at 20% 35%, rgba(255, 247, 214, 0.14), transparent 8rem),
+    radial-gradient(circle at 78% 58%, rgba(255, 138, 35, 0.12), transparent 9rem);
+}
+
 .macho-purchase-flight {
   animation: macho-purchase-flight 0.86s cubic-bezier(0.18, 0.96, 0.22, 1.12) forwards;
 }
@@ -1221,6 +1330,8 @@ main {
 .macho-reduced-effects .macho-building-purchased::after,
 .macho-reduced-effects .macho-purchase-flight,
 .macho-reduced-effects .macho-powerup-owned-new,
+.macho-reduced-effects .macho-building-row::before,
+.macho-reduced-effects .macho-building-row::after,
 .macho-reduced-effects .macho-shop-ready,
 .macho-reduced-effects .macho-shop-ready::after,
 .macho-reduced-effects .macho-click-ripple,

@@ -470,6 +470,15 @@ const upgrades: Upgrade[] = [
 
 const visualUpgrades = upgrades.filter((upgrade) => upgrade.key !== "pushUp");
 
+const getUpgradeTier = (key: UpgradeKey) => {
+  const index = upgrades.findIndex((upgrade) => upgrade.key === key);
+
+  if (index >= 14) return "cosmic";
+  if (index >= 10) return "mythic";
+  if (index >= 6) return "advanced";
+  return "basic";
+};
+
 const ambientItems: AmbientItem[] = [
   { id: "amb-dumbbell-1", src: "/game/macho-clicker/icons/generated-v1/dumbbell.png", left: "7%", size: 42, delay: "-2s", duration: "15s", opacity: 0.42 },
   { id: "amb-protein-1", src: "/game/macho-clicker/icons/generated-v1/protein-workshop.png", left: "17%", size: 48, delay: "-11s", duration: "21s", opacity: 0.34 },
@@ -2893,9 +2902,10 @@ export function MachoClickerPage() {
                     return (
                       <div
                         key={upgrade.key}
+                        data-upgrade-tier={getUpgradeTier(upgrade.key)}
                         className={`relative grid min-h-0 grid-cols-[11.5rem_minmax(0,1fr)] items-stretch overflow-hidden bg-gradient-to-r ${
                           isBuildingFrenzyTarget ? "macho-building-boost" : ""
-                        } ${recentlyPurchasedKey === upgrade.key ? "macho-building-purchased" : ""} ${getUpgradeSceneClass(upgrade.key)}`}
+                        } macho-building-row ${recentlyPurchasedKey === upgrade.key ? "macho-building-purchased" : ""} ${getUpgradeSceneClass(upgrade.key)}`}
                         onMouseEnter={() => setHoveredGymUpgradeKey(upgrade.key)}
                         onMouseMove={updateTooltipPosition}
                         onMouseLeave={() => setHoveredGymUpgradeKey(null)}
@@ -2910,6 +2920,7 @@ export function MachoClickerPage() {
                           className="z-0 object-cover opacity-100"
                         />
                         <div className="absolute inset-0 z-[1] bg-[linear-gradient(90deg,rgba(42,20,11,0.30)_0%,rgba(42,20,11,0.06)_42%,rgba(42,20,11,0.22)_100%)]" />
+                        <div className="macho-building-tier-aura pointer-events-none absolute inset-0 z-[2]" />
                         {isBuildingFrenzyTarget ? (
                           <div className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(circle_at_72%_50%,rgba(255,247,214,0.42),transparent_34%),linear-gradient(90deg,transparent,rgba(255,180,93,0.24),transparent)]" />
                         ) : null}
@@ -2920,7 +2931,7 @@ export function MachoClickerPage() {
                           </div>
                           <div className="flex items-center justify-between gap-2">
                             <span className="rounded-full bg-[#FF8A23] px-2 py-1 text-xs font-black text-white">所持 {level}</span>
-                            <Image src={upgrade.spriteSrc} alt="" width={34} height={34} className="h-8 w-8 object-contain drop-shadow-lg" />
+                            <Image src={upgrade.spriteSrc} alt="" width={42} height={42} className="macho-building-icon h-8 w-8 object-contain drop-shadow-lg" />
                           </div>
                           <button
                             type="button"
@@ -2931,7 +2942,7 @@ export function MachoClickerPage() {
                             設備Lv.{buildingLevel} +1
                           </button>
                         </div>
-                        <div className="relative z-10 grid max-w-full grid-flow-col grid-rows-3 content-center gap-x-2 gap-y-2 overflow-hidden px-4 py-4 [grid-auto-columns:2rem] sm:[grid-auto-columns:2.25rem] 2xl:[grid-auto-columns:2.5rem]">
+                        <div className="macho-unit-field relative z-10 grid max-w-full grid-flow-col grid-rows-3 content-center gap-x-2 gap-y-2 overflow-hidden px-4 py-4 [grid-auto-columns:2rem] sm:[grid-auto-columns:2.25rem] 2xl:[grid-auto-columns:2.5rem]">
                           {Array.from({ length: visibleCount }, (_, index) => (
                             <div
                               key={`${upgrade.key}-unit-${index}`}
