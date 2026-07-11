@@ -212,10 +212,44 @@ type BalanceBenchmark = {
   upgrades: Record<UpgradeKey, number>;
 };
 
+type CookieStyleBenchmarkTarget = {
+  minutes: number;
+  perSecondRange: [number, number];
+  ownedRange: [number, number];
+  focus: string;
+};
+
 type GoldenEffect = {
   id: "lucky" | "frenzy" | "clickFrenzy" | "buildingFrenzy" | "jackpot";
   weight: number;
 };
+
+const cookieStyleBenchmarkTargets: CookieStyleBenchmarkTarget[] = [
+  {
+    minutes: 5,
+    perSecondRange: [0.8, 4],
+    ownedRange: [8, 20],
+    focus: "ダンベル中心。腹筋ローラーに届くかどうかの序盤。",
+  },
+  {
+    minutes: 10,
+    perSecondRange: [2, 10],
+    ownedRange: [14, 30],
+    focus: "腹筋ローラーを増やし、バーベル部隊を目指す段階。",
+  },
+  {
+    minutes: 30,
+    perSecondRange: [12, 70],
+    ownedRange: [28, 55],
+    focus: "バーベル部隊が主力になり、プロテイン工房が見え始める段階。",
+  },
+  {
+    minutes: 60,
+    perSecondRange: [45, 240],
+    ownedRange: [45, 80],
+    focus: "プロテイン工房を買い始め、高たんぱく食堂を遠い目標にする段階。",
+  },
+];
 
 type LegacyUpgrade = {
   id: string;
@@ -593,42 +627,42 @@ const manualPowerUpgrades: PowerUpgrade[] = [
   {
     id: "grip-gloves",
     name: "握力強化グローブ",
-    description: "クリック時の筋肉ポイントが2倍になります。",
+    description: "クリック時の筋肉ポイントが+1されます。序盤の手動クリックを少しだけ強くします。",
     cost: 100,
     spriteSrc: "/game/macho-clicker/icons/generated-v3/dumbbell.png",
-    effectLabel: "クリック x2",
-    clickMultiplier: 2,
-    unlock: (state) => state.totalMuscle >= 50,
+    effectLabel: "クリック +1",
+    clickBonus: 1,
+    unlock: (state) => state.upgrades.pushUp >= 1 || state.totalMuscle >= 100,
   },
   {
     id: "double-grip",
     name: "両手クリック",
-    description: "クリック時の筋肉ポイントがさらに2倍になります。",
-    cost: 500,
+    description: "クリック時の筋肉ポイントがさらに+1されます。設備を増やした後の次の手動強化です。",
+    cost: 5_000,
     spriteSrc: "/game/macho-clicker/icons/generated-v3/dumbbell.png",
-    effectLabel: "クリック x2",
-    clickMultiplier: 2,
-    unlock: (state) => state.upgrades.pushUp >= 1,
+    effectLabel: "クリック +1",
+    clickBonus: 1,
+    unlock: (state) => state.upgrades.pushUp >= 10 && state.totalMuscle >= 2_500,
   },
   {
     id: "cps-click-1",
     name: "神経伝達強化",
     description: "クリック時に毎秒生産量の0.1%が追加されます。",
-    cost: 100_000,
+    cost: 500_000,
     spriteSrc: "/game/macho-clicker/icons/generated-v3/trainer.png",
     effectLabel: "クリック +CpS 0.1%",
     clickCpsPercent: 0.001,
-    unlock: (state) => state.upgrades.pushUp >= 25,
+    unlock: (state) => state.upgrades.pushUp >= 25 && getPerSecond(state) >= 25,
   },
   {
     id: "cps-click-2",
     name: "爆速パンプ",
     description: "クリック時に毎秒生産量の0.1%が追加されます。",
-    cost: 10_000_000,
+    cost: 50_000_000,
     spriteSrc: "/game/macho-clicker/icons/generated-v3/golden-protein.png",
     effectLabel: "クリック +CpS 0.1%",
     clickCpsPercent: 0.001,
-    unlock: (state) => state.upgrades.pushUp >= 50,
+    unlock: (state) => state.upgrades.pushUp >= 50 && getPerSecond(state) >= 250,
   },
   {
     id: "protein-blend",
@@ -1517,6 +1551,18 @@ const simulateBalanceBenchmark = (minutes: number, clicksPerSecond = 1): Balance
 };
 
 const balanceBenchmarks = [5, 10, 30, 60].map((minutes) => simulateBalanceBenchmark(minutes));
+
+const getOwnedUpgradeCount = (upgradeCounts: Record<UpgradeKey, number>) =>
+  Object.values(upgradeCounts).reduce((total, level) => total + level, 0);
+
+const getCookieBenchmarkTarget = (minutes: number) =>
+  cookieStyleBenchmarkTargets.find((target) => target.minutes === minutes);
+
+const getRangeStatus = (value: number, [min, max]: [number, number]) => {
+  if (value < min) return "遅め";
+  if (value > max) return "速め";
+  return "目安内";
+};
 
 const getTitle = (totalMuscle: number) => {
   if (totalMuscle >= 10_000_000) return "マチョ神";
@@ -3745,13 +3791,28 @@ export function MachoClickerPage() {
               </div>
               <div className="mt-4 grid gap-2 md:grid-cols-4">
                 {balanceBenchmarks.map((benchmark) => {
-                  const owned = Object.values(benchmark.upgrades).reduce((total, level) => total + level, 0);
+                  const owned = getOwnedUpgradeCount(benchmark.upgrades);
+                  const target = getCookieBenchmarkTarget(benchmark.minutes);
+                  const perSecondStatus = target ? getRangeStatus(benchmark.perSecond, target.perSecondRange) : "-";
+                  const ownedStatus = target ? getRangeStatus(owned, target.ownedRange) : "-";
                   return (
                     <div key={benchmark.minutes} className="macho-dark-card rounded-2xl px-4 py-3">
                       <div className="text-xs font-black text-[#FFB45D]">{benchmark.minutes}分</div>
                       <div className="mt-1 text-lg font-black">{displayNumber(benchmark.muscle)}</div>
                       <div className="mt-1 text-xs font-bold text-white/70">毎秒 +{displayNumber(benchmark.perSecond)}</div>
                       <div className="mt-1 text-xs font-bold text-white/70">設備 {owned}個</div>
+                      {target ? (
+                        <div className="mt-3 rounded-2xl border border-white/10 bg-black/20 p-3 text-[11px] leading-5 text-white/70">
+                          <div className="font-black text-white">Cookie型目安</div>
+                          <div>
+                            毎秒 {formatRate(target.perSecondRange[0])}〜{formatRate(target.perSecondRange[1])}: {perSecondStatus}
+                          </div>
+                          <div>
+                            設備 {target.ownedRange[0]}〜{target.ownedRange[1]}個: {ownedStatus}
+                          </div>
+                          <div className="mt-1 text-white/55">{target.focus}</div>
+                        </div>
+                      ) : null}
                     </div>
                   );
                 })}
