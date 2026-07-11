@@ -530,14 +530,14 @@ const upgradeSceneImages: Record<UpgradeKey, string> = {
   mealPrepLab: "/game/macho-clicker/scenes/generated-v5/nutrition-alchemy-lab.png",
   machoPortal: "/game/macho-clicker/scenes/generated-v5/macho-portal-chamber.png",
   timeGym: "/game/macho-clicker/scenes/generated-v5/time-gym.png",
-  antiGravityGym: "/game/macho-clicker/scenes/generated-v2/anti-gravity-gym.png",
-  proteinPrism: "/game/macho-clicker/scenes/generated-v2/protein-prism-room.png",
-  chanceMachine: "/game/macho-clicker/scenes/generated-v2/muscle-gacha-arcade.png",
-  fractalMuscle: "/game/macho-clicker/scenes/generated-v2/fractal-reactor-room.png",
-  muscleConsole: "/game/macho-clicker/scenes/generated-v2/muscle-console-room.png",
-  idleverseGym: "/game/macho-clicker/scenes/generated-v2/idleverse-gym.png",
-  cortexTrainer: "/game/macho-clicker/scenes/generated-v2/cortex-trainer-room.png",
-  finalMacho: "/game/macho-clicker/scenes/generated-v2/final-macho-arena.png",
+  antiGravityGym: "/game/macho-clicker/scenes/generated-v6/anti-gravity-gym.png",
+  proteinPrism: "/game/macho-clicker/scenes/generated-v6/protein-prism-room.png",
+  chanceMachine: "/game/macho-clicker/scenes/generated-v6/muscle-gacha-arcade.png",
+  fractalMuscle: "/game/macho-clicker/scenes/generated-v6/fractal-reactor-room.png",
+  muscleConsole: "/game/macho-clicker/scenes/generated-v6/muscle-console-room.png",
+  idleverseGym: "/game/macho-clicker/scenes/generated-v6/idleverse-gym.png",
+  cortexTrainer: "/game/macho-clicker/scenes/generated-v6/cortex-trainer-room.png",
+  finalMacho: "/game/macho-clicker/scenes/generated-v6/final-macho-arena.png",
 };
 
 const getUpgradeSceneImage = (key: UpgradeKey) => upgradeSceneImages[key];
