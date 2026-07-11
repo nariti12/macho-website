@@ -496,8 +496,8 @@ const upgradeSceneClasses: Record<UpgradeKey, string> = {
   pushUp: "from-[#FFF7EB] via-[#FED7AA] to-[#F97316]",
   abRoller: "from-[#E0F2FE] via-[#BAE6FD] to-[#0284C7]",
   dumbbell: "from-[#E5E7EB] via-[#9CA3AF] to-[#374151]",
-  protein: "from-[#FFF1F2] via-[#FDBA74] to-[#C2410C]",
-  chicken: "from-[#FEF3C7] via-[#F59E0B] to-[#92400E]",
+  protein: "from-[#EFF6FF] via-[#BFDBFE] to-[#2563EB]",
+  chicken: "from-[#FEFCE8] via-[#BBF7D0] to-[#65A30D]",
   benchPress: "from-[#FEE2E2] via-[#FB7185] to-[#7F1D1D]",
   trainer: "from-[#ECFCCB] via-[#84CC16] to-[#365314]",
   gym: "from-[#DBEAFE] via-[#60A5FA] to-[#1E3A8A]",
@@ -519,11 +519,11 @@ const getUpgradeSceneClass = (key: UpgradeKey) => upgradeSceneClasses[key];
 
 const upgradeSceneImages: Record<UpgradeKey, string> = {
   pushUp: "/game/macho-clicker/scenes/generated-v2/push-up-stage.png",
-  abRoller: "/game/macho-clicker/scenes/generated-v3/ab-roller-studio.png",
-  dumbbell: "/game/macho-clicker/scenes/generated-v3/barbell-squad-zone.png",
-  protein: "/game/macho-clicker/scenes/generated-v3/protein-workshop.png",
-  chicken: "/game/macho-clicker/scenes/generated-v3/high-protein-cafeteria.png",
-  benchPress: "/game/macho-clicker/scenes/generated-v3/bench-press-arena.png",
+  abRoller: "/game/macho-clicker/scenes/generated-v4/ab-roller-studio.png",
+  dumbbell: "/game/macho-clicker/scenes/generated-v4/barbell-squad-zone.png",
+  protein: "/game/macho-clicker/scenes/generated-v4/protein-workshop.png",
+  chicken: "/game/macho-clicker/scenes/generated-v4/high-protein-cafeteria.png",
+  benchPress: "/game/macho-clicker/scenes/generated-v4/bench-press-arena.png",
   trainer: "/game/macho-clicker/scenes/generated-v2/trainer-office.png",
   gym: "/game/macho-clicker/scenes/generated-v2/huge-gym-hall.png",
   supplementStore: "/game/macho-clicker/scenes/generated-v2/supplement-space-delivery.png",
@@ -2708,7 +2708,7 @@ export function MachoClickerPage() {
               }`}
             >
               <Image
-                src="/game/macho-clicker/backgrounds/click-gym-stage-v2.png"
+                src="/game/macho-clicker/backgrounds/click-gym-stage-v4.png"
                 alt=""
                 fill
                 priority
