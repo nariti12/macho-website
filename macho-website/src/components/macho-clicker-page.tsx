@@ -1917,6 +1917,8 @@ export function MachoClickerPage() {
     (powerUp) => powerUp.unlock(state) && !state.purchasedPowerUps.includes(powerUp.id)
   );
   const purchasedPowerUps = powerUpgrades.filter((powerUp) => state.purchasedPowerUps.includes(powerUp.id));
+  const recentPurchasedPowerUps = purchasedPowerUps.slice(-6).reverse();
+  const hiddenPurchasedPowerUpCount = Math.max(0, purchasedPowerUps.length - recentPurchasedPowerUps.length);
   const displayNumber = (value: number) => formatDisplayNumber(value, numberNotation);
   const animatedMuscle = useAnimatedNumber(state.muscle);
   const animatedPerSecond = useAnimatedNumber(perSecond);
@@ -2719,6 +2721,9 @@ export function MachoClickerPage() {
               <div className="macho-gym-light pointer-events-none absolute inset-x-0 top-0 z-[2] h-48" />
               <div className={`macho-click-foreground pointer-events-none absolute inset-0 z-[4] ${clickBurst ? "macho-click-foreground-hit" : ""}`}>
                 <span className="macho-stage-floor-glow" />
+                <span className="macho-stage-light-sweep" />
+                <span className="macho-stage-floor-reflection" />
+                <span className="macho-stage-equipment-shift" />
                 <span className="macho-stage-dust-cloud macho-stage-dust-cloud-1" />
                 <span className="macho-stage-dust-cloud macho-stage-dust-cloud-2" />
                 <span className="macho-stage-dust-cloud macho-stage-dust-cloud-3" />
@@ -3062,13 +3067,23 @@ export function MachoClickerPage() {
                   )}
                   {purchasedPowerUps.length > 0 ? (
                     <div className="mt-4 border-t border-[#FED7AA] pt-3">
-                      <div className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-[#C2410C]">取得済み</div>
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <div className="text-xs font-black uppercase tracking-[0.16em] text-[#C2410C]">取得済み</div>
+                        <div className="rounded-full bg-[#FFF4E7] px-2 py-1 text-[11px] font-black text-[#9A3412]">
+                          直近 {recentPurchasedPowerUps.length}件
+                        </div>
+                      </div>
                       <div className="grid grid-cols-6 gap-2">
-                        {purchasedPowerUps.slice(0, 18).map((powerUp) => (
+                        {recentPurchasedPowerUps.map((powerUp) => (
                           <span
                             key={`owned-${powerUp.id}`}
                             title={`${powerUp.name}: ${powerUp.effectLabel}`}
                             data-shop-state="owned"
+                            onMouseEnter={() => setHoveredPowerUpId(powerUp.id)}
+                            onMouseLeave={() => setHoveredPowerUpId(null)}
+                            onFocus={() => setHoveredPowerUpId(powerUp.id)}
+                            onBlur={() => setHoveredPowerUpId(null)}
+                            tabIndex={0}
                             className={`macho-shop-card macho-upgrade-slot flex h-11 w-11 items-center justify-center rounded-xl border border-[#FDBA74] bg-[#FFE7C2] shadow-inner ${
                               recentlyPurchasedPowerUpId === powerUp.id ? "macho-powerup-owned-new" : ""
                             }`}
@@ -3076,6 +3091,11 @@ export function MachoClickerPage() {
                             <Image src={powerUp.spriteSrc} alt="" width={34} height={34} className="h-8 w-8 object-contain" />
                           </span>
                         ))}
+                        {hiddenPurchasedPowerUpCount > 0 ? (
+                          <span className="macho-shop-card flex h-11 w-11 items-center justify-center rounded-xl border border-[#FDBA74] bg-[#FFF4E7] text-xs font-black text-[#9A3412] shadow-inner">
+                            +{hiddenPurchasedPowerUpCount}
+                          </span>
+                        ) : null}
                       </div>
                     </div>
                   ) : null}
