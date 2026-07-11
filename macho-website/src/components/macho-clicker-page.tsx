@@ -541,6 +541,8 @@ const upgradeSceneImages: Record<UpgradeKey, string> = {
 };
 
 const getUpgradeSceneImage = (key: UpgradeKey) => upgradeSceneImages[key];
+const clickStageImageSizes = "(min-width: 1536px) 980px, (min-width: 1280px) 860px, (min-width: 768px) 60vw, 100vw";
+const buildingSceneImageSizes = "(min-width: 1536px) 780px, (min-width: 1280px) 58vw, (min-width: 768px) 100vw, 100vw";
 
 const emptyUpgrades: Record<UpgradeKey, number> = {
   pushUp: 0,
@@ -2719,7 +2721,8 @@ export function MachoClickerPage() {
                 alt=""
                 fill
                 priority
-                sizes="(min-width: 1280px) 760px, 100vw"
+                quality={78}
+                sizes={clickStageImageSizes}
                 className="macho-click-stage-bg z-0 object-cover"
               />
               <div className="macho-click-stage-glow pointer-events-none absolute inset-0 z-[1]" />
@@ -2940,7 +2943,8 @@ export function MachoClickerPage() {
                           src={getUpgradeSceneImage(upgrade.key)}
                           alt=""
                           fill
-                          sizes="(min-width: 1280px) 60vw, 100vw"
+                          quality={68}
+                          sizes={buildingSceneImageSizes}
                           className="z-0 object-cover opacity-100"
                         />
                         <div className="absolute inset-0 z-[1] bg-[linear-gradient(90deg,rgba(42,20,11,0.30)_0%,rgba(42,20,11,0.06)_42%,rgba(42,20,11,0.22)_100%)]" />
