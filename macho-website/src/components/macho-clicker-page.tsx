@@ -2957,6 +2957,7 @@ export function MachoClickerPage() {
                     return (
                       <div
                         key={upgrade.key}
+                        data-upgrade-key={upgrade.key}
                         data-upgrade-tier={getUpgradeTier(upgrade.key)}
                         className={`relative grid min-h-0 grid-cols-[11.5rem_minmax(0,1fr)] items-stretch overflow-hidden bg-gradient-to-r ${
                           isBuildingFrenzyTarget ? "macho-building-boost" : ""

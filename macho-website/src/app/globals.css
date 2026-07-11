@@ -670,6 +670,108 @@ main {
   }
 }
 
+@keyframes macho-unit-roll {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  50% {
+    transform: translateX(0.14rem) rotate(10deg);
+  }
+}
+
+@keyframes macho-unit-pump {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  45% {
+    transform: translateY(-0.16rem) scale(1.08);
+  }
+}
+
+@keyframes macho-unit-mix {
+  0%,
+  100% {
+    transform: rotate(-2deg);
+  }
+  50% {
+    transform: rotate(4deg) translateY(-0.08rem);
+  }
+}
+
+@keyframes macho-unit-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-0.22rem);
+  }
+}
+
+@keyframes macho-unit-glimmer {
+  0%,
+  100% {
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.55)) saturate(1);
+  }
+  50% {
+    filter:
+      drop-shadow(0 4px 8px rgba(0, 0, 0, 0.55))
+      drop-shadow(0 0 10px rgba(125, 211, 252, 0.72))
+      saturate(1.28);
+  }
+}
+
+@keyframes macho-unit-portal-spin {
+  0%,
+  100% {
+    transform: rotate(-2deg) scale(1);
+  }
+  50% {
+    transform: rotate(5deg) scale(1.05);
+  }
+}
+
+@keyframes macho-unit-tick {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  48% {
+    transform: rotate(6deg);
+  }
+  52% {
+    transform: rotate(-4deg);
+  }
+}
+
+@keyframes macho-unit-bounce-heavy {
+  0%,
+  100% {
+    transform: translateY(0) scaleY(1);
+  }
+  42% {
+    transform: translateY(-0.12rem) scaleY(0.96);
+  }
+  62% {
+    transform: translateY(0.04rem) scaleY(1.04);
+  }
+}
+
+@keyframes macho-unit-neural {
+  0%,
+  100% {
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.55)) hue-rotate(0deg);
+  }
+  50% {
+    filter:
+      drop-shadow(0 4px 8px rgba(0, 0, 0, 0.55))
+      drop-shadow(0 0 12px rgba(168, 85, 247, 0.62))
+      hue-rotate(18deg);
+  }
+}
+
 @keyframes macho-achievement-flash {
   0% {
     filter: brightness(1.25);
@@ -1125,6 +1227,59 @@ main {
   background:
     radial-gradient(circle at 20% 35%, rgba(219, 234, 254, 0.14), transparent 8rem),
     radial-gradient(circle at 78% 58%, rgba(167, 139, 250, 0.12), transparent 9rem);
+}
+
+.macho-building-row[data-upgrade-key="pushUp"] .macho-unit img {
+  animation: macho-unit-bounce-heavy 3.1s ease-in-out infinite;
+}
+
+.macho-building-row[data-upgrade-key="abRoller"] .macho-unit img {
+  animation: macho-unit-roll 2.4s ease-in-out infinite;
+}
+
+.macho-building-row[data-upgrade-key="dumbbell"] .macho-unit img,
+.macho-building-row[data-upgrade-key="benchPress"] .macho-unit img {
+  animation: macho-unit-pump 2.8s ease-in-out infinite;
+}
+
+.macho-building-row[data-upgrade-key="protein"] .macho-unit img,
+.macho-building-row[data-upgrade-key="chicken"] .macho-unit img,
+.macho-building-row[data-upgrade-key="mealPrepLab"] .macho-unit img {
+  animation: macho-unit-mix 3.2s ease-in-out infinite;
+}
+
+.macho-building-row[data-upgrade-key="trainer"] .macho-unit img,
+.macho-building-row[data-upgrade-key="gym"] .macho-unit img {
+  animation: macho-unit-float 3.4s ease-in-out infinite;
+}
+
+.macho-building-row[data-upgrade-key="supplementStore"] .macho-unit img,
+.macho-building-row[data-upgrade-key="antiGravityGym"] .macho-unit img,
+.macho-building-row[data-upgrade-key="proteinPrism"] .macho-unit img,
+.macho-building-row[data-upgrade-key="fractalMuscle"] .macho-unit img {
+  animation:
+    macho-unit-float 3.1s ease-in-out infinite,
+    macho-unit-glimmer 4.3s ease-in-out infinite;
+}
+
+.macho-building-row[data-upgrade-key="machoPortal"] .macho-unit img,
+.macho-building-row[data-upgrade-key="idleverseGym"] .macho-unit img {
+  animation:
+    macho-unit-portal-spin 3.5s ease-in-out infinite,
+    macho-unit-neural 5.2s ease-in-out infinite;
+}
+
+.macho-building-row[data-upgrade-key="timeGym"] .macho-unit img,
+.macho-building-row[data-upgrade-key="chanceMachine"] .macho-unit img {
+  animation: macho-unit-tick 3.2s steps(2, end) infinite;
+}
+
+.macho-building-row[data-upgrade-key="muscleConsole"] .macho-unit img,
+.macho-building-row[data-upgrade-key="cortexTrainer"] .macho-unit img,
+.macho-building-row[data-upgrade-key="finalMacho"] .macho-unit img {
+  animation:
+    macho-unit-pump 3.2s ease-in-out infinite,
+    macho-unit-neural 4.8s ease-in-out infinite;
 }
 
 .macho-purchase-flight {
@@ -1604,6 +1759,7 @@ main {
 .macho-reduced-effects .macho-breathe,
 .macho-reduced-effects .macho-cursor,
 .macho-reduced-effects .macho-unit,
+.macho-reduced-effects .macho-unit img,
 .macho-reduced-effects .macho-unit-new,
 .macho-reduced-effects .macho-counter,
 .macho-reduced-effects .macho-counter-purchase,
