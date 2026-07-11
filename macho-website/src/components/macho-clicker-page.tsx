@@ -141,6 +141,7 @@ type PurchaseFlight = {
 };
 
 type MobilePanel = "click" | "gym" | "shop" | "stats";
+type DesktopDetailPanel = "overview" | "achievements" | "legacy" | "levels" | "save" | "benchmarks";
 
 type SoundType = "click" | "buy" | "blocked" | "golden";
 
@@ -1314,6 +1315,15 @@ const mobilePanels: { key: MobilePanel; label: string }[] = [
   { key: "stats", label: "統計" },
 ];
 
+const desktopDetailPanels: { key: DesktopDetailPanel; label: string; description: string }[] = [
+  { key: "overview", label: "概要", description: "今見るべき進行状況" },
+  { key: "achievements", label: "実績", description: "解除状況とシェイク" },
+  { key: "legacy", label: "遺産", description: "仕上げ直しの恒久強化" },
+  { key: "levels", label: "設備Lv", description: "筋肉結晶で設備強化" },
+  { key: "save", label: "保存", description: "表示設定とセーブ" },
+  { key: "benchmarks", label: "検証", description: "難易度調整用データ" },
+];
+
 const soundFiles: Record<SoundType, string> = {
   click: "/sounds/macho-clicker/click.wav",
   buy: "/sounds/macho-clicker/buy.wav",
@@ -1866,6 +1876,7 @@ export function MachoClickerPage() {
   const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition>({ x: 0, y: 0 });
   const [recentlyPurchasedKey, setRecentlyPurchasedKey] = useState<UpgradeKey | null>(null);
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("click");
+  const [desktopDetailPanel, setDesktopDetailPanel] = useState<DesktopDetailPanel>("overview");
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [numberNotation, setNumberNotation] = useState<NumberNotation>("short");
   const [reducedEffects, setReducedEffects] = useState(false);
@@ -3435,35 +3446,62 @@ export function MachoClickerPage() {
           </section>
 
           <section className="macho-stats-panel hidden gap-4 rounded-[28px] border border-[#FCD27B]/60 bg-[#2A140B]/90 p-4 text-white shadow-2xl md:mx-2 md:grid md:grid-cols-4 xl:mx-3 xl:grid-cols-7">
-            <div className="macho-dark-card rounded-2xl px-4 py-3">
+            <div className="macho-dark-card rounded-2xl px-4 py-3 md:col-span-4 xl:col-span-7">
+              <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                <div>
+                  <div className="macho-ui-label">Game Panels</div>
+                  <div className="mt-1 text-sm font-bold text-white/70">
+                    必要な情報だけ開けるように整理しました。普段は概要だけ見れば進行できます。
+                  </div>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-3 xl:w-[46rem] xl:grid-cols-6">
+                  {desktopDetailPanels.map((panel) => (
+                    <button
+                      key={panel.key}
+                      type="button"
+                      onClick={() => setDesktopDetailPanel(panel.key)}
+                      className={`macho-game-button rounded-2xl border px-3 py-3 text-left transition ${
+                        desktopDetailPanel === panel.key
+                          ? "border-[#FFB45D] bg-[#FF8A23] text-white shadow-[0_0_24px_rgba(255,138,35,0.28)]"
+                          : "border-white/10 bg-white/10 text-white/75 hover:border-[#FFB45D] hover:bg-white/15"
+                      }`}
+                    >
+                      <span className="block text-sm font-black">{panel.label}</span>
+                      <span className="mt-1 block text-[10px] font-bold leading-4 opacity-75">{panel.description}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 ${desktopDetailPanel === "overview" ? "" : "hidden"}`}>
               <div className="macho-ui-label">Achievements</div>
               <div className="macho-ui-number mt-1 text-2xl">{state.unlockedAchievements.length}/{achievements.length}</div>
             </div>
-            <div className="macho-dark-card rounded-2xl px-4 py-3">
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 ${desktopDetailPanel === "overview" || desktopDetailPanel === "achievements" ? "" : "hidden"}`}>
               <div className="macho-ui-label">Protein Shake</div>
               <div className="mt-1 text-lg font-black">{proteinShakeName}</div>
               <div className="macho-shake-meter mt-3" style={{ "--shake-level": `${proteinShakeLevel}%` } as CSSProperties}>
                 <div className="macho-shake-fill" />
               </div>
             </div>
-            <div className="macho-dark-card rounded-2xl px-4 py-3">
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 ${desktopDetailPanel === "overview" ? "" : "hidden"}`}>
               <div className="macho-ui-label">Upgrades</div>
               <div className="macho-ui-number mt-1 text-2xl">{ownedUpgradeCount}</div>
             </div>
-            <div className="macho-dark-card rounded-2xl px-4 py-3">
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 ${desktopDetailPanel === "overview" || desktopDetailPanel === "legacy" ? "" : "hidden"}`}>
               <div className="macho-ui-label">Prestige</div>
               <div className="macho-ui-number mt-1 text-2xl">+{state.prestigeLevel}%</div>
               <div className="mt-1 text-xs font-bold text-white/70">未使用 {formatFullNumber(availableLegacyPoints)}</div>
             </div>
-            <div className="macho-dark-card rounded-2xl px-4 py-3">
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 ${desktopDetailPanel === "overview" ? "" : "hidden"}`}>
               <div className="macho-ui-label">Hand-made</div>
               <div className="macho-ui-number mt-1 text-2xl">{displayNumber(state.handMadeMuscle)}</div>
             </div>
-            <div className="macho-dark-card rounded-2xl px-4 py-3">
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 ${desktopDetailPanel === "overview" ? "" : "hidden"}`}>
               <div className="macho-ui-label">Ascensions</div>
               <div className="macho-ui-number mt-1 text-2xl">{formatFullNumber(state.ascensionCount)}</div>
             </div>
-            <div className="macho-dark-card rounded-2xl px-4 py-3">
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 ${desktopDetailPanel === "overview" ? "" : "hidden"}`}>
               <div className="macho-ui-label">Season</div>
               <div className="mt-1 flex items-center gap-2 text-lg font-black">
                 <span className="rounded-lg bg-[#FF8A23] px-2 py-1 text-xs text-white">{seasonalEvent.icon}</span>
@@ -3471,7 +3509,7 @@ export function MachoClickerPage() {
               </div>
               <div className="mt-1 text-xs font-bold text-white/70">{seasonalEvent.bonusLabel}</div>
             </div>
-            <div className="macho-dark-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-2">
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-2 ${desktopDetailPanel === "overview" || desktopDetailPanel === "levels" ? "" : "hidden"}`}>
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="macho-ui-label">Muscle Crystal</div>
@@ -3488,12 +3526,12 @@ export function MachoClickerPage() {
                 </button>
               </div>
             </div>
-            <div className="macho-dark-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-2">
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-2 ${desktopDetailPanel === "overview" || desktopDetailPanel === "levels" ? "" : "hidden"}`}>
               <div className="macho-ui-label">Building Level</div>
               <div className="macho-ui-number mt-1 text-2xl">{formatFullNumber(totalBuildingLevel)}</div>
               <div className="mt-1 text-xs font-bold text-white/70">設備Lv1ごとに対象設備 +1%</div>
             </div>
-            <div className="macho-dark-card rounded-2xl px-4 py-3">
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 ${desktopDetailPanel === "overview" || desktopDetailPanel === "achievements" ? "" : "hidden"}`}>
               <div className="macho-ui-label">Unlocked</div>
               <div className="mt-2 flex flex-wrap gap-2">
                 {achievements.slice(0, 6).map((achievement) => {
@@ -3511,7 +3549,7 @@ export function MachoClickerPage() {
                 })}
               </div>
             </div>
-            <div className="macho-cat-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-2">
+            <div className={`macho-cat-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-2 ${desktopDetailPanel === "overview" || desktopDetailPanel === "achievements" ? "" : "hidden"}`}>
               <div className="flex items-start gap-3">
                 <div className="macho-cat-icon" aria-hidden="true">
                   <span />
@@ -3527,7 +3565,7 @@ export function MachoClickerPage() {
                 </div>
               </div>
             </div>
-            <div className="macho-dark-card rounded-2xl px-4 py-3 md:col-span-4 xl:col-span-7">
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-4 xl:col-span-7 ${desktopDetailPanel === "achievements" ? "" : "hidden"}`}>
               <div className="macho-ui-label">Achievement Categories</div>
               <div className="mt-3 grid gap-2 md:grid-cols-4 xl:grid-cols-7">
                 {achievementCategoryCounts.map((item) => (
@@ -3545,7 +3583,7 @@ export function MachoClickerPage() {
                 ))}
               </div>
             </div>
-            <div className="macho-dark-card rounded-2xl px-4 py-3 md:col-span-4 xl:col-span-7">
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-4 xl:col-span-7 ${desktopDetailPanel === "legacy" ? "" : "hidden"}`}>
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <div className="macho-ui-label">Machoda Legacy</div>
@@ -3590,7 +3628,7 @@ export function MachoClickerPage() {
                 })}
               </div>
             </div>
-            <div className="macho-dark-card rounded-2xl px-4 py-3 md:col-span-4 xl:col-span-7">
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-4 xl:col-span-7 ${desktopDetailPanel === "levels" ? "" : "hidden"}`}>
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <div className="macho-ui-label">Building Levels</div>
@@ -3623,7 +3661,7 @@ export function MachoClickerPage() {
                 </div>
               </div>
             </div>
-            <div className="macho-dark-card rounded-2xl px-4 py-3 md:col-span-4 xl:col-span-3">
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-4 xl:col-span-3 ${desktopDetailPanel === "achievements" ? "" : "hidden"}`}>
               <div className="macho-ui-label">Golden History</div>
               <div className="mt-1 text-sm font-bold text-white/70">獲得回数 {formatFullNumber(state.goldenClicks)}回</div>
               <div className="mt-3 max-h-56 space-y-2 overflow-y-auto pr-1">
@@ -3641,7 +3679,7 @@ export function MachoClickerPage() {
                 )}
               </div>
             </div>
-            <div className="macho-dark-card rounded-2xl px-4 py-3 md:col-span-4 xl:col-span-4">
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-4 xl:col-span-4 ${desktopDetailPanel === "achievements" ? "" : "hidden"}`}>
               <div className="macho-ui-label">Achievement List</div>
               <div className="mt-3 grid max-h-56 gap-2 overflow-y-auto pr-1 md:grid-cols-2">
                 {achievements.map((achievement) => {
@@ -3661,7 +3699,7 @@ export function MachoClickerPage() {
                 })}
               </div>
             </div>
-            <div className="macho-dark-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-7">
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-7 ${desktopDetailPanel === "save" ? "" : "hidden"}`}>
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <div className="macho-ui-label">Options / Save Data</div>
@@ -3699,7 +3737,7 @@ export function MachoClickerPage() {
                 </div>
               </div>
             </div>
-            <div className="macho-dark-card rounded-2xl px-4 py-3 md:col-span-4 xl:col-span-7">
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-4 xl:col-span-7 ${desktopDetailPanel === "benchmarks" ? "" : "hidden"}`}>
               <div className="macho-ui-label">Balance Benchmarks</div>
               <div className="mt-2 text-sm font-bold text-white/75">
                 1秒1クリックで自動購入した場合の目安です。Cookie Clicker 実測値と比較して難易度調整に使います。
