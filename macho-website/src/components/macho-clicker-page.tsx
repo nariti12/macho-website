@@ -1861,6 +1861,7 @@ export function MachoClickerPage() {
   const [hoveredGymUpgradeKey, setHoveredGymUpgradeKey] = useState<UpgradeKey | null>(null);
   const [hoveredShopUpgradeKey, setHoveredShopUpgradeKey] = useState<UpgradeKey | null>(null);
   const [hoveredPowerUpId, setHoveredPowerUpId] = useState<string | null>(null);
+  const [selectedOwnedPowerUpId, setSelectedOwnedPowerUpId] = useState<string | null>(null);
   const [hoveredMysteryId, setHoveredMysteryId] = useState<string | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition>({ x: 0, y: 0 });
   const [recentlyPurchasedKey, setRecentlyPurchasedKey] = useState<UpgradeKey | null>(null);
@@ -1912,6 +1913,9 @@ export function MachoClickerPage() {
   const hoveredGymUpgrade = hoveredGymUpgradeKey ? upgrades.find((upgrade) => upgrade.key === hoveredGymUpgradeKey) ?? null : null;
   const hoveredShopUpgrade = hoveredShopUpgradeKey ? upgrades.find((upgrade) => upgrade.key === hoveredShopUpgradeKey) ?? null : null;
   const hoveredPowerUp = hoveredPowerUpId ? powerUpgrades.find((powerUp) => powerUp.id === hoveredPowerUpId) ?? null : null;
+  const selectedOwnedPowerUp = selectedOwnedPowerUpId
+    ? powerUpgrades.find((powerUp) => powerUp.id === selectedOwnedPowerUpId) ?? null
+    : null;
   const hoveredMystery = hoveredMysteryId ? mysteryShopItems.find((item) => item.id === hoveredMysteryId) ?? null : null;
   const unlockedPowerUps = powerUpgrades.filter(
     (powerUp) => powerUp.unlock(state) && !state.purchasedPowerUps.includes(powerUp.id)
@@ -2239,6 +2243,7 @@ export function MachoClickerPage() {
 
       setPurchaseFlash(`${powerUp.name}: ${getPowerUpgradeSummary(powerUp, current)}`);
       spawnPowerUpgradeEffects(powerUp, event);
+      setSelectedOwnedPowerUpId(powerUp.id);
       window.setTimeout(() => setPurchaseFlash(null), 1100);
       playSound("buy");
 
@@ -3059,6 +3064,14 @@ export function MachoClickerPage() {
                                 : "cursor-not-allowed border-[#FED7AA] bg-[#FFF4E7] grayscale opacity-45"
                             }`}
                           >
+                            <span
+                              className={`macho-state-chip absolute right-1 top-1 ${
+                                canBuyPowerUp ? "macho-state-chip-ready" : "macho-state-chip-wait"
+                              }`}
+                              aria-hidden="true"
+                            >
+                              {canBuyPowerUp ? "✓" : "…"}
+                            </span>
                             <Image src={powerUp.spriteSrc} alt="" width={48} height={48} className="h-12 w-12 object-contain" />
                           </button>
                         );
@@ -3075,21 +3088,26 @@ export function MachoClickerPage() {
                       </div>
                       <div className="grid grid-cols-6 gap-2">
                         {recentPurchasedPowerUps.map((powerUp) => (
-                          <span
+                          <button
                             key={`owned-${powerUp.id}`}
+                            type="button"
                             title={`${powerUp.name}: ${powerUp.effectLabel}`}
                             data-shop-state="owned"
                             onMouseEnter={() => setHoveredPowerUpId(powerUp.id)}
                             onMouseLeave={() => setHoveredPowerUpId(null)}
                             onFocus={() => setHoveredPowerUpId(powerUp.id)}
                             onBlur={() => setHoveredPowerUpId(null)}
-                            tabIndex={0}
-                            className={`macho-shop-card macho-upgrade-slot flex h-11 w-11 items-center justify-center rounded-xl border border-[#FDBA74] bg-[#FFE7C2] shadow-inner ${
+                            onClick={() => setSelectedOwnedPowerUpId((current) => (current === powerUp.id ? null : powerUp.id))}
+                            aria-pressed={selectedOwnedPowerUpId === powerUp.id}
+                            className={`macho-shop-card macho-upgrade-slot relative flex h-11 w-11 items-center justify-center rounded-xl border border-[#FDBA74] bg-[#FFE7C2] shadow-inner ${
                               recentlyPurchasedPowerUpId === powerUp.id ? "macho-powerup-owned-new" : ""
                             }`}
                           >
+                            <span className="macho-state-chip macho-state-chip-owned absolute right-0.5 top-0.5" aria-hidden="true">
+                              ✓
+                            </span>
                             <Image src={powerUp.spriteSrc} alt="" width={34} height={34} className="h-8 w-8 object-contain" />
-                          </span>
+                          </button>
                         ))}
                         {hiddenPurchasedPowerUpCount > 0 ? (
                           <span className="macho-shop-card flex h-11 w-11 items-center justify-center rounded-xl border border-[#FDBA74] bg-[#FFF4E7] text-xs font-black text-[#9A3412] shadow-inner">
@@ -3097,6 +3115,19 @@ export function MachoClickerPage() {
                           </span>
                         ) : null}
                       </div>
+                      {selectedOwnedPowerUp ? (
+                        <div className="mt-3 rounded-2xl border border-[#FDBA74] bg-[#FFF7EB] p-3 text-[#7C2D12] shadow-inner">
+                          <div className="flex items-center gap-3">
+                            <Image src={selectedOwnedPowerUp.spriteSrc} alt="" width={36} height={36} className="h-9 w-9 object-contain" />
+                            <div>
+                              <div className="text-sm font-black">{selectedOwnedPowerUp.name}</div>
+                              <div className="text-xs font-bold text-[#C2410C]">{selectedOwnedPowerUp.effectLabel}</div>
+                            </div>
+                          </div>
+                          <div className="mt-2 text-xs font-bold leading-5 text-[#9A3412]">{selectedOwnedPowerUp.description}</div>
+                          <PowerUpgradeDetails state={state} powerUp={selectedOwnedPowerUp} />
+                        </div>
+                      ) : null}
                     </div>
                   ) : null}
                 </div>
@@ -3151,6 +3182,14 @@ export function MachoClickerPage() {
                             className={`block h-full ${canBuy ? "bg-[#22C55E]" : "bg-[#FF8A23]"}`}
                             style={{ width: `${purchaseProgress}%` }}
                           />
+                        </span>
+                        <span
+                          className={`macho-state-chip absolute right-2 top-2 ${
+                            canBuy ? "macho-state-chip-ready" : "macho-state-chip-wait"
+                          }`}
+                          aria-hidden="true"
+                        >
+                          {canBuy ? "✓" : "…"}
                         </span>
                         <div className="flex items-start gap-3">
                           <span

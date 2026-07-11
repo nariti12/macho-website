@@ -1492,6 +1492,43 @@ main {
     linear-gradient(180deg, rgba(255, 231, 194, 0.95), rgba(255, 180, 93, 0.7));
 }
 
+.macho-state-chip {
+  display: inline-flex;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 900;
+  line-height: 1;
+  pointer-events: none;
+  box-shadow:
+    0 2px 0 rgba(42, 20, 11, 0.22),
+    0 0 0 2px rgba(42, 20, 11, 0.06);
+}
+
+.macho-state-chip-ready {
+  background: #16a34a;
+  color: white;
+}
+
+.macho-state-chip-wait {
+  background: #fef3c7;
+  color: #7c2d12;
+}
+
+.macho-state-chip-owned {
+  background: #0f766e;
+  color: white;
+}
+
+.macho-shop-card[aria-pressed="true"] {
+  outline: 3px solid rgba(15, 118, 110, 0.34);
+  outline-offset: 2px;
+}
+
 .macho-shop-shelf {
   background:
     linear-gradient(180deg, rgba(255, 247, 235, 0.72), rgba(255, 231, 194, 0.76)),
