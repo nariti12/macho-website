@@ -1167,6 +1167,27 @@ main {
   image-rendering: pixelated;
 }
 
+.macho-game-nav {
+  box-shadow:
+    inset 0 -1px 0 rgba(255, 231, 194, 0.28),
+    0 10px 34px rgba(42, 20, 11, 0.42);
+}
+
+.macho-game-nav::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(255, 180, 93, 0.12), transparent 18%, transparent 82%, rgba(255, 180, 93, 0.1)),
+    repeating-linear-gradient(90deg, rgba(255, 231, 194, 0.04) 0 1px, transparent 1px 8px);
+}
+
+.macho-game-nav > * {
+  position: relative;
+  z-index: 1;
+}
+
 .macho-game-shell::after {
   content: "";
   position: fixed;
@@ -1210,6 +1231,11 @@ main {
   background:
     linear-gradient(90deg, rgba(42, 20, 11, 0.34), transparent 22%, transparent 78%, rgba(42, 20, 11, 0.34)),
     linear-gradient(180deg, #7c2d12 0%, #451a03 100%);
+}
+
+.macho-main-grid > aside,
+.macho-main-grid > section {
+  min-height: 0;
 }
 
 .macho-mobile-tabs {

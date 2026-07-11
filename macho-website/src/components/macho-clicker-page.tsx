@@ -1,12 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import type { CSSProperties, MouseEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { SiteHeader } from "@/components/site-header";
-
-const profileImageSrc = "/picture/ore.png";
 const characterImageSrc = "/picture/man.png";
 const STORAGE_KEY = "machoda:macho-clicker:v3";
 const SAVE_INTERVAL_MS = 1000;
@@ -2580,13 +2578,32 @@ export function MachoClickerPage() {
 
   return (
     <div
-      className={`macho-game-shell min-h-screen overflow-hidden bg-[#FFF3DF] text-slate-900 ${
+      className={`macho-game-shell min-h-dvh overflow-hidden bg-[#160D08] text-slate-900 ${
         reducedEffects ? "macho-reduced-effects" : ""
       }`}
       onPointerDown={unlockAudio}
     >
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_18%_8%,rgba(255,184,77,0.34),transparent_32%),radial-gradient(circle_at_86%_0%,rgba(251,146,60,0.26),transparent_30%),linear-gradient(180deg,#FFF7EB_0%,#FDBA74_48%,#7C2D12_100%)]" />
-      <SiteHeader profileImageSrc={profileImageSrc} />
+      <header className="macho-game-nav sticky top-0 z-50 flex h-14 items-center justify-between border-b-4 border-[#7C2D12] bg-[#1F120A]/95 px-3 text-[#FFE7C2] shadow-2xl backdrop-blur md:px-5">
+        <Link
+          href="/"
+          className="macho-game-button rounded-full border-2 border-[#FFB45D]/60 bg-[#7C2D12] px-4 py-2 text-xs font-black text-[#FFE7C2] transition hover:bg-[#9A3412] sm:text-sm"
+        >
+          ← トップへ戻る
+        </Link>
+        <div className="min-w-0 px-3 text-center">
+          <div className="truncate text-base font-black tracking-tight sm:text-xl">マチョクリッカー</div>
+          <div className="hidden text-[10px] font-black uppercase tracking-[0.18em] text-[#FFB45D] sm:block">Full Screen Gym Game</div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setReducedEffects((current) => !current)}
+          className="macho-game-button rounded-full border-2 border-[#FFB45D]/50 bg-[#2A140B] px-3 py-2 text-[11px] font-black text-[#FFE7C2] transition hover:bg-[#451A03] sm:px-4 sm:text-xs"
+          aria-pressed={reducedEffects}
+        >
+          軽量 {reducedEffects ? "ON" : "OFF"}
+        </button>
+      </header>
 
       {achievementToast ? (
         <div className="macho-toast macho-achievement-flash fixed right-4 top-24 z-50 max-w-xs rounded-3xl border-2 border-[#FCD27B] bg-[#FFF7EB] px-5 py-4 text-[#7C2D12] shadow-2xl">
@@ -2607,9 +2624,9 @@ export function MachoClickerPage() {
         </div>
       ) : null}
 
-      <main className="relative z-10 px-0 pb-12 pt-16">
-        <div className="flex w-full max-w-none flex-col gap-2 md:gap-3">
-          <section className="macho-game-topbar macho-game-panel overflow-hidden border-y-4 border-[#7C2D12] bg-[#7C2D12] text-white shadow-2xl md:mx-2 md:rounded-[28px] md:border-4 xl:mx-3">
+      <main className="relative z-10 px-0 pb-0 pt-0">
+        <div className="flex w-full max-w-none flex-col gap-0">
+          <section className="macho-game-topbar macho-game-panel overflow-hidden border-b-4 border-[#7C2D12] bg-[#7C2D12] text-white shadow-2xl md:border-x-0 md:border-t-0">
             <div className="grid gap-px bg-[#FED7AA] lg:grid-cols-[420px_minmax(0,1fr)_390px]">
               <div className="bg-[#9A3412] px-5 py-4">
                 <h1 className="text-3xl font-black tracking-tight text-[#FFE7C2]">マチョクリッカー</h1>
@@ -2691,7 +2708,7 @@ export function MachoClickerPage() {
           </section>
 
           <nav
-            className="macho-mobile-tabs sticky top-16 z-40 grid grid-cols-4 gap-2 border-x-4 border-[#7C2D12] bg-[#2A140B] p-2 shadow-2xl md:hidden"
+            className="macho-mobile-tabs sticky top-14 z-40 grid grid-cols-4 gap-2 border-b-4 border-[#7C2D12] bg-[#2A140B] p-2 shadow-2xl md:hidden"
             aria-label="マチョクリッカー画面切り替え"
           >
             {mobilePanels.map((panel) => (
@@ -2710,9 +2727,9 @@ export function MachoClickerPage() {
             ))}
           </nav>
 
-          <section className="macho-game-panel macho-main-grid grid min-h-[calc(100vh-12rem)] overflow-hidden border-y-4 border-[#7C2D12] bg-[#7C2D12] shadow-2xl md:mx-2 md:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)] md:rounded-[30px] md:border-4 xl:mx-3 xl:grid-cols-[minmax(700px,860px)_minmax(0,1fr)_400px] 2xl:grid-cols-[minmax(780px,980px)_minmax(0,1fr)_420px]">
+          <section className="macho-game-panel macho-main-grid grid min-h-[calc(100dvh-15rem)] overflow-hidden border-b-4 border-[#7C2D12] bg-[#7C2D12] shadow-2xl md:h-[calc(100dvh-12.75rem)] md:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)] md:border-b-0 xl:grid-cols-[minmax(700px,920px)_minmax(0,1fr)_400px] 2xl:grid-cols-[minmax(780px,1040px)_minmax(0,1fr)_420px]">
             <aside
-              className={`relative min-h-[calc(100vh-15rem)] flex-col items-center justify-between overflow-hidden border-b-4 border-[#7C2D12] bg-[#451A03] p-4 text-center sm:p-5 md:col-start-1 md:row-span-2 md:flex md:min-h-[calc(100vh-14rem)] md:border-b-0 md:border-r-4 xl:col-auto xl:row-auto xl:flex xl:min-h-[850px] xl:border-b-0 xl:border-r-4 ${
+              className={`relative min-h-[calc(100dvh-15rem)] flex-col items-center justify-between overflow-hidden border-b-4 border-[#7C2D12] bg-[#451A03] p-4 text-center sm:p-5 md:col-start-1 md:row-span-2 md:flex md:min-h-0 md:border-b-0 md:border-r-4 xl:col-auto xl:row-auto xl:flex xl:min-h-0 xl:border-b-0 xl:border-r-4 ${
                 mobilePanel === "click" ? "flex" : "hidden"
               }`}
             >
@@ -2900,7 +2917,7 @@ export function MachoClickerPage() {
             </aside>
 
             <section
-              className={`relative min-h-[calc(100vh-15rem)] overflow-hidden border-b-4 border-[#7C2D12] bg-[linear-gradient(180deg,#FFF0D5_0%,#FDBA74_48%,#C2410C_100%)] md:col-start-2 md:row-start-1 md:block md:min-h-[calc(50vh-7rem)] xl:col-auto xl:row-auto xl:block xl:min-h-[560px] xl:border-b-0 xl:border-r-4 ${
+              className={`relative min-h-[calc(100dvh-15rem)] overflow-hidden border-b-4 border-[#7C2D12] bg-[linear-gradient(180deg,#FFF0D5_0%,#FDBA74_48%,#C2410C_100%)] md:col-start-2 md:row-start-1 md:block md:min-h-0 xl:col-auto xl:row-auto xl:block xl:min-h-0 xl:border-b-0 xl:border-r-4 ${
                 mobilePanel === "gym" ? "block" : "hidden"
               }`}
             >
@@ -3021,8 +3038,8 @@ export function MachoClickerPage() {
               ) : null}
             </section>
 
-            <aside className={`${mobilePanel === "shop" ? "block" : "hidden"} macho-shop-shelf text-[#7C2D12] md:col-start-2 md:row-start-2 md:block xl:col-auto xl:row-auto xl:block`}>
-              <div className="max-h-none overflow-y-visible p-4 md:max-h-[calc(50vh-7rem)] md:overflow-y-auto xl:sticky xl:top-20 xl:max-h-[calc(100vh-5rem)]">
+            <aside className={`${mobilePanel === "shop" ? "block" : "hidden"} macho-shop-shelf text-[#7C2D12] md:col-start-2 md:row-start-2 md:block xl:col-auto xl:row-auto xl:block xl:min-h-0`}>
+              <div className="max-h-none overflow-y-visible p-4 md:max-h-full md:overflow-y-auto xl:sticky xl:top-0 xl:max-h-[calc(100dvh-12.75rem)]">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <h2 className="text-2xl font-black text-[#7C2D12]">ショップ</h2>
                   <button
