@@ -33,9 +33,6 @@ const BUILDING_LEVEL_BONUS_RATE = 0.01;
 const MAX_BUILDING_LEVEL_MULTIPLIER = 4;
 const MAX_PRESTIGE_MULTIPLIER = 25;
 const MAX_ACHIEVEMENT_SUPPORT_MULTIPLIER = 3;
-const BALANCE_CLICKS_PER_SECOND = 1;
-const BALANCE_MAX_MINUTES = 240;
-const BUILDING_COUNT_CHECKPOINTS = [1, 5, 10, 25, 50, 100, 150, 200] as const;
 const GOLDEN_HISTORY_LIMIT = 12;
 const LEGACY_STARTING_MUSCLE = 100;
 
@@ -83,6 +80,7 @@ type PowerUpgrade = {
   effectLabel: string;
   target?: UpgradeKey;
   buildingMultiplier?: number;
+  productionMultiplier?: number;
   clickBonus?: number;
   clickMultiplier?: number;
   clickCpsPercent?: number;
@@ -154,7 +152,7 @@ type PurchaseFlight = {
 };
 
 type MobilePanel = "click" | "gym" | "shop" | "stats";
-type DesktopDetailPanel = "overview" | "achievements" | "legacy" | "levels" | "save" | "benchmarks";
+type DesktopDetailPanel = "overview" | "daily" | "achievements" | "legacy" | "levels" | "stats" | "save";
 
 type SoundType = "click" | "buy" | "blocked" | "golden";
 
@@ -201,6 +199,12 @@ type SeasonalEvent = {
   bonusLabel: string;
 };
 
+type SeasonalTheme = {
+  shellClass: string;
+  stageLabel: string;
+  accentClass: string;
+};
+
 type AmbientItem = {
   id: string;
   src: string;
@@ -216,26 +220,6 @@ type MysteryShopItem = {
   name: string;
   description: string;
   unlockHint: string;
-};
-
-type BalanceBenchmark = {
-  minutes: number;
-  muscle: number;
-  perSecond: number;
-  upgrades: Record<UpgradeKey, number>;
-};
-
-type CookieStyleBenchmarkTarget = {
-  minutes: number;
-  perSecondRange: [number, number];
-  ownedRange: [number, number];
-  focus: string;
-};
-
-type BuildingCountCheckpoint = {
-  owned: number;
-  minute: number | null;
-  perSecond: number;
 };
 
 type BodyPartKey = "chest" | "back" | "legs" | "shoulders" | "arms" | "abs";
@@ -287,33 +271,6 @@ type GoldenEffect = {
   weight: number;
   unlock?: (state: GameState) => boolean;
 };
-
-const cookieStyleBenchmarkTargets: CookieStyleBenchmarkTarget[] = [
-  {
-    minutes: 5,
-    perSecondRange: [0.8, 4],
-    ownedRange: [8, 20],
-    focus: "ダンベル中心。腹筋ローラーに届くかどうかの序盤。",
-  },
-  {
-    minutes: 10,
-    perSecondRange: [2, 10],
-    ownedRange: [14, 30],
-    focus: "腹筋ローラーを増やし、バーベル部隊を目指す段階。",
-  },
-  {
-    minutes: 30,
-    perSecondRange: [12, 70],
-    ownedRange: [28, 55],
-    focus: "バーベル部隊が主力になり、プロテイン工房が見え始める段階。",
-  },
-  {
-    minutes: 60,
-    perSecondRange: [45, 240],
-    ownedRange: [45, 80],
-    focus: "プロテイン工房を買い始め、高たんぱく食堂を遠い目標にする段階。",
-  },
-];
 
 type LegacyUpgrade = {
   id: string;
@@ -919,6 +876,47 @@ const manualPowerUpgrades: PowerUpgrade[] = [
     effectLabel: "実績1個ごとに +0.5%",
     achievementSupportRate: 0.005,
     unlock: (state) => state.unlockedAchievements.length >= 50,
+  },
+  {
+    id: "season-winter-bulk-meal",
+    name: "冬の増量ミール",
+    description: "冬の増量期だけ解放される限定アップグレード。買うと以後も全体生産が少し伸びます。",
+    cost: 1_000_000,
+    spriteSrc: "/game/macho-clicker/icons/generated-v3/high-protein-meal.png",
+    effectLabel: "全体生産 x1.04",
+    productionMultiplier: 1.04,
+    unlock: (state) => getSeasonalEvent().id === "winter" && state.totalMuscle >= 250_000,
+  },
+  {
+    id: "season-spring-gym-pass",
+    name: "春の入会パス",
+    description: "春だけ出る限定アップグレード。新規トレーニーの勢いで全体生産を少し伸ばします。",
+    cost: 750_000,
+    spriteSrc: "/game/macho-clicker/icons/generated-v3/gym.png",
+    effectLabel: "全体生産 x1.03",
+    productionMultiplier: 1.03,
+    unlock: (state) => getSeasonalEvent().id === "spring" && state.totalMuscle >= 100_000,
+  },
+  {
+    id: "season-summer-cutting-tank",
+    name: "夏の仕上げタンクトップ",
+    description: "夏だけ出る限定アップグレード。クリックのキレと全体生産を少し伸ばします。",
+    cost: 900_000,
+    spriteSrc: "/game/macho-clicker/icons/generated-v3/final-macho.png",
+    effectLabel: "クリック x1.05 / 全体生産 x1.02",
+    clickMultiplier: 1.05,
+    productionMultiplier: 1.02,
+    unlock: (state) => getSeasonalEvent().id === "summer" && state.totalMuscle >= 150_000,
+  },
+  {
+    id: "season-autumn-bulk-pass",
+    name: "秋のバルク予約券",
+    description: "秋だけ出る限定アップグレード。重量を伸ばす季節の恒久ボーナスです。",
+    cost: 850_000,
+    spriteSrc: "/game/macho-clicker/icons/generated-v3/barbell-rack.png",
+    effectLabel: "全体生産 x1.035",
+    productionMultiplier: 1.035,
+    unlock: (state) => getSeasonalEvent().id === "autumn" && state.totalMuscle >= 150_000,
   },
 ];
 
@@ -1569,6 +1567,36 @@ const getSeasonalEvent = (date = new Date()): SeasonalEvent => {
   };
 };
 
+const getSeasonalTheme = (event: SeasonalEvent): SeasonalTheme => {
+  switch (event.id) {
+    case "winter":
+      return {
+        shellClass: "macho-season-winter",
+        stageLabel: "増量期ジム",
+        accentClass: "from-sky-200 via-white to-blue-500",
+      };
+    case "spring":
+      return {
+        shellClass: "macho-season-spring",
+        stageLabel: "入会キャンペーン",
+        accentClass: "from-lime-200 via-emerald-200 to-pink-400",
+      };
+    case "summer":
+      return {
+        shellClass: "macho-season-summer",
+        stageLabel: "仕上げ期ジム",
+        accentClass: "from-cyan-200 via-blue-300 to-orange-400",
+      };
+    case "autumn":
+    default:
+      return {
+        shellClass: "macho-season-autumn",
+        stageLabel: "バルク期ジム",
+        accentClass: "from-amber-200 via-orange-300 to-red-600",
+      };
+  }
+};
+
 const mobilePanels: { key: MobilePanel; label: string }[] = [
   { key: "click", label: "クリック" },
   { key: "shop", label: "ショップ" },
@@ -1576,13 +1604,14 @@ const mobilePanels: { key: MobilePanel; label: string }[] = [
   { key: "stats", label: "統計" },
 ];
 
-const desktopDetailPanels: { key: DesktopDetailPanel; label: string; description: string }[] = [
-  { key: "overview", label: "概要", description: "今見るべき進行状況" },
-  { key: "achievements", label: "実績", description: "解除状況とシェイク" },
-  { key: "legacy", label: "遺産", description: "仕上げ直しの恒久強化" },
-  { key: "levels", label: "設備Lv", description: "筋肉結晶で設備強化" },
-  { key: "save", label: "保存", description: "表示設定とセーブ" },
-  { key: "benchmarks", label: "検証", description: "難易度調整用データ" },
+const desktopDetailPanels: { key: DesktopDetailPanel; label: string; icon: string }[] = [
+  { key: "overview", label: "概要", icon: "◎" },
+  { key: "daily", label: "日課", icon: "日" },
+  { key: "achievements", label: "実績", icon: "★" },
+  { key: "legacy", label: "遺産", icon: "転" },
+  { key: "levels", label: "設備Lv", icon: "晶" },
+  { key: "stats", label: "統計", icon: "Σ" },
+  { key: "save", label: "保存", icon: "保" },
 ];
 
 const soundFiles: Record<SoundType, string> = {
@@ -1733,6 +1762,12 @@ const getAchievementSupportMultiplier = (state: GameState) => {
   return Math.min(MAX_ACHIEVEMENT_SUPPORT_MULTIPLIER, 1 + state.unlockedAchievements.length * supportRate);
 };
 
+const getPowerUpgradeProductionMultiplier = (state: GameState) =>
+  powerUpgrades.reduce((total, powerUp) => {
+    if (!state.purchasedPowerUps.includes(powerUp.id)) return total;
+    return total * (powerUp.productionMultiplier ?? 1);
+  }, 1);
+
 const getTodayKey = () => new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" });
 
 const getActiveTrainingPlan = (state: GameState) => {
@@ -1771,123 +1806,14 @@ const getPerSecond = (state: GameState) =>
   getLegacyProductionMultiplier(state) *
   getFrenzyMultiplier(state) *
   getAchievementSupportMultiplier(state) *
+  getPowerUpgradeProductionMultiplier(state) *
   getDailyTrainingMultiplier(state) *
   getSupplementProductionMultiplier(state) *
   getDailyConditionProductionMultiplier(state) *
   getSeasonalEvent().multiplier;
 
-const createBenchmarkState = (): GameState => ({
-  ...initialState,
-  upgrades: { ...emptyUpgrades },
-  lastSavedAt: Date.now(),
-});
-
-const buyAffordableBenchmarkBuildings = (state: GameState) => {
-  let simulated = state;
-  let purchased = true;
-
-  while (purchased) {
-    purchased = false;
-    const nextUpgrade = [...upgrades]
-      .reverse()
-      .find((upgrade) => simulated.muscle >= getUpgradeCost(upgrade, simulated.upgrades[upgrade.key]));
-
-    if (!nextUpgrade) continue;
-
-    const cost = getUpgradeCost(nextUpgrade, simulated.upgrades[nextUpgrade.key]);
-    simulated = {
-      ...simulated,
-      muscle: clampScore(simulated.muscle - cost),
-      upgrades: {
-        ...simulated.upgrades,
-        [nextUpgrade.key]: simulated.upgrades[nextUpgrade.key] + 1,
-      },
-    };
-    purchased = true;
-  }
-
-  return simulated;
-};
-
-const advanceBenchmarkSecond = (state: GameState, clicksPerSecond = BALANCE_CLICKS_PER_SECOND) => {
-  const clickGain = getClickPower(state) * clicksPerSecond;
-  const passiveGain = getPerSecond(state);
-  const nextState = {
-    ...state,
-    muscle: clampScore(state.muscle + clickGain + passiveGain),
-    totalMuscle: clampScore(state.totalMuscle + clickGain + passiveGain),
-    handMadeMuscle: clampScore(state.handMadeMuscle + clickGain),
-    clickCount: state.clickCount + clicksPerSecond,
-  };
-
-  return buyAffordableBenchmarkBuildings(nextState);
-};
-
-const simulateBalanceBenchmark = (minutes: number, clicksPerSecond = BALANCE_CLICKS_PER_SECOND): BalanceBenchmark => {
-  let simulated = createBenchmarkState();
-  const seconds = minutes * 60;
-
-  for (let second = 0; second < seconds; second += 1) {
-    simulated = advanceBenchmarkSecond(simulated, clicksPerSecond);
-  }
-
-  return {
-    minutes,
-    muscle: simulated.muscle,
-    perSecond: getPerSecond(simulated),
-    upgrades: simulated.upgrades,
-  };
-};
-
-const balanceBenchmarks = [5, 10, 30, 60].map((minutes) => simulateBalanceBenchmark(minutes));
-
 const getOwnedUpgradeCount = (upgradeCounts: Record<UpgradeKey, number>) =>
   Object.values(upgradeCounts).reduce((total, level) => total + level, 0);
-
-const simulateBuildingCountCheckpoints = (): BuildingCountCheckpoint[] => {
-  let simulated = createBenchmarkState();
-  const reached = new Map<number, BuildingCountCheckpoint>();
-  const maxSeconds = BALANCE_MAX_MINUTES * 60;
-
-  for (let second = 0; second <= maxSeconds; second += 1) {
-    if (second > 0) {
-      simulated = advanceBenchmarkSecond(simulated);
-    }
-
-    const owned = getOwnedUpgradeCount(simulated.upgrades);
-    for (const checkpoint of BUILDING_COUNT_CHECKPOINTS) {
-      if (owned >= checkpoint && !reached.has(checkpoint)) {
-        reached.set(checkpoint, {
-          owned: checkpoint,
-          minute: Math.round((second / 60) * 10) / 10,
-          perSecond: getPerSecond(simulated),
-        });
-      }
-    }
-
-    if (reached.size === BUILDING_COUNT_CHECKPOINTS.length) break;
-  }
-
-  return BUILDING_COUNT_CHECKPOINTS.map(
-    (checkpoint) =>
-      reached.get(checkpoint) ?? {
-        owned: checkpoint,
-        minute: null,
-        perSecond: getPerSecond(simulated),
-      }
-  );
-};
-
-const buildingCountCheckpoints = simulateBuildingCountCheckpoints();
-
-const getCookieBenchmarkTarget = (minutes: number) =>
-  cookieStyleBenchmarkTargets.find((target) => target.minutes === minutes);
-
-const getRangeStatus = (value: number, [min, max]: [number, number]) => {
-  if (value < min) return "遅め";
-  if (value > max) return "速め";
-  return "目安内";
-};
 
 const getTitle = (totalMuscle: number) => {
   if (totalMuscle >= 1_000_000_000_000) return "伝説のマチョ田";
@@ -2053,6 +1979,12 @@ const getPowerUpgradeSummary = (powerUp: PowerUpgrade, state: GameState) => {
     return `ゴールデンプロテイン x${powerUp.goldenMultiplier}`;
   }
 
+  if (powerUp.productionMultiplier) {
+    const before = getPerSecond(state);
+    const after = before * powerUp.productionMultiplier;
+    return `全体生産 +${formatRate(Math.max(0, after - before))}/秒`;
+  }
+
   if (powerUp.achievementSupportRate) {
     const bonus = state.unlockedAchievements.length * powerUp.achievementSupportRate * 100;
     return `実績ボーナス +${bonus.toLocaleString("ja-JP", { maximumFractionDigits: 1 })}%`;
@@ -2154,6 +2086,21 @@ const PowerUpgradeDetails = ({ state, powerUp }: { state: GameState; powerUp: Po
         </div>
         <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
           購入後<br />x{nextMultiplier.toLocaleString("ja-JP", { maximumFractionDigits: 3 })}
+        </div>
+      </div>
+    );
+  }
+
+  if (powerUp.productionMultiplier) {
+    const before = getPerSecond(state);
+    const after = before * powerUp.productionMultiplier;
+    return (
+      <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-black">
+        <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
+          現在毎秒<br />+{formatRate(before)}
+        </div>
+        <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
+          購入後<br />+{formatRate(after)}
         </div>
       </div>
     );
@@ -2319,6 +2266,7 @@ export function MachoClickerPage() {
   );
   const pendingPrestige = getPendingPrestige(state);
   const seasonalEvent = getSeasonalEvent();
+  const seasonalTheme = getSeasonalTheme(seasonalEvent);
   const activeTrainingPlan = getActiveTrainingPlan(state);
   const activeSupplements = getActiveSupplements(state);
   const activeDailyCondition = getActiveDailyCondition(state);
@@ -3093,7 +3041,7 @@ export function MachoClickerPage() {
 
   return (
     <div
-      className={`macho-game-shell min-h-dvh overflow-hidden bg-[#160D08] text-slate-900 ${
+      className={`macho-game-shell ${seasonalTheme.shellClass} min-h-dvh overflow-hidden bg-[#160D08] text-slate-900 ${
         reducedEffects ? "macho-reduced-effects" : ""
       }`}
       onPointerDown={unlockAudio}
@@ -3260,6 +3208,7 @@ export function MachoClickerPage() {
                 className="macho-click-stage-bg z-0 object-cover"
               />
               <div className="macho-click-stage-glow pointer-events-none absolute inset-0 z-[1]" />
+              <div className="macho-season-stage-overlay pointer-events-none absolute inset-0 z-[2]" />
               <div className="macho-gym-light pointer-events-none absolute inset-x-0 top-0 z-[2] h-48" />
               <div className={`macho-click-foreground pointer-events-none absolute inset-0 z-[4] ${clickBurst ? "macho-click-foreground-hit" : ""}`}>
                 <span className="macho-stage-floor-glow" />
@@ -3374,6 +3323,25 @@ export function MachoClickerPage() {
                   />
                 </button>
               ) : null}
+
+              <div className="pointer-events-none absolute right-4 top-28 z-30 hidden w-56 space-y-2 text-left lg:block">
+                <div className={`rounded-2xl bg-gradient-to-r ${seasonalTheme.accentClass} p-[2px] shadow-2xl`}>
+                  <div className="rounded-2xl bg-[#1F120A]/88 px-3 py-2 text-[#FFE7C2] backdrop-blur">
+                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-white/60">Season Event</div>
+                    <div className="mt-1 text-sm font-black">{seasonalTheme.stageLabel}</div>
+                    <div className="mt-1 text-[11px] font-bold text-white/70">{seasonalEvent.bonusLabel}</div>
+                  </div>
+                </div>
+                {activeBuffs.map((buff) => (
+                  <div key={`click-buff-${buff.id}`} className="rounded-2xl border border-[#FCD27B]/60 bg-[#2A140B]/88 px-3 py-2 text-[#FFE7C2] shadow-xl backdrop-blur">
+                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#FFB45D]">Golden Effect</div>
+                    <div className="mt-1 text-sm font-black">
+                      {buff.name} x{buff.multiplier}
+                    </div>
+                    <div className="mt-1 text-[11px] font-bold text-white/70">残り{Math.max(0, Math.ceil((buff.endAt - Date.now()) / 1000))}秒</div>
+                  </div>
+                ))}
+              </div>
 
               <div className="relative z-20 my-4 flex aspect-square w-full max-w-[860px] items-center justify-center overflow-visible sm:my-5">
                 {clickBurst ? <span className="macho-click-ripple pointer-events-none absolute left-1/2 top-1/2 z-20" /> : null}
@@ -3975,70 +3943,52 @@ export function MachoClickerPage() {
           </section>
 
           <section className="macho-stats-panel hidden gap-4 rounded-[28px] border border-[#FCD27B]/60 bg-[#2A140B]/90 p-4 text-white shadow-2xl md:mx-2 md:grid md:grid-cols-4 xl:mx-3 xl:grid-cols-7">
-            <div className="macho-dark-card rounded-2xl px-4 py-3 md:col-span-4 xl:col-span-7">
-              <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-                <div>
-                  <div className="macho-ui-label">Game Panels</div>
-                  <div className="mt-1 text-sm font-bold text-white/70">
-                    必要な情報だけ開けるように整理しました。普段は概要だけ見れば進行できます。
-                  </div>
-                </div>
-                <div className="grid gap-2 sm:grid-cols-3 xl:w-[46rem] xl:grid-cols-6">
-                  {desktopDetailPanels.map((panel) => (
-                    <button
-                      key={panel.key}
-                      type="button"
-                      onClick={() => setDesktopDetailPanel(panel.key)}
-                      className={`macho-game-button rounded-2xl border px-3 py-3 text-left transition ${
-                        desktopDetailPanel === panel.key
-                          ? "border-[#FFB45D] bg-[#FF8A23] text-white shadow-[0_0_24px_rgba(255,138,35,0.28)]"
-                          : "border-white/10 bg-white/10 text-white/75 hover:border-[#FFB45D] hover:bg-white/15"
-                      }`}
-                    >
-                      <span className="block text-sm font-black">{panel.label}</span>
-                      <span className="mt-1 block text-[10px] font-bold leading-4 opacity-75">{panel.description}</span>
-                    </button>
-                  ))}
+            <div className="macho-panel-dock md:col-span-4 xl:col-span-7">
+              {desktopDetailPanels.map((panel) => (
+                <button
+                  key={panel.key}
+                  type="button"
+                  onClick={() => setDesktopDetailPanel(panel.key)}
+                  className={`macho-panel-tab ${desktopDetailPanel === panel.key ? "macho-panel-tab-active" : ""}`}
+                >
+                  <span className="macho-panel-tab-icon">{panel.icon}</span>
+                  <span>{panel.label}</span>
+                </button>
+              ))}
+            </div>
+            <div className={`macho-status-hero md:col-span-2 xl:col-span-3 ${desktopDetailPanel === "overview" ? "" : "hidden"}`}>
+              <div>
+                <div className="macho-ui-label">Next Goal</div>
+                <div className="mt-1 text-2xl font-black text-[#FFE7C2]">{nextGoal.title}</div>
+                <div className="mt-2 h-3 overflow-hidden rounded-full bg-white/10">
+                  <div className="h-full rounded-full bg-gradient-to-r from-[#FFB45D] to-[#FF5A1F]" style={{ width: `${titleProgress}%` }} />
                 </div>
               </div>
-            </div>
-            <div className={`macho-dark-card rounded-2xl px-4 py-3 ${desktopDetailPanel === "overview" ? "" : "hidden"}`}>
-              <div className="macho-ui-label">Achievements</div>
-              <div className="macho-ui-number mt-1 text-2xl">{state.unlockedAchievements.length}/{achievements.length}</div>
-            </div>
-            <div className={`macho-dark-card rounded-2xl px-4 py-3 ${desktopDetailPanel === "overview" || desktopDetailPanel === "achievements" ? "" : "hidden"}`}>
-              <div className="macho-ui-label">Protein Shake</div>
-              <div className="mt-1 text-lg font-black">{proteinShakeName}</div>
-              <div className="macho-shake-meter mt-3" style={{ "--shake-level": `${proteinShakeLevel}%` } as CSSProperties}>
-                <div className="macho-shake-fill" />
+              <div className="macho-status-medal">
+                <span>{Math.floor(titleProgress)}%</span>
               </div>
             </div>
-            <div className={`macho-dark-card rounded-2xl px-4 py-3 ${desktopDetailPanel === "overview" ? "" : "hidden"}`}>
-              <div className="macho-ui-label">Upgrades</div>
-              <div className="macho-ui-number mt-1 text-2xl">{ownedUpgradeCount}</div>
-            </div>
-            <div className={`macho-dark-card rounded-2xl px-4 py-3 ${desktopDetailPanel === "overview" || desktopDetailPanel === "legacy" ? "" : "hidden"}`}>
-              <div className="macho-ui-label">Prestige</div>
-              <div className="macho-ui-number mt-1 text-2xl">+{state.prestigeLevel}%</div>
-              <div className="mt-1 text-xs font-bold text-white/70">未使用 {formatFullNumber(availableLegacyPoints)}</div>
-            </div>
-            <div className={`macho-dark-card rounded-2xl px-4 py-3 ${desktopDetailPanel === "overview" ? "" : "hidden"}`}>
-              <div className="macho-ui-label">Hand-made</div>
-              <div className="macho-ui-number mt-1 text-2xl">{displayNumber(state.handMadeMuscle)}</div>
-            </div>
-            <div className={`macho-dark-card rounded-2xl px-4 py-3 ${desktopDetailPanel === "overview" ? "" : "hidden"}`}>
-              <div className="macho-ui-label">Ascensions</div>
-              <div className="macho-ui-number mt-1 text-2xl">{formatFullNumber(state.ascensionCount)}</div>
-            </div>
-            <div className={`macho-dark-card rounded-2xl px-4 py-3 ${desktopDetailPanel === "overview" ? "" : "hidden"}`}>
-              <div className="macho-ui-label">Season</div>
-              <div className="mt-1 flex items-center gap-2 text-lg font-black">
-                <span className="rounded-lg bg-[#FF8A23] px-2 py-1 text-xs text-white">{seasonalEvent.icon}</span>
-                <span>{seasonalEvent.name}</span>
+            <div className={`macho-status-hero md:col-span-2 xl:col-span-2 ${desktopDetailPanel === "overview" || desktopDetailPanel === "achievements" ? "" : "hidden"}`}>
+              <div>
+                <div className="macho-ui-label">Protein Shake</div>
+                <div className="mt-1 text-xl font-black text-[#FFE7C2]">{proteinShakeName}</div>
+                <div className="macho-shake-meter mt-3" style={{ "--shake-level": `${proteinShakeLevel}%` } as CSSProperties}>
+                  <div className="macho-shake-fill" />
+                </div>
               </div>
-              <div className="mt-1 text-xs font-bold text-white/70">{seasonalEvent.bonusLabel}</div>
+              <div className="macho-status-medal">
+                <span>{state.unlockedAchievements.length}/{achievements.length}</span>
+              </div>
             </div>
-            <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-3 ${desktopDetailPanel === "overview" ? "" : "hidden"}`}>
+            <div className={`macho-status-hero md:col-span-2 xl:col-span-2 ${desktopDetailPanel === "overview" ? "" : "hidden"}`}>
+              <div>
+                <div className="macho-ui-label">Season</div>
+                <div className="mt-1 text-xl font-black text-[#FFE7C2]">{seasonalEvent.name}</div>
+                <div className="mt-1 text-xs font-bold text-white/70">{seasonalEvent.bonusLabel}</div>
+              </div>
+              <div className={`macho-season-badge bg-gradient-to-br ${seasonalTheme.accentClass}`}>{seasonalEvent.icon}</div>
+            </div>
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-3 ${desktopDetailPanel === "daily" ? "" : "hidden"}`}>
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="macho-ui-label">Today Training</div>
@@ -4072,7 +4022,7 @@ export function MachoClickerPage() {
                 })}
               </div>
             </div>
-            <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-3 ${desktopDetailPanel === "overview" ? "" : "hidden"}`}>
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-3 ${desktopDetailPanel === "daily" ? "" : "hidden"}`}>
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="macho-ui-label">Supplement Stack</div>
@@ -4109,7 +4059,7 @@ export function MachoClickerPage() {
                 })}
               </div>
             </div>
-            <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-3 ${desktopDetailPanel === "overview" ? "" : "hidden"}`}>
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-3 ${desktopDetailPanel === "daily" ? "" : "hidden"}`}>
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="macho-ui-label">Machoda Event</div>
@@ -4144,7 +4094,7 @@ export function MachoClickerPage() {
                 })}
               </div>
             </div>
-            <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-4 ${desktopDetailPanel === "overview" ? "" : "hidden"}`}>
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-4 ${desktopDetailPanel === "save" ? "" : "hidden"}`}>
               <div className="macho-ui-label">Machoda Links</div>
               <div className="mt-1 text-lg font-black">筋トレ情報と連携</div>
               <div className="mt-1 text-xs font-bold text-white/70">ゲームの邪魔にならないよう、必要な時だけ関連ページへ移動できます。</div>
@@ -4160,7 +4110,7 @@ export function MachoClickerPage() {
                 </Link>
               </div>
             </div>
-            <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-3 ${desktopDetailPanel === "overview" || desktopDetailPanel === "save" ? "" : "hidden"}`}>
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-3 ${desktopDetailPanel === "save" ? "" : "hidden"}`}>
               <div className="macho-ui-label">Share</div>
               <div className="mt-1 text-lg font-black">今の結果を共有</div>
               <div className="mt-1 text-xs font-bold text-white/70">称号、累計筋肉ポイント、毎秒生産を共有用テキストにします。</div>
@@ -4194,7 +4144,7 @@ export function MachoClickerPage() {
               <div className="macho-ui-number mt-1 text-2xl">{formatFullNumber(totalBuildingLevel)}</div>
               <div className="mt-1 text-xs font-bold text-white/70">設備Lv1ごとに対象設備 +1%</div>
             </div>
-            <div className={`macho-dark-card rounded-2xl px-4 py-3 ${desktopDetailPanel === "overview" || desktopDetailPanel === "achievements" ? "" : "hidden"}`}>
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 ${desktopDetailPanel === "achievements" ? "" : "hidden"}`}>
               <div className="macho-ui-label">Unlocked</div>
               <div className="mt-2 flex flex-wrap gap-2">
                 {achievements.slice(0, 6).map((achievement) => {
@@ -4212,7 +4162,7 @@ export function MachoClickerPage() {
                 })}
               </div>
             </div>
-            <div className={`macho-cat-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-2 ${desktopDetailPanel === "overview" || desktopDetailPanel === "achievements" ? "" : "hidden"}`}>
+            <div className={`macho-cat-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-2 ${desktopDetailPanel === "achievements" ? "" : "hidden"}`}>
               <div className="flex items-start gap-3">
                 <div className="macho-cat-icon" aria-hidden="true">
                   <span />
@@ -4400,63 +4350,28 @@ export function MachoClickerPage() {
                 </div>
               </div>
             </div>
-            <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-4 xl:col-span-7 ${desktopDetailPanel === "benchmarks" ? "" : "hidden"}`}>
-              <div className="macho-ui-label">Balance Benchmarks</div>
-              <div className="mt-2 text-sm font-bold text-white/75">
-                1秒1クリックで自動購入した場合の目安です。Cookie Clicker 実測値と比較して難易度調整に使います。
-              </div>
-              <div className="mt-4 grid gap-2 md:grid-cols-4">
-                {balanceBenchmarks.map((benchmark) => {
-                  const owned = getOwnedUpgradeCount(benchmark.upgrades);
-                  const target = getCookieBenchmarkTarget(benchmark.minutes);
-                  const perSecondStatus = target ? getRangeStatus(benchmark.perSecond, target.perSecondRange) : "-";
-                  const ownedStatus = target ? getRangeStatus(owned, target.ownedRange) : "-";
-                  return (
-                    <div key={benchmark.minutes} className="macho-dark-card rounded-2xl px-4 py-3">
-                      <div className="text-xs font-black text-[#FFB45D]">{benchmark.minutes}分</div>
-                      <div className="mt-1 text-lg font-black">{displayNumber(benchmark.muscle)}</div>
-                      <div className="mt-1 text-xs font-bold text-white/70">毎秒 +{displayNumber(benchmark.perSecond)}</div>
-                      <div className="mt-1 text-xs font-bold text-white/70">設備 {owned}個</div>
-                      {target ? (
-                        <div className="mt-3 rounded-2xl border border-white/10 bg-black/20 p-3 text-[11px] leading-5 text-white/70">
-                          <div className="font-black text-white">Cookie型目安</div>
-                          <div>
-                            毎秒 {formatRate(target.perSecondRange[0])}〜{formatRate(target.perSecondRange[1])}: {perSecondStatus}
-                          </div>
-                          <div>
-                            設備 {target.ownedRange[0]}〜{target.ownedRange[1]}個: {ownedStatus}
-                          </div>
-                          <div className="mt-1 text-white/55">{target.focus}</div>
-                        </div>
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="mt-4 grid gap-3 lg:grid-cols-[1.2fr_0.8fr]">
-                <div className="macho-dark-card rounded-2xl px-4 py-3">
-                  <div className="text-sm font-black text-[#FFB45D]">建物購入数チェックポイント</div>
-                  <div className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                    {buildingCountCheckpoints.map((checkpoint) => (
-                      <div key={checkpoint.owned} className="rounded-2xl border border-white/10 bg-black/20 p-3">
-                        <div className="text-xs font-black text-white/60">設備 {checkpoint.owned}個</div>
-                        <div className="mt-1 text-base font-black text-white">
-                          {checkpoint.minute === null ? `${BALANCE_MAX_MINUTES}分超` : `${checkpoint.minute}分`}
-                        </div>
-                        <div className="mt-1 text-[11px] font-bold text-white/60">毎秒 +{displayNumber(checkpoint.perSecond)}</div>
-                      </div>
-                    ))}
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-4 xl:col-span-7 ${desktopDetailPanel === "stats" ? "" : "hidden"}`}>
+              <div className="macho-ui-label">Stats</div>
+              <div className="mt-3 grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+                {[
+                  ["累計", displayNumber(state.totalMuscle)],
+                  ["現在", displayNumber(state.muscle)],
+                  ["毎秒", `+${displayNumber(perSecond)}`],
+                  ["クリック", formatFullNumber(state.clickCount)],
+                  ["手動獲得", displayNumber(state.handMadeMuscle)],
+                  ["設備数", formatFullNumber(ownedUpgradeCount)],
+                  ["設備Lv", formatFullNumber(totalBuildingLevel)],
+                  ["実績", `${state.unlockedAchievements.length}/${achievements.length}`],
+                  ["ゴールデン", `${formatFullNumber(state.goldenClicks)}回`],
+                  ["仕上げ直し", `${formatFullNumber(state.ascensionCount)}回`],
+                  ["永久倍率", `+${formatFullNumber(state.prestigeLevel)}%`],
+                  ["筋肉結晶", `${formatFullNumber(state.muscleCrystals)}個`],
+                ].map(([label, value]) => (
+                  <div key={label} className="macho-stat-tile">
+                    <div className="macho-ui-label">{label}</div>
+                    <div className="macho-ui-number mt-1 break-words text-xl">{value}</div>
                   </div>
-                </div>
-                <div className="macho-dark-card rounded-2xl px-4 py-3">
-                  <div className="text-sm font-black text-[#FFB45D]">倍率上限</div>
-                  <div className="mt-3 space-y-2 text-xs font-bold leading-5 text-white/70">
-                    <div>仕上げ直し: 最大 x{MAX_PRESTIGE_MULTIPLIER}</div>
-                    <div>設備レベル: 1設備あたり最大 x{MAX_BUILDING_LEVEL_MULTIPLIER}</div>
-                    <div>実績サポート: 最大 x{MAX_ACHIEVEMENT_SUPPORT_MULTIPLIER}</div>
-                    <div>検証条件: 1秒{BALANCE_CLICKS_PER_SECOND}クリック / 自動購入</div>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           </section>
