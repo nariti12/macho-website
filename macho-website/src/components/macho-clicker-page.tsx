@@ -109,6 +109,8 @@ type GameState = {
   ascensionCount: number;
   lastSavedAt: number;
   unlockedAchievements: string[];
+  dailyTrainingPlanId: TrainingPlanId | null;
+  dailyTrainingDate: string | null;
 };
 
 type RankingEntry = {
@@ -233,6 +235,7 @@ type BuildingCountCheckpoint = {
 };
 
 type BodyPartKey = "chest" | "back" | "legs" | "shoulders" | "arms" | "abs";
+type TrainingPlanId = "chest" | "back" | "legs" | "shoulders" | "arms" | "abs" | "off";
 
 type BodyPartDefinition = {
   key: BodyPartKey;
@@ -244,6 +247,15 @@ type BodyPartDefinition = {
 type BodyPartProgress = BodyPartDefinition & {
   level: number;
   progress: number;
+};
+
+type TrainingPlan = {
+  id: TrainingPlanId;
+  label: string;
+  description: string;
+  targetParts: BodyPartKey[];
+  multiplier: number;
+  bonusLabel: string;
 };
 
 type GoldenEffect = {
@@ -569,6 +581,65 @@ const bodyPartDefinitions: BodyPartDefinition[] = [
     label: "腹筋",
     mainUpgrades: ["abRoller", "mealPrepLab", "cortexTrainer"],
     accent: "from-cyan-200 to-teal-700",
+  },
+];
+
+const trainingPlans: TrainingPlan[] = [
+  {
+    id: "chest",
+    label: "胸の日",
+    description: "ベンチプレス中心。胸と腕の伸びを少し後押しします。",
+    targetParts: ["chest", "arms"],
+    multiplier: 1.04,
+    bonusLabel: "胸・腕成長 + 生産 +4%",
+  },
+  {
+    id: "back",
+    label: "背中の日",
+    description: "デッドリフトとローイング。背中と腹筋の伸びを少し後押しします。",
+    targetParts: ["back", "abs"],
+    multiplier: 1.04,
+    bonusLabel: "背中・腹筋成長 + 生産 +4%",
+  },
+  {
+    id: "legs",
+    label: "脚の日",
+    description: "スクワット中心。脚と肩の伸びを少し後押しします。",
+    targetParts: ["legs", "shoulders"],
+    multiplier: 1.04,
+    bonusLabel: "脚・肩成長 + 生産 +4%",
+  },
+  {
+    id: "shoulders",
+    label: "肩の日",
+    description: "サイドレイズ中心。肩と腕の伸びを少し後押しします。",
+    targetParts: ["shoulders", "arms"],
+    multiplier: 1.035,
+    bonusLabel: "肩・腕成長 + 生産 +3.5%",
+  },
+  {
+    id: "arms",
+    label: "腕の日",
+    description: "二頭筋と三頭筋。腕の伸びを重点的に後押しします。",
+    targetParts: ["arms"],
+    multiplier: 1.03,
+    bonusLabel: "腕成長 + 生産 +3%",
+  },
+  {
+    id: "abs",
+    label: "腹筋ローラーの日",
+    description: "マチョ田らしい腹筋ローラー特化。腹筋の伸びを重点的に後押しします。",
+    targetParts: ["abs"],
+    multiplier: 1.03,
+    bonusLabel: "腹筋成長 + 生産 +3%",
+  },
+  {
+    id: "off",
+    label: "オフ or 有酸素",
+    description: "回復もトレーニング。生産は少しだけ下がる代わりに全身がじわっと伸びます。",
+    targetParts: ["chest", "back", "legs", "shoulders", "arms", "abs"],
+    multiplier: 0.98,
+    bonusLabel: "全身成長 / 生産 -2%",
   },
 ];
 
@@ -1134,6 +1205,8 @@ const initialState: GameState = {
   ascensionCount: 0,
   lastSavedAt: Date.now(),
   unlockedAchievements: [],
+  dailyTrainingPlanId: null,
+  dailyTrainingDate: null,
 };
 
 const legacyUpgrades: LegacyUpgrade[] = [
@@ -1569,6 +1642,15 @@ const getAchievementSupportMultiplier = (state: GameState) => {
   return Math.min(MAX_ACHIEVEMENT_SUPPORT_MULTIPLIER, 1 + state.unlockedAchievements.length * supportRate);
 };
 
+const getTodayKey = () => new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" });
+
+const getActiveTrainingPlan = (state: GameState) => {
+  if (!state.dailyTrainingPlanId || state.dailyTrainingDate !== getTodayKey()) return null;
+  return trainingPlans.find((plan) => plan.id === state.dailyTrainingPlanId) ?? null;
+};
+
+const getDailyTrainingMultiplier = (state: GameState) => getActiveTrainingPlan(state)?.multiplier ?? 1;
+
 const getBasePerSecond = (state: GameState) =>
   upgrades.reduce((total, upgrade) => total + getBuildingUnitProduction(state, upgrade) * state.upgrades[upgrade.key], 0);
 
@@ -1578,6 +1660,7 @@ const getPerSecond = (state: GameState) =>
   getLegacyProductionMultiplier(state) *
   getFrenzyMultiplier(state) *
   getAchievementSupportMultiplier(state) *
+  getDailyTrainingMultiplier(state) *
   getSeasonalEvent().multiplier;
 
 const createBenchmarkState = (): GameState => ({
@@ -1725,13 +1808,15 @@ const getNextTitleGoal = (totalMuscle: number) => {
 
 const getBodyPartProgress = (state: GameState): BodyPartProgress[] =>
   bodyPartDefinitions.map((part) => {
+    const activeTrainingPlan = getActiveTrainingPlan(state);
+    const trainingBonus = activeTrainingPlan?.targetParts.includes(part.key) ? 8 : 0;
     const rawScore = part.mainUpgrades.reduce((total, key, index) => {
       const countScore = state.upgrades[key] * (index === 0 ? 1 : 1.35);
       const levelScore = (state.buildingLevels[key] ?? 0) * 3;
       return total + countScore + levelScore;
     }, 0);
     const titleScore = Math.log10(Math.max(1, state.totalMuscle)) * 2;
-    const score = rawScore + titleScore;
+    const score = rawScore + titleScore + trainingBonus;
     const level = Math.max(1, Math.min(10, Math.floor(score / 18) + 1));
     const progress = Math.min(100, Math.max(0, ((score % 18) / 18) * 100));
 
@@ -1994,6 +2079,11 @@ const normalizeLegacyUpgrades = (value?: string[]) =>
     ? value.filter((id) => legacyUpgrades.some((legacy) => legacy.id === id))
     : [];
 
+const normalizeTrainingPlanId = (value: unknown): TrainingPlanId | null =>
+  trainingPlans.some((plan) => plan.id === value) ? (value as TrainingPlanId) : null;
+
+const normalizeTrainingDate = (value: unknown) => (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null);
+
 const readSavedState = (): GameState => {
   if (typeof window === "undefined") return initialState;
 
@@ -2033,6 +2123,8 @@ const readSavedState = (): GameState => {
       ascensionCount: typeof saved.ascensionCount === "number" ? Math.max(0, Math.floor(saved.ascensionCount)) : 0,
       lastSavedAt: typeof saved.lastSavedAt === "number" ? saved.lastSavedAt : Date.now(),
       unlockedAchievements: Array.isArray(saved.unlockedAchievements) ? saved.unlockedAchievements : [],
+      dailyTrainingPlanId: normalizeTrainingPlanId(saved.dailyTrainingPlanId),
+      dailyTrainingDate: normalizeTrainingDate(saved.dailyTrainingDate),
     };
 
     const offlineSeconds = Math.min(
@@ -2096,6 +2188,7 @@ export function MachoClickerPage() {
   );
   const pendingPrestige = getPendingPrestige(state);
   const seasonalEvent = getSeasonalEvent();
+  const activeTrainingPlan = getActiveTrainingPlan(state);
   const proteinShakeLevel = getProteinShakeLevel(state.unlockedAchievements.length);
   const proteinShakeName = getProteinShakeName(state.unlockedAchievements.length);
   const achievementSupportMultiplier = getAchievementSupportMultiplier(state);
@@ -2657,6 +2750,18 @@ export function MachoClickerPage() {
     window.setTimeout(() => setPurchaseFlash(null), 1400);
   };
 
+  const selectTrainingPlan = (plan: TrainingPlan) => {
+    const today = getTodayKey();
+    setState((current) => ({
+      ...current,
+      dailyTrainingPlanId: plan.id,
+      dailyTrainingDate: today,
+      lastSavedAt: Date.now(),
+    }));
+    setPurchaseFlash(`${plan.label}: ${plan.bonusLabel}`);
+    window.setTimeout(() => setPurchaseFlash(null), 1400);
+  };
+
   const resetGame = () => {
     if (!window.confirm("マチョクリッカーの進行状況をリセットしますか？")) return;
     const nextState = {
@@ -2726,6 +2831,8 @@ export function MachoClickerPage() {
         ascensionCount: typeof parsed.ascensionCount === "number" ? Math.max(0, Math.floor(parsed.ascensionCount)) : 0,
         lastSavedAt: Date.now(),
         unlockedAchievements: Array.isArray(parsed.unlockedAchievements) ? parsed.unlockedAchievements : [],
+        dailyTrainingPlanId: normalizeTrainingPlanId(parsed.dailyTrainingPlanId),
+        dailyTrainingDate: normalizeTrainingDate(parsed.dailyTrainingDate),
       };
       setState(importedState);
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(importedState));
@@ -2758,6 +2865,8 @@ export function MachoClickerPage() {
       ascensionCount: state.ascensionCount + 1,
       lastSavedAt: Date.now(),
       unlockedAchievements: state.unlockedAchievements,
+      dailyTrainingPlanId: state.dailyTrainingPlanId,
+      dailyTrainingDate: state.dailyTrainingDate,
     };
 
     setState(nextState);
@@ -3739,6 +3848,40 @@ export function MachoClickerPage() {
                 <span>{seasonalEvent.name}</span>
               </div>
               <div className="mt-1 text-xs font-bold text-white/70">{seasonalEvent.bonusLabel}</div>
+            </div>
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-3 ${desktopDetailPanel === "overview" ? "" : "hidden"}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="macho-ui-label">Today Training</div>
+                  <div className="mt-1 text-lg font-black">{activeTrainingPlan ? activeTrainingPlan.label : "未選択"}</div>
+                  <div className="mt-1 text-xs font-bold text-white/70">
+                    {activeTrainingPlan ? activeTrainingPlan.bonusLabel : "今日のメニューを選ぶと、部位成長と生産に小さなボーナスが入ります。"}
+                  </div>
+                </div>
+                <div className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-[#FFE7C2]">
+                  {state.dailyTrainingDate === getTodayKey() ? "本日分" : "未設定"}
+                </div>
+              </div>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                {trainingPlans.map((plan) => {
+                  const selected = activeTrainingPlan?.id === plan.id;
+                  return (
+                    <button
+                      key={plan.id}
+                      type="button"
+                      onClick={() => selectTrainingPlan(plan)}
+                      className={`rounded-2xl border px-3 py-3 text-left transition ${
+                        selected
+                          ? "border-[#FFE7C2] bg-[#FF8A23] text-white shadow-[0_0_0_3px_rgba(255,138,35,0.22)]"
+                          : "border-white/10 bg-black/20 text-white/80 hover:border-[#FFB45D] hover:bg-white/10"
+                      }`}
+                    >
+                      <div className="text-sm font-black">{plan.label}</div>
+                      <div className="mt-1 text-[11px] font-bold leading-5 opacity-75">{plan.description}</div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
             <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-2 ${desktopDetailPanel === "overview" || desktopDetailPanel === "levels" ? "" : "hidden"}`}>
               <div className="flex items-start justify-between gap-3">
