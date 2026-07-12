@@ -2,147 +2,148 @@
 
 最終更新: 2026-07-12
 
-この図は、現在の `macho-website` の主要ページ、API、外部サービス、DB、静的アセットの関係を俯瞰するための構成図です。
+巨大な1枚図にすると読みづらいため、まず全体像を小さく示し、その下に詳細図を分けています。
+
+## 全体構成
+
+```mermaid
+flowchart LR
+  user[ユーザー] --> vercel[Vercel<br/>Next.js App Router]
+
+  vercel --> pages[画面ページ<br/>src/app/**/page.tsx]
+  vercel --> api[API<br/>src/app/api/**/route.ts]
+  vercel --> cron[Vercel Cron]
+
+  pages --> assets[静的アセット<br/>public/]
+  pages --> affiliate[外部ECリンク<br/>楽天 / Amazon / iHerb]
+  pages --> api
+
+  api --> microcms[microCMS<br/>Blog]
+  api --> supabase[(Supabase<br/>DB)]
+  api --> resend[Resend<br/>お問い合わせ]
+  api --> rakuten[Rakuten API<br/>価格 / サプリ更新]
+
+  cron --> api
+```
+
+## 画面ページ構成
 
 ```mermaid
 flowchart TB
-  user[ユーザー / Browser] --> vercel[Vercel<br/>Next.js App Router]
+  layout[src/app/layout.tsx<br/>共通レイアウト / SEO / 計測タグ]
 
-  subgraph next[Next.js アプリ]
-    layout[src/app/layout.tsx<br/>共通レイアウト / メタ情報 / 計測タグ]
-    home["/<br/>トップページ"]
-    blogList["/blog<br/>ブログ一覧"]
-    blogDetail["/blog/[id]<br/>ブログ詳細"]
-    profile["/profile<br/>プロフィール"]
-    menu["/menu<br/>マチョ田の筋トレメニュー"]
-    calculator["/intake-calculator<br/>カロリー/たんぱく質計算機"]
-    supplements["/supplements-ranking<br/>おすすめサプリ"]
-    shoes["/training-wear<br/>おすすめトレーニングシューズ"]
-    gear["/training-gear<br/>おすすめトレーニングギア"]
-    faq["/training-faq<br/>筋トレFAQ"]
-    clicker["/macho-clicker<br/>マチョクリッカー"]
-    contact["/contact<br/>お問い合わせ"]
-    privacy["/privacy<br/>プライバシーポリシー"]
-  end
+  layout --> home["/<br/>トップページ"]
+  layout --> blogList["/blog<br/>ブログ一覧"]
+  layout --> blogDetail["/blog/[id]<br/>ブログ詳細"]
+  layout --> profile["/profile<br/>プロフィール"]
+  layout --> menu["/menu<br/>マチョ田の筋トレメニュー"]
+  layout --> calculator["/intake-calculator<br/>計算機"]
+  layout --> supplements["/supplements-ranking<br/>おすすめサプリ"]
+  layout --> shoes["/training-wear<br/>おすすめトレーニングシューズ"]
+  layout --> gear["/training-gear<br/>おすすめトレーニングギア"]
+  layout --> faq["/training-faq<br/>筋トレFAQ"]
+  layout --> clicker["/macho-clicker<br/>マチョクリッカー"]
+  layout --> contact["/contact<br/>お問い合わせ"]
+  layout --> privacy["/privacy<br/>プライバシーポリシー"]
 
-  vercel --> layout
-  layout --> home
-  layout --> blogList
-  layout --> blogDetail
-  layout --> profile
-  layout --> menu
-  layout --> calculator
-  layout --> supplements
-  layout --> shoes
-  layout --> gear
-  layout --> faq
-  layout --> clicker
-  layout --> contact
-  layout --> privacy
+  home --> homeComponent[src/components/home-page.tsx]
+  supplements --> supplementsComponent[src/components/supplements-top-page.tsx]
+  clicker --> clickerComponent[src/components/macho-clicker-page.tsx]
+  layout --> header[src/components/site-header.tsx]
+```
 
-  subgraph components[src/components]
-    homeComponent[home-page.tsx<br/>トップ導線 / Blog最新表示]
-    headerComponent[site-header.tsx<br/>共通ヘッダー]
-    supplementsComponent[supplements-top-page.tsx<br/>サプリ表示カード]
-    clickerComponent[macho-clicker-page.tsx<br/>ゲーム本体]
-  end
+## Blog / CMS 構成
 
-  home --> homeComponent
-  layout --> headerComponent
-  supplements --> supplementsComponent
-  clicker --> clickerComponent
+```mermaid
+flowchart LR
+  home[トップページ<br/>Blog最新表示] --> apiBlogs["/api/blogs"]
+  blogList["/blog"] --> apiBlogs
+  blogDetail["/blog/[id]"] --> apiBlogId["/api/blogs/[id]"]
 
-  subgraph api[API Route Handlers]
-    apiBlogs["/api/blogs<br/>Blog最新取得"]
-    apiBlogId["/api/blogs/[id]<br/>Blog詳細取得"]
-    apiRevalidate["/api/revalidate<br/>microCMS再検証"]
-    apiContact["/api/contact<br/>お問い合わせ送信"]
-    apiClicker["/api/macho-clicker/rankings<br/>ゲームランキング"]
-    apiCron["/api/cron/protein-rankings<br/>サプリDB更新"]
-  end
-
-  homeComponent --> apiBlogs
-  blogList --> apiBlogs
-  blogDetail --> apiBlogId
-  contact --> apiContact
-  clickerComponent --> apiClicker
-
-  subgraph lib[src/lib]
-    seoLib[seo.ts<br/>SEO定義]
-    supabaseLib[supabase/*<br/>Supabase client]
-    rankingLib[protein-rankings/*<br/>楽天取得 / 抽出 / 保存 / リンク生成]
-    priceLib[rakuten-price.ts<br/>楽天参考価格取得]
-  end
-
-  layout --> seoLib
-  apiClicker --> supabaseLib
-  apiCron --> rankingLib
-  rankingLib --> supabaseLib
-  supplementsComponent --> supabaseLib
-  shoes --> priceLib
-  gear --> priceLib
-
-  subgraph external[外部サービス]
-    microcms[microCMS<br/>Blog CMS]
-    supabase[(Supabase Postgres)]
-    resend[Resend<br/>メール送信]
-    rakuten[Rakuten Web Service API]
-    rakutenAffiliate[楽天アフィリエイトリンク]
-    amazonAffiliate[Amazonアソシエイトリンク]
-    iherb[iHerb外部リンク]
-    analytics[Google Analytics / Tag Manager / AdSense]
-  end
-
-  apiBlogs --> microcms
+  apiBlogs --> microcms[microCMS<br/>blogs API]
   apiBlogId --> microcms
-  apiRevalidate --> microcms
-  supabaseLib --> supabase
-  rankingLib --> rakuten
-  priceLib --> rakuten
-  apiContact --> resend
-  layout --> analytics
 
-  supplementsComponent --> rakutenAffiliate
-  supplementsComponent --> amazonAffiliate
-  supplementsComponent --> iherb
-  shoes --> rakutenAffiliate
-  shoes --> amazonAffiliate
+  microcmsWebhook[microCMS Webhook] --> revalidate["/api/revalidate"]
+  revalidate --> nextCache[Next.js Cache<br/>blog-list / blog-detail 再検証]
+```
+
+## おすすめサプリ / 価格更新構成
+
+```mermaid
+flowchart TB
+  supplementsPage["/supplements-ranking"] --> supplementsComponent[src/components/supplements-top-page.tsx]
+  supplementsComponent --> supabase[(Supabase)]
+  supplementsComponent --> rakutenLink[楽天アフィリエイトリンク]
+  supplementsComponent --> amazonLink[Amazonアソシエイトリンク]
+  supplementsComponent --> iherbLink[iHerbリンク]
+
+  cron[Vercel Cron<br/>毎週日曜 18:00 UTC] --> cronApi["/api/cron/protein-rankings"]
+  manual[手動 curl 実行] --> cronApi
+
+  cronApi --> service[src/lib/protein-rankings/service.ts]
+  service --> rakutenClient[src/lib/protein-rankings/rakuten-client.ts]
+  service --> extractor[src/lib/protein-rankings/extractors.ts]
+  service --> scoring[src/lib/protein-rankings/scoring.ts]
+  service --> repository[src/lib/protein-rankings/repository.ts]
+
+  rakutenClient --> rakutenApi[Rakuten API]
+  repository --> supabase
+
+  supabase --> products[products]
+  supabase --> metrics[product_metrics]
+  supabase --> rankings[rankings]
+```
+
+## トレーニングシューズ / ギア構成
+
+```mermaid
+flowchart TB
+  shoes["/training-wear<br/>おすすめトレーニングシューズ"]
+  gear["/training-gear<br/>おすすめトレーニングギア"]
+
+  shoes --> staticDataShoes[ページ内の固定ランキング定義]
+  gear --> staticDataGear[ページ内の固定ランキング定義]
+
+  staticDataShoes --> priceLib[src/lib/rakuten-price.ts]
+  staticDataGear --> priceLib
+  priceLib --> rakutenApi[Rakuten API<br/>参考価格取得]
+
+  shoes --> rakutenAffiliate[楽天アフィリエイトリンク]
+  shoes --> amazonAffiliate[Amazonアソシエイトリンク]
   gear --> rakutenAffiliate
   gear --> amazonAffiliate
 
-  subgraph db[Supabase テーブル]
-    products[products<br/>商品基本情報]
-    metrics[product_metrics<br/>抽出指標 / 分類]
-    rankings[rankings<br/>サプリ表示ランキング]
-    clickerScores[macho_clicker_scores<br/>ゲームランキング]
-  end
+  cronShoes[Vercel Cron<br/>毎週日曜 18:10 UTC] --> shoes
+  cronGear[Vercel Cron<br/>毎週日曜 18:20 UTC] --> gear
+```
 
-  supabase --> products
-  supabase --> metrics
-  supabase --> rankings
-  supabase --> clickerScores
+## マチョクリッカー構成
 
-  subgraph cron[Vercel Cron]
-    cronProtein[毎週日曜 18:00 UTC<br/>/api/cron/protein-rankings]
-    cronShoes[毎週日曜 18:10 UTC<br/>/training-wear 再検証]
-    cronGear[毎週日曜 18:20 UTC<br/>/training-gear 再検証]
-  end
+```mermaid
+flowchart TB
+  clickerPage["/macho-clicker"] --> clickerComponent[src/components/macho-clicker-page.tsx]
 
-  cronProtein --> apiCron
-  cronShoes --> shoes
-  cronGear --> gear
+  clickerComponent --> localStorage[Browser localStorage<br/>ゲーム進行保存]
+  clickerComponent --> assets[public/game/macho-clicker<br/>背景 / アイコン / 進化キャラ / 効果音]
+  clickerComponent --> rankingApi["/api/macho-clicker/rankings"]
 
-  subgraph publicAssets[public アセット]
-    pictures[public/picture<br/>プロフィール / 商品補助画像]
-    clickerAssets[public/game/macho-clicker<br/>背景 / アイコン / 進化キャラ / 効果音]
-    icons[public/icon.png<br/>favicon]
-  end
+  rankingApi --> supabase[(Supabase)]
+  supabase --> scores[macho_clicker_scores]
+```
 
-  home --> pictures
-  profile --> pictures
-  supplementsComponent --> pictures
-  clickerComponent --> clickerAssets
-  layout --> icons
+## お問い合わせ / 計測 / 静的アセット
+
+```mermaid
+flowchart LR
+  contactPage["/contact"] --> contactApi["/api/contact"]
+  contactApi --> resend[Resend<br/>メール送信]
+
+  layout[src/app/layout.tsx] --> ga[Google Analytics]
+  layout --> gtm[Google Tag Manager]
+  layout --> adsense[Google AdSense]
+
+  pages[各ページ] --> picture[public/picture<br/>プロフィール / 商品補助画像]
+  pages --> favicon[public/icon.png<br/>favicon]
 ```
 
 ## 補足
