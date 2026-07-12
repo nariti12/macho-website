@@ -94,6 +94,7 @@ type GameState = {
   totalMuscle: number;
   handMadeMuscle: number;
   clickCount: number;
+  bodyEvolutionStage: number;
   upgrades: Record<UpgradeKey, number>;
   buildingLevels: Record<UpgradeKey, number>;
   muscleCrystals: number;
@@ -1268,6 +1269,7 @@ const initialState: GameState = {
   totalMuscle: 0,
   handMadeMuscle: 0,
   clickCount: 0,
+  bodyEvolutionStage: 0,
   upgrades: emptyUpgrades,
   buildingLevels: emptyBuildingLevels,
   muscleCrystals: 0,
@@ -1866,60 +1868,95 @@ const getBodyPartProgress = (state: GameState): BodyPartProgress[] =>
     };
   });
 
-const getBodyStage = (totalMuscle: number) => {
-  if (totalMuscle >= 1_000_000) {
-    return {
-      label: "完成形マチョ",
-      imageSrc: finalCharacterImageSrc,
-      ring: "border-red-100 bg-[#FF8A23]",
-      scale: 1.1,
-      aura: "opacity-90",
-    };
-  }
-  if (totalMuscle >= 250_000) {
-    return {
-      label: "ゴリマッチョ目前",
-      imageSrc: "/picture/macho-evolution/stage-3-muscular.png",
-      ring: "border-orange-100 bg-[#FF9D2E]",
-      scale: 1.04,
-      aura: "opacity-75",
-    };
-  }
-  if (totalMuscle >= 50_000) {
-    return {
-      label: "筋肉が見えてきた",
-      imageSrc: "/picture/macho-evolution/stage-2-athletic.png",
-      ring: "border-white/80 bg-[#FFB45D]",
-      scale: 1,
-      aura: "opacity-55",
-    };
-  }
-  if (totalMuscle >= 5_000) {
-    return {
-      label: "メタボ脱出中",
-      imageSrc: "/picture/macho-evolution/stage-1-training.png",
-      ring: "border-white/70 bg-[#FFC46F]",
-      scale: 0.98,
-      aura: "opacity-40",
-    };
-  }
-  if (totalMuscle >= 500) {
-    return {
-      label: "動き始めたメタボ",
-      imageSrc: "/picture/macho-evolution/stage-0-metabo.png",
-      ring: "border-white/70 bg-[#FFD89A]",
-      scale: 0.96,
-      aura: "opacity-25",
-    };
-  }
-  return {
+const bodyEvolutionStages = [
+  {
+    stage: 0,
     label: "だらしないメタボ期",
+    requirement: 0,
     imageSrc: "/picture/macho-evolution/stage-0-metabo.png",
     ring: "border-white/60 bg-[#FFE7C2]",
     scale: 0.94,
     aura: "opacity-10",
-  };
-};
+  },
+  {
+    stage: 1,
+    label: "動き始めたメタボ",
+    requirement: 500,
+    imageSrc: "/picture/macho-evolution/stage-0-metabo.png",
+    ring: "border-white/70 bg-[#FFD89A]",
+    scale: 0.96,
+    aura: "opacity-25",
+  },
+  {
+    stage: 2,
+    label: "メタボ脱出中",
+    requirement: 5_000,
+    imageSrc: "/picture/macho-evolution/stage-1-training.png",
+    ring: "border-white/70 bg-[#FFC46F]",
+    scale: 0.98,
+    aura: "opacity-40",
+  },
+  {
+    stage: 3,
+    label: "筋肉が見えてきた",
+    requirement: 25_000,
+    imageSrc: "/picture/macho-evolution/stage-1-training.png",
+    ring: "border-white/80 bg-[#FFB45D]",
+    scale: 1,
+    aura: "opacity-48",
+  },
+  {
+    stage: 4,
+    label: "細マッチョ期",
+    requirement: 50_000,
+    imageSrc: "/picture/macho-evolution/stage-2-athletic.png",
+    ring: "border-white/80 bg-[#FFB45D]",
+    scale: 1.01,
+    aura: "opacity-55",
+  },
+  {
+    stage: 5,
+    label: "筋トレ中級マッチョ",
+    requirement: 100_000,
+    imageSrc: "/picture/macho-evolution/stage-2-athletic.png",
+    ring: "border-orange-100 bg-[#FFA33D]",
+    scale: 1.03,
+    aura: "opacity-66",
+  },
+  {
+    stage: 6,
+    label: "ゴリマッチョ目前",
+    requirement: 250_000,
+    imageSrc: "/picture/macho-evolution/stage-3-muscular.png",
+    ring: "border-orange-100 bg-[#FF9D2E]",
+    scale: 1.05,
+    aura: "opacity-75",
+  },
+  {
+    stage: 7,
+    label: "マチョ田級",
+    requirement: 1_000_000,
+    imageSrc: finalCharacterImageSrc,
+    ring: "border-red-100 bg-[#FF8A23]",
+    scale: 1.08,
+    aura: "opacity-84",
+  },
+  {
+    stage: 8,
+    label: "完成形マチョ",
+    requirement: 10_000_000,
+    imageSrc: finalCharacterImageSrc,
+    ring: "border-red-100 bg-[#FF6A1A]",
+    scale: 1.12,
+    aura: "opacity-95",
+  },
+] as const;
+
+const getUnlockedBodyEvolutionStage = (totalMuscle: number) =>
+  bodyEvolutionStages.reduce((highest, stage) => (totalMuscle >= stage.requirement ? stage.stage : highest), 0);
+
+const getBodyStage = (stage: number) =>
+  bodyEvolutionStages.find((candidate) => candidate.stage === stage) ?? bodyEvolutionStages[0];
 
 const getNewsLines = (state: GameState, title: string, perSecond: number) => {
   const seasonalEvent = getSeasonalEvent();
@@ -2171,6 +2208,10 @@ const readSavedState = (): GameState => {
       totalMuscle: typeof saved.totalMuscle === "number" ? clampScore(saved.totalMuscle) : 0,
       handMadeMuscle: typeof saved.handMadeMuscle === "number" ? clampScore(saved.handMadeMuscle) : 0,
       clickCount: typeof saved.clickCount === "number" ? Math.max(0, Math.floor(saved.clickCount)) : 0,
+      bodyEvolutionStage:
+        typeof saved.bodyEvolutionStage === "number"
+          ? Math.max(0, Math.min(bodyEvolutionStages.length - 1, Math.floor(saved.bodyEvolutionStage)))
+          : getUnlockedBodyEvolutionStage(typeof saved.totalMuscle === "number" ? saved.totalMuscle : 0),
       upgrades: normalizeSavedUpgrades(saved.upgrades),
       buildingLevels: normalizeSavedBuildingLevels(saved.buildingLevels),
       muscleCrystals: typeof saved.muscleCrystals === "number" ? Math.max(0, Math.floor(saved.muscleCrystals)) : 0,
@@ -2215,6 +2256,10 @@ const readSavedState = (): GameState => {
       ...normalized,
       muscle: clampScore(normalized.muscle + offlineGain),
       totalMuscle: clampScore(normalized.totalMuscle + offlineGain),
+      bodyEvolutionStage: Math.min(
+        normalized.bodyEvolutionStage,
+        getUnlockedBodyEvolutionStage(clampScore(normalized.totalMuscle + offlineGain))
+      ),
       lastSavedAt: Date.now(),
     };
   } catch {
@@ -2253,6 +2298,7 @@ export function MachoClickerPage() {
   const [numberNotation, setNumberNotation] = useState<NumberNotation>("short");
   const [reducedEffects, setReducedEffects] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
+  const [evolutionFlash, setEvolutionFlash] = useState(false);
   const effectIdRef = useRef(0);
   const stateRef = useRef<GameState>(initialState);
   const lastTickAtRef = useRef(Date.now());
@@ -2275,6 +2321,9 @@ export function MachoClickerPage() {
   const achievementSupportMultiplier = getAchievementSupportMultiplier(state);
   const title = getTitle(state.totalMuscle);
   const nextGoal = getNextTitleGoal(state.totalMuscle);
+  const unlockedBodyEvolutionStage = getUnlockedBodyEvolutionStage(state.totalMuscle);
+  const canBodyEvolve = state.bodyEvolutionStage < unlockedBodyEvolutionStage;
+  const nextBodyStage = canBodyEvolve ? getBodyStage(state.bodyEvolutionStage + 1) : null;
   const bodyPartProgress = useMemo(() => getBodyPartProgress(state), [state]);
   const bodyPartAverageLevel = Math.round(
     bodyPartProgress.reduce((total, part) => total + part.level, 0) / Math.max(1, bodyPartProgress.length)
@@ -2285,7 +2334,7 @@ export function MachoClickerPage() {
   const visualOwnedUpgradeCount = visualUpgrades.reduce((total, upgrade) => total + state.upgrades[upgrade.key], 0);
   const newsLines = getNewsLines(state, title, perSecond);
   const news = newsLines[newsIndex % newsLines.length];
-  const bodyStage = getBodyStage(state.totalMuscle);
+  const bodyStage = getBodyStage(state.bodyEvolutionStage);
   const dumbbellOrbitItems = useMemo(() => getDumbbellOrbitItems(state.upgrades.pushUp), [state.upgrades.pushUp]);
   const visibleAmbientItems = useMemo(() => {
     if (reducedEffects) return [];
@@ -2871,6 +2920,21 @@ export function MachoClickerPage() {
     window.setTimeout(() => setPurchaseFlash(null), 1400);
   };
 
+  const evolveBody = () => {
+    if (!canBodyEvolve || !nextBodyStage) return;
+
+    setEvolutionFlash(true);
+    setPurchaseFlash(`進化: ${nextBodyStage.label}`);
+    playSound("buy");
+    setState((current) => ({
+      ...current,
+      bodyEvolutionStage: Math.min(getUnlockedBodyEvolutionStage(current.totalMuscle), current.bodyEvolutionStage + 1),
+      lastSavedAt: Date.now(),
+    }));
+    window.setTimeout(() => setEvolutionFlash(false), 1200);
+    window.setTimeout(() => setPurchaseFlash(null), 1600);
+  };
+
   const shareResult = async () => {
     const text = `マチョクリッカーで「${title}」まで到達。累計筋肉ポイント ${formatFullNumber(state.totalMuscle)}、毎秒 +${formatRate(
       perSecond
@@ -2944,6 +3008,10 @@ export function MachoClickerPage() {
         totalMuscle: typeof parsed.totalMuscle === "number" ? clampScore(parsed.totalMuscle) : 0,
         handMadeMuscle: typeof parsed.handMadeMuscle === "number" ? clampScore(parsed.handMadeMuscle) : 0,
         clickCount: typeof parsed.clickCount === "number" ? Math.max(0, Math.floor(parsed.clickCount)) : 0,
+        bodyEvolutionStage:
+          typeof parsed.bodyEvolutionStage === "number"
+            ? Math.max(0, Math.min(bodyEvolutionStages.length - 1, Math.floor(parsed.bodyEvolutionStage)))
+            : getUnlockedBodyEvolutionStage(typeof parsed.totalMuscle === "number" ? parsed.totalMuscle : 0),
         upgrades: normalizeSavedUpgrades(parsed.upgrades),
         buildingLevels: normalizeSavedBuildingLevels(parsed.buildingLevels),
         muscleCrystals: typeof parsed.muscleCrystals === "number" ? Math.max(0, Math.floor(parsed.muscleCrystals)) : 0,
@@ -2985,6 +3053,7 @@ export function MachoClickerPage() {
       muscle: getAscensionStartingMuscle(state),
       totalMuscle: state.totalMuscle,
       clickCount: 0,
+      bodyEvolutionStage: state.bodyEvolutionStage,
       upgrades: { ...emptyUpgrades },
       buildingLevels: state.buildingLevels,
       muscleCrystals: state.muscleCrystals,
@@ -3264,6 +3333,31 @@ export function MachoClickerPage() {
                   <span>COMBO {combo}</span>
                 </div>
               </div>
+              <div className="relative z-20 mt-3 w-full">
+                <div className={`macho-evolution-card ${canBodyEvolve ? "macho-evolution-ready" : ""}`}>
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[#C2410C]">Body Evolution</div>
+                    <div className="mt-1 truncate text-sm font-black text-[#7C2D12]">
+                      現在: {bodyStage.label}
+                    </div>
+                    <div className="mt-1 text-xs font-bold text-[#9A3412]">
+                      {nextBodyStage
+                        ? `次: ${nextBodyStage.label}`
+                        : state.bodyEvolutionStage >= bodyEvolutionStages.length - 1
+                          ? "最終進化済み"
+                          : `次の進化まで ${displayNumber(Math.max(0, bodyEvolutionStages[state.bodyEvolutionStage + 1].requirement - state.totalMuscle))}`}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={evolveBody}
+                    disabled={!canBodyEvolve}
+                    className="macho-evolution-button"
+                  >
+                    {canBodyEvolve ? "進化" : "待機"}
+                  </button>
+                </div>
+              </div>
 
               {floatingGains.map((item) => (
                 <div
@@ -3343,7 +3437,9 @@ export function MachoClickerPage() {
                 ))}
               </div>
 
-              <div className="relative z-20 my-4 flex aspect-square w-full max-w-[860px] items-center justify-center overflow-visible sm:my-5">
+              <div className={`relative z-20 my-4 flex aspect-square w-full max-w-[860px] items-center justify-center overflow-visible sm:my-5 ${
+                evolutionFlash ? "macho-evolution-flash" : ""
+              }`}>
                 {clickBurst ? <span className="macho-click-ripple pointer-events-none absolute left-1/2 top-1/2 z-20" /> : null}
                 {dumbbellOrbitItems.map((item) => (
                   <span
@@ -3968,6 +4064,32 @@ export function MachoClickerPage() {
                 <span>{Math.floor(titleProgress)}%</span>
               </div>
             </div>
+            <div className={`macho-visual-panel md:col-span-2 xl:col-span-4 ${desktopDetailPanel === "overview" ? "" : "hidden"}`}>
+              <div className="macho-visual-orbit">
+                <Image src={bodyStage.imageSrc} alt="" width={120} height={120} className="relative z-10 h-24 w-24 object-contain drop-shadow-2xl" />
+                <Image src="/game/macho-clicker/icons/generated-v3/dumbbell.png" alt="" width={44} height={44} className="macho-orbit-icon macho-orbit-icon-1" />
+                <Image src="/game/macho-clicker/icons/generated-v3/protein-workshop.png" alt="" width={44} height={44} className="macho-orbit-icon macho-orbit-icon-2" />
+                <Image src="/game/macho-clicker/icons/generated-v3/golden-protein.png" alt="" width={44} height={44} className="macho-orbit-icon macho-orbit-icon-3" />
+              </div>
+              <div className="min-w-0">
+                <div className="macho-ui-label">Now Training</div>
+                <div className="mt-1 text-2xl font-black text-[#FFE7C2]">{title}</div>
+                <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+                  <div className="macho-mini-meter">
+                    <span>設備</span>
+                    <strong>{formatFullNumber(ownedUpgradeCount)}</strong>
+                  </div>
+                  <div className="macho-mini-meter">
+                    <span>実績</span>
+                    <strong>{state.unlockedAchievements.length}</strong>
+                  </div>
+                  <div className="macho-mini-meter">
+                    <span>黄金</span>
+                    <strong>{formatFullNumber(state.goldenClicks)}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
             <div className={`macho-status-hero md:col-span-2 xl:col-span-2 ${desktopDetailPanel === "overview" || desktopDetailPanel === "achievements" ? "" : "hidden"}`}>
               <div>
                 <div className="macho-ui-label">Protein Shake</div>
@@ -3987,6 +4109,28 @@ export function MachoClickerPage() {
                 <div className="mt-1 text-xs font-bold text-white/70">{seasonalEvent.bonusLabel}</div>
               </div>
               <div className={`macho-season-badge bg-gradient-to-br ${seasonalTheme.accentClass}`}>{seasonalEvent.icon}</div>
+            </div>
+            <div className={`macho-visual-panel md:col-span-4 xl:col-span-7 ${desktopDetailPanel === "daily" ? "" : "hidden"}`}>
+              <div className="macho-daily-stage">
+                <Image
+                  src={activeTrainingPlan?.id === "off" ? "/game/macho-clicker/icons/generated-v3/high-protein-meal.png" : "/game/macho-clicker/icons/generated-v3/dumbbell.png"}
+                  alt=""
+                  width={92}
+                  height={92}
+                  className="h-20 w-20 object-contain drop-shadow-2xl"
+                />
+                <Image src="/game/macho-clicker/icons/generated-v3/protein-workshop.png" alt="" width={76} height={76} className="h-16 w-16 object-contain drop-shadow-2xl" />
+                <Image src="/game/macho-clicker/icons/generated-v3/trainer.png" alt="" width={76} height={76} className="h-16 w-16 object-contain drop-shadow-2xl" />
+              </div>
+              <div className="min-w-0">
+                <div className="macho-ui-label">Daily Setup</div>
+                <div className="mt-1 text-2xl font-black text-[#FFE7C2]">
+                  {activeTrainingPlan ? activeTrainingPlan.label : "今日のメニューを選択"}
+                </div>
+                <div className="mt-2 text-sm font-bold leading-6 text-white/72">
+                  日課は毎日リセットされる小さなボーナスです。選ぶだけで今日の遊び方が少し変わります。
+                </div>
+              </div>
             </div>
             <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-3 ${desktopDetailPanel === "daily" ? "" : "hidden"}`}>
               <div className="flex items-start justify-between gap-3">
@@ -4179,6 +4323,15 @@ export function MachoClickerPage() {
               </div>
             </div>
             <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-4 xl:col-span-7 ${desktopDetailPanel === "achievements" ? "" : "hidden"}`}>
+              <div className="macho-panel-scene-header">
+                <div className="macho-panel-scene-icon">
+                  <Image src="/game/macho-clicker/icons/generated-v3/golden-protein.png" alt="" width={64} height={64} className="h-12 w-12 object-contain" />
+                </div>
+                <div>
+                  <div className="macho-ui-label">Achievement Room</div>
+                  <div className="mt-1 text-xl font-black text-[#FFE7C2]">実績を集めてシェイクを濃くする</div>
+                </div>
+              </div>
               <div className="macho-ui-label">Achievement Categories</div>
               <div className="mt-3 grid gap-2 md:grid-cols-4 xl:grid-cols-7">
                 {achievementCategoryCounts.map((item) => (
@@ -4197,6 +4350,15 @@ export function MachoClickerPage() {
               </div>
             </div>
             <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-4 xl:col-span-7 ${desktopDetailPanel === "legacy" ? "" : "hidden"}`}>
+              <div className="macho-panel-scene-header">
+                <div className="macho-panel-scene-icon">
+                  <Image src="/game/macho-clicker/icons/generated-v3/macho-portal.png" alt="" width={64} height={64} className="h-12 w-12 object-contain" />
+                </div>
+                <div>
+                  <div className="macho-ui-label">Legacy Room</div>
+                  <div className="mt-1 text-xl font-black text-[#FFE7C2]">仕上げ直しで恒久強化を取る</div>
+                </div>
+              </div>
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <div className="macho-ui-label">Machoda Legacy</div>
@@ -4242,6 +4404,15 @@ export function MachoClickerPage() {
               </div>
             </div>
             <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-4 xl:col-span-7 ${desktopDetailPanel === "levels" ? "" : "hidden"}`}>
+              <div className="macho-panel-scene-header">
+                <div className="macho-panel-scene-icon">
+                  <Image src="/game/macho-clicker/icons/generated-v3/nutrition-lab.png" alt="" width={64} height={64} className="h-12 w-12 object-contain" />
+                </div>
+                <div>
+                  <div className="macho-ui-label">Crystal Lab</div>
+                  <div className="mt-1 text-xl font-black text-[#FFE7C2]">筋肉結晶で設備を育てる</div>
+                </div>
+              </div>
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <div className="macho-ui-label">Building Levels</div>
@@ -4313,6 +4484,15 @@ export function MachoClickerPage() {
               </div>
             </div>
             <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-7 ${desktopDetailPanel === "save" ? "" : "hidden"}`}>
+              <div className="macho-panel-scene-header">
+                <div className="macho-panel-scene-icon">
+                  <Image src="/game/macho-clicker/icons/generated-v3/muscle-console.png" alt="" width={64} height={64} className="h-12 w-12 object-contain" />
+                </div>
+                <div>
+                  <div className="macho-ui-label">Control Console</div>
+                  <div className="mt-1 text-xl font-black text-[#FFE7C2]">保存・表示・共有をまとめて管理</div>
+                </div>
+              </div>
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <div className="macho-ui-label">Options / Save Data</div>
@@ -4351,6 +4531,15 @@ export function MachoClickerPage() {
               </div>
             </div>
             <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-4 xl:col-span-7 ${desktopDetailPanel === "stats" ? "" : "hidden"}`}>
+              <div className="macho-panel-scene-header">
+                <div className="macho-panel-scene-icon">
+                  <Image src="/game/macho-clicker/icons/generated-v3/cortex-trainer.png" alt="" width={64} height={64} className="h-12 w-12 object-contain" />
+                </div>
+                <div>
+                  <div className="macho-ui-label">Stats Board</div>
+                  <div className="mt-1 text-xl font-black text-[#FFE7C2]">細かい数字はここで確認</div>
+                </div>
+              </div>
               <div className="macho-ui-label">Stats</div>
               <div className="mt-3 grid gap-3 md:grid-cols-3 xl:grid-cols-6">
                 {[
