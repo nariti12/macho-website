@@ -111,6 +111,8 @@ type GameState = {
   unlockedAchievements: string[];
   dailyTrainingPlanId: TrainingPlanId | null;
   dailyTrainingDate: string | null;
+  dailySupplementIds: SupplementId[];
+  dailySupplementDate: string | null;
 };
 
 type RankingEntry = {
@@ -236,6 +238,7 @@ type BuildingCountCheckpoint = {
 
 type BodyPartKey = "chest" | "back" | "legs" | "shoulders" | "arms" | "abs";
 type TrainingPlanId = "chest" | "back" | "legs" | "shoulders" | "arms" | "abs" | "off";
+type SupplementId = "protein" | "creatine" | "preworkout";
 
 type BodyPartDefinition = {
   key: BodyPartKey;
@@ -255,6 +258,15 @@ type TrainingPlan = {
   description: string;
   targetParts: BodyPartKey[];
   multiplier: number;
+  bonusLabel: string;
+};
+
+type SupplementDefinition = {
+  id: SupplementId;
+  label: string;
+  description: string;
+  productionMultiplier: number;
+  clickMultiplier: number;
   bonusLabel: string;
 };
 
@@ -640,6 +652,33 @@ const trainingPlans: TrainingPlan[] = [
     targetParts: ["chest", "back", "legs", "shoulders", "arms", "abs"],
     multiplier: 0.98,
     bonusLabel: "全身成長 / 生産 -2%",
+  },
+];
+
+const supplementDefinitions: SupplementDefinition[] = [
+  {
+    id: "protein",
+    label: "プロテイン",
+    description: "長期の土台。筋肉ポイントの自動生産を少し伸ばします。",
+    productionMultiplier: 1.025,
+    clickMultiplier: 1,
+    bonusLabel: "自動生産 +2.5%",
+  },
+  {
+    id: "creatine",
+    label: "クレアチン",
+    description: "パワーの底上げ。クリックと自動生産の両方を少し伸ばします。",
+    productionMultiplier: 1.02,
+    clickMultiplier: 1.04,
+    bonusLabel: "クリック +4% / 自動生産 +2%",
+  },
+  {
+    id: "preworkout",
+    label: "プレワークアウト",
+    description: "短期集中用。クリック時の伸びを大きめに上げます。",
+    productionMultiplier: 1,
+    clickMultiplier: 1.08,
+    bonusLabel: "クリック +8%",
   },
 ];
 
@@ -1207,6 +1246,8 @@ const initialState: GameState = {
   unlockedAchievements: [],
   dailyTrainingPlanId: null,
   dailyTrainingDate: null,
+  dailySupplementIds: [],
+  dailySupplementDate: null,
 };
 
 const legacyUpgrades: LegacyUpgrade[] = [
@@ -1582,14 +1623,14 @@ const getClickPower = (state: GameState, pendingPowerUp?: PowerUpgrade) => {
     return total + getPerSecond(state) * (powerUp.clickCpsPercent ?? 0);
   }, 0);
 
-  const currentClick = (baseClick * clickMultiplier + cpsClickBonus) * getClickFrenzyMultiplier(state);
+  const currentClick = (baseClick * clickMultiplier + cpsClickBonus) * getSupplementClickMultiplier(state) * getClickFrenzyMultiplier(state);
   if (!pendingPowerUp || state.purchasedPowerUps.includes(pendingPowerUp.id)) return currentClick;
 
   const pendingBase = baseClick + (pendingPowerUp.clickBonus ?? 0);
   const pendingMultiplier = clickMultiplier * (pendingPowerUp.clickMultiplier ?? 1);
   const pendingCpsBonus = cpsClickBonus + getPerSecond(state) * (pendingPowerUp.clickCpsPercent ?? 0);
 
-  return (pendingBase * pendingMultiplier + pendingCpsBonus) * getClickFrenzyMultiplier(state);
+  return (pendingBase * pendingMultiplier + pendingCpsBonus) * getSupplementClickMultiplier(state) * getClickFrenzyMultiplier(state);
 };
 
 const getBuildingMultiplier = (state: GameState, key: UpgradeKey) =>
@@ -1651,6 +1692,17 @@ const getActiveTrainingPlan = (state: GameState) => {
 
 const getDailyTrainingMultiplier = (state: GameState) => getActiveTrainingPlan(state)?.multiplier ?? 1;
 
+const getActiveSupplements = (state: GameState) => {
+  if (state.dailySupplementDate !== getTodayKey()) return [];
+  return supplementDefinitions.filter((supplement) => state.dailySupplementIds.includes(supplement.id));
+};
+
+const getSupplementProductionMultiplier = (state: GameState) =>
+  getActiveSupplements(state).reduce((total, supplement) => total * supplement.productionMultiplier, 1);
+
+const getSupplementClickMultiplier = (state: GameState) =>
+  getActiveSupplements(state).reduce((total, supplement) => total * supplement.clickMultiplier, 1);
+
 const getBasePerSecond = (state: GameState) =>
   upgrades.reduce((total, upgrade) => total + getBuildingUnitProduction(state, upgrade) * state.upgrades[upgrade.key], 0);
 
@@ -1661,6 +1713,7 @@ const getPerSecond = (state: GameState) =>
   getFrenzyMultiplier(state) *
   getAchievementSupportMultiplier(state) *
   getDailyTrainingMultiplier(state) *
+  getSupplementProductionMultiplier(state) *
   getSeasonalEvent().multiplier;
 
 const createBenchmarkState = (): GameState => ({
@@ -2084,6 +2137,11 @@ const normalizeTrainingPlanId = (value: unknown): TrainingPlanId | null =>
 
 const normalizeTrainingDate = (value: unknown) => (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null);
 
+const normalizeSupplementIds = (value: unknown): SupplementId[] =>
+  Array.isArray(value)
+    ? value.filter((id): id is SupplementId => supplementDefinitions.some((supplement) => supplement.id === id))
+    : [];
+
 const readSavedState = (): GameState => {
   if (typeof window === "undefined") return initialState;
 
@@ -2125,6 +2183,8 @@ const readSavedState = (): GameState => {
       unlockedAchievements: Array.isArray(saved.unlockedAchievements) ? saved.unlockedAchievements : [],
       dailyTrainingPlanId: normalizeTrainingPlanId(saved.dailyTrainingPlanId),
       dailyTrainingDate: normalizeTrainingDate(saved.dailyTrainingDate),
+      dailySupplementIds: normalizeSupplementIds(saved.dailySupplementIds),
+      dailySupplementDate: normalizeTrainingDate(saved.dailySupplementDate),
     };
 
     const offlineSeconds = Math.min(
@@ -2189,6 +2249,7 @@ export function MachoClickerPage() {
   const pendingPrestige = getPendingPrestige(state);
   const seasonalEvent = getSeasonalEvent();
   const activeTrainingPlan = getActiveTrainingPlan(state);
+  const activeSupplements = getActiveSupplements(state);
   const proteinShakeLevel = getProteinShakeLevel(state.unlockedAchievements.length);
   const proteinShakeName = getProteinShakeName(state.unlockedAchievements.length);
   const achievementSupportMultiplier = getAchievementSupportMultiplier(state);
@@ -2762,6 +2823,22 @@ export function MachoClickerPage() {
     window.setTimeout(() => setPurchaseFlash(null), 1400);
   };
 
+  const toggleSupplement = (supplement: SupplementDefinition) => {
+    const today = getTodayKey();
+    setState((current) => {
+      const currentIds = current.dailySupplementDate === today ? current.dailySupplementIds : [];
+      const active = currentIds.includes(supplement.id);
+      return {
+        ...current,
+        dailySupplementIds: active ? currentIds.filter((id) => id !== supplement.id) : [...currentIds, supplement.id],
+        dailySupplementDate: today,
+        lastSavedAt: Date.now(),
+      };
+    });
+    setPurchaseFlash(`${supplement.label}: ${supplement.bonusLabel}`);
+    window.setTimeout(() => setPurchaseFlash(null), 1400);
+  };
+
   const resetGame = () => {
     if (!window.confirm("マチョクリッカーの進行状況をリセットしますか？")) return;
     const nextState = {
@@ -2833,6 +2910,8 @@ export function MachoClickerPage() {
         unlockedAchievements: Array.isArray(parsed.unlockedAchievements) ? parsed.unlockedAchievements : [],
         dailyTrainingPlanId: normalizeTrainingPlanId(parsed.dailyTrainingPlanId),
         dailyTrainingDate: normalizeTrainingDate(parsed.dailyTrainingDate),
+        dailySupplementIds: normalizeSupplementIds(parsed.dailySupplementIds),
+        dailySupplementDate: normalizeTrainingDate(parsed.dailySupplementDate),
       };
       setState(importedState);
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(importedState));
@@ -2867,6 +2946,8 @@ export function MachoClickerPage() {
       unlockedAchievements: state.unlockedAchievements,
       dailyTrainingPlanId: state.dailyTrainingPlanId,
       dailyTrainingDate: state.dailyTrainingDate,
+      dailySupplementIds: state.dailySupplementIds,
+      dailySupplementDate: state.dailySupplementDate,
     };
 
     setState(nextState);
@@ -3878,6 +3959,43 @@ export function MachoClickerPage() {
                     >
                       <div className="text-sm font-black">{plan.label}</div>
                       <div className="mt-1 text-[11px] font-bold leading-5 opacity-75">{plan.description}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-3 ${desktopDetailPanel === "overview" ? "" : "hidden"}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="macho-ui-label">Supplement Stack</div>
+                  <div className="mt-1 text-lg font-black">
+                    {activeSupplements.length > 0 ? activeSupplements.map((supplement) => supplement.label).join(" / ") : "未使用"}
+                  </div>
+                  <div className="mt-1 text-xs font-bold text-white/70">
+                    プロテインは長期の生産、クレアチンは底上げ、プレワークアウトはクリック寄りに効きます。
+                  </div>
+                </div>
+                <div className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-[#FFE7C2]">
+                  {state.dailySupplementDate === getTodayKey() ? `${activeSupplements.length}種類` : "未設定"}
+                </div>
+              </div>
+              <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                {supplementDefinitions.map((supplement) => {
+                  const selected = activeSupplements.some((active) => active.id === supplement.id);
+                  return (
+                    <button
+                      key={supplement.id}
+                      type="button"
+                      onClick={() => toggleSupplement(supplement)}
+                      className={`rounded-2xl border px-3 py-3 text-left transition ${
+                        selected
+                          ? "border-[#FFE7C2] bg-[#FF8A23] text-white shadow-[0_0_0_3px_rgba(255,138,35,0.22)]"
+                          : "border-white/10 bg-black/20 text-white/80 hover:border-[#FFB45D] hover:bg-white/10"
+                      }`}
+                    >
+                      <div className="text-sm font-black">{supplement.label}</div>
+                      <div className="mt-1 text-[11px] font-bold leading-5 opacity-75">{supplement.description}</div>
+                      <div className="mt-2 rounded-full bg-black/20 px-2 py-1 text-[10px] font-black">{supplement.bonusLabel}</div>
                     </button>
                   );
                 })}
