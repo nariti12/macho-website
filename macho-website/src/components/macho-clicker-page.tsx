@@ -106,6 +106,7 @@ type GameState = {
   activeBuffs: ActiveBuff[];
   prestigeLevel: number;
   ascensionCount: number;
+  playStartedAt: number;
   lastSavedAt: number;
   unlockedAchievements: string[];
   dailyTrainingPlanId: TrainingPlanId | null;
@@ -158,6 +159,8 @@ type DesktopDetailPanel = "overview" | "daily" | "achievements" | "legacy" | "le
 type SoundType = "click" | "buy" | "blocked" | "golden";
 
 type NumberNotation = "short" | "japanese" | "full";
+type EffectDensity = "low" | "normal" | "high";
+type EquipmentDisplayMode = "compact" | "normal" | "dense";
 
 type Achievement = {
   key: string;
@@ -1281,6 +1284,7 @@ const initialState: GameState = {
   activeBuffs: [],
   prestigeLevel: 0,
   ascensionCount: 0,
+  playStartedAt: Date.now(),
   lastSavedAt: Date.now(),
   unlockedAchievements: [],
   dailyTrainingPlanId: null,
@@ -1384,6 +1388,30 @@ const formatNumber = (value: number) => {
 };
 
 const formatFullNumber = (value: number) => Math.floor(value).toLocaleString("ja-JP");
+
+const formatDateTime = (timestamp: number) => {
+  if (!Number.isFinite(timestamp)) return "未保存";
+
+  return new Intl.DateTimeFormat("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(timestamp));
+};
+
+const formatDuration = (seconds: number) => {
+  const safeSeconds = Math.max(0, Math.floor(seconds));
+  const days = Math.floor(safeSeconds / 86_400);
+  const hours = Math.floor((safeSeconds % 86_400) / 3_600);
+  const minutes = Math.floor((safeSeconds % 3_600) / 60);
+
+  if (days > 0) return `${days}日 ${hours}時間`;
+  if (hours > 0) return `${hours}時間 ${minutes}分`;
+  return `${minutes}分`;
+};
 
 const japaneseNumberUnits = [
   { value: 1e16, name: "京" },
@@ -2236,6 +2264,7 @@ const readSavedState = (): GameState => {
         : [],
       prestigeLevel: typeof saved.prestigeLevel === "number" ? Math.max(0, Math.floor(saved.prestigeLevel)) : 0,
       ascensionCount: typeof saved.ascensionCount === "number" ? Math.max(0, Math.floor(saved.ascensionCount)) : 0,
+      playStartedAt: typeof saved.playStartedAt === "number" ? saved.playStartedAt : Date.now(),
       lastSavedAt: typeof saved.lastSavedAt === "number" ? saved.lastSavedAt : Date.now(),
       unlockedAchievements: Array.isArray(saved.unlockedAchievements) ? saved.unlockedAchievements : [],
       dailyTrainingPlanId: normalizeTrainingPlanId(saved.dailyTrainingPlanId),
@@ -2295,9 +2324,17 @@ export function MachoClickerPage() {
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("click");
   const [desktopDetailPanel, setDesktopDetailPanel] = useState<DesktopDetailPanel>("overview");
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [bgmVolume, setBgmVolume] = useState(0.35);
+  const [soundVolume, setSoundVolume] = useState(0.72);
+  const [notificationVolume, setNotificationVolume] = useState(0.72);
   const [numberNotation, setNumberNotation] = useState<NumberNotation>("short");
   const [reducedEffects, setReducedEffects] = useState(false);
+  const [effectDensity, setEffectDensity] = useState<EffectDensity>("normal");
+  const [backgroundAnimationEnabled, setBackgroundAnimationEnabled] = useState(true);
+  const [equipmentDisplayMode, setEquipmentDisplayMode] = useState<EquipmentDisplayMode>("normal");
   const [saveMessage, setSaveMessage] = useState("");
+  const [exportedSaveText, setExportedSaveText] = useState("");
+  const [lastAutoSaveAt, setLastAutoSaveAt] = useState<number | null>(null);
   const [evolutionFlash, setEvolutionFlash] = useState(false);
   const effectIdRef = useRef(0);
   const stateRef = useRef<GameState>(initialState);
@@ -2364,6 +2401,7 @@ export function MachoClickerPage() {
   const recentPurchasedPowerUps = purchasedPowerUps.slice(-6).reverse();
   const hiddenPurchasedPowerUpCount = Math.max(0, purchasedPowerUps.length - recentPurchasedPowerUps.length);
   const displayNumber = (value: number) => formatDisplayNumber(value, numberNotation);
+  const displayEquipmentLimit = equipmentDisplayMode === "compact" ? 24 : equipmentDisplayMode === "normal" ? 48 : 96;
   const animatedMuscle = useAnimatedNumber(state.muscle);
   const animatedPerSecond = useAnimatedNumber(perSecond);
   const animatedClickPower = useAnimatedNumber(clickPower);
@@ -2381,6 +2419,18 @@ export function MachoClickerPage() {
     total: achievements.filter((achievement) => (achievement.category ?? "隠し") === category).length,
   }));
   const purchasedSupportPowerUps = purchasedPowerUps.filter((powerUp) => powerUp.achievementSupportRate);
+  const totalPlaySeconds = Math.max(0, Math.floor((Date.now() - state.playStartedAt) / 1000));
+  const buildingStats = upgrades.map((upgrade) => {
+    const owned = state.upgrades[upgrade.key];
+    const totalProduction = getBuildingTotalProduction(state, upgrade);
+    return {
+      upgrade,
+      owned,
+      totalProduction,
+      unitProduction: getBuildingUnitProduction(state, upgrade),
+      percentage: perSecond > 0 ? Math.min(100, (totalProduction / perSecond) * 100) : 0,
+    };
+  });
   const tooltipStyle: CSSProperties = {
     left: Math.max(16, tooltipPosition.x - 360),
     top: Math.max(96, tooltipPosition.y - 28),
@@ -2401,13 +2451,13 @@ export function MachoClickerPage() {
       Object.entries(soundFiles).map(([type, src]) => {
         const audio = new Audio(src);
         audio.preload = "auto";
-        audio.volume = type === "click" ? 0.8 : 0.72;
+        audio.volume = type === "click" ? soundVolume : notificationVolume;
         return [type, audio];
       })
     ) as Record<SoundType, HTMLAudioElement>;
 
     soundRefs.current = sounds;
-  }, []);
+  }, [notificationVolume, soundVolume]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -2419,7 +2469,9 @@ export function MachoClickerPage() {
   useEffect(() => {
     if (!isLoaded) return;
     const timer = window.setInterval(() => {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...stateRef.current, lastSavedAt: Date.now() }));
+      const now = Date.now();
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...stateRef.current, lastSavedAt: now }));
+      setLastAutoSaveAt(now);
     }, SAVE_INTERVAL_MS);
 
     return () => {
@@ -2519,8 +2571,9 @@ export function MachoClickerPage() {
   }, [state, soundEnabled]);
 
   const spawnClickEffects = (value: number) => {
+    const sparkCount = reducedEffects ? 0 : effectDensity === "low" ? 3 : effectDensity === "high" ? 12 : 7;
     const baseId = effectIdRef.current;
-    effectIdRef.current += 8;
+    effectIdRef.current += Math.max(1, sparkCount + 1);
     setFloatingGains((current) => [
       ...current,
       {
@@ -2532,7 +2585,7 @@ export function MachoClickerPage() {
     ]);
     setSparks((current) => [
       ...current,
-      ...Array.from({ length: reducedEffects ? 0 : 7 }, (_, index) => ({
+      ...Array.from({ length: sparkCount }, (_, index) => ({
         id: baseId + index + 1,
         x: 20 + Math.random() * 60,
         y: 18 + Math.random() * 62,
@@ -2541,7 +2594,7 @@ export function MachoClickerPage() {
       })),
     ]);
     window.setTimeout(() => setFloatingGains((current) => current.filter((item) => item.id !== baseId)), 950);
-    window.setTimeout(() => setSparks((current) => current.filter((item) => item.id < baseId || item.id > baseId + 7)), 760);
+    window.setTimeout(() => setSparks((current) => current.filter((item) => item.id < baseId || item.id > baseId + sparkCount)), 760);
   };
 
   const spawnPurchaseEffects = (upgrade: Upgrade, event?: MouseEvent<HTMLElement>) => {
@@ -2970,6 +3023,7 @@ export function MachoClickerPage() {
       activeBuffs: [],
       prestigeLevel: 0,
       ascensionCount: 0,
+      playStartedAt: Date.now(),
       lastSavedAt: Date.now(),
     };
     setState(nextState);
@@ -2978,13 +3032,16 @@ export function MachoClickerPage() {
   };
 
   const manualSave = () => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...stateRef.current, lastSavedAt: Date.now() }));
+    const now = Date.now();
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...stateRef.current, lastSavedAt: now }));
+    setLastAutoSaveAt(now);
     setSaveMessage("保存しました。");
     window.setTimeout(() => setSaveMessage(""), 1800);
   };
 
   const exportSave = async () => {
     const saveText = btoa(unescape(encodeURIComponent(JSON.stringify({ ...stateRef.current, lastSavedAt: Date.now() }))));
+    setExportedSaveText(saveText);
     try {
       await navigator.clipboard.writeText(saveText);
       setSaveMessage("セーブデータをコピーしました。");
@@ -2996,6 +3053,7 @@ export function MachoClickerPage() {
   };
 
   const importSave = () => {
+    if (!window.confirm("現在のセーブデータを上書きします。インポートを続けますか？")) return;
     const saveText = window.prompt("インポートするセーブデータを貼り付けてください。");
     if (!saveText) return;
 
@@ -3026,6 +3084,7 @@ export function MachoClickerPage() {
         activeBuffs: [],
         prestigeLevel: typeof parsed.prestigeLevel === "number" ? Math.max(0, Math.floor(parsed.prestigeLevel)) : 0,
         ascensionCount: typeof parsed.ascensionCount === "number" ? Math.max(0, Math.floor(parsed.ascensionCount)) : 0,
+        playStartedAt: typeof parsed.playStartedAt === "number" ? parsed.playStartedAt : Date.now(),
         lastSavedAt: Date.now(),
         unlockedAchievements: Array.isArray(parsed.unlockedAchievements) ? parsed.unlockedAchievements : [],
         dailyTrainingPlanId: normalizeTrainingPlanId(parsed.dailyTrainingPlanId),
@@ -3065,6 +3124,7 @@ export function MachoClickerPage() {
       activeBuffs: [],
       prestigeLevel: state.prestigeLevel + pendingPrestige,
       ascensionCount: state.ascensionCount + 1,
+      playStartedAt: state.playStartedAt,
       lastSavedAt: Date.now(),
       unlockedAchievements: state.unlockedAchievements,
       dailyTrainingPlanId: state.dailyTrainingPlanId,
@@ -3279,7 +3339,11 @@ export function MachoClickerPage() {
               <div className="macho-click-stage-glow pointer-events-none absolute inset-0 z-[1]" />
               <div className="macho-season-stage-overlay pointer-events-none absolute inset-0 z-[2]" />
               <div className="macho-gym-light pointer-events-none absolute inset-x-0 top-0 z-[2] h-48" />
-              <div className={`macho-click-foreground pointer-events-none absolute inset-0 z-[4] ${clickBurst ? "macho-click-foreground-hit" : ""}`}>
+              <div
+                className={`macho-click-foreground pointer-events-none absolute inset-0 z-[4] ${
+                  backgroundAnimationEnabled && !reducedEffects ? "" : "hidden"
+                } ${clickBurst ? "macho-click-foreground-hit" : ""}`}
+              >
                 <span className="macho-stage-floor-glow" />
                 <span className="macho-stage-light-sweep" />
                 <span className="macho-stage-floor-reflection" />
@@ -3296,7 +3360,7 @@ export function MachoClickerPage() {
                 <span className="macho-gym-floor-line macho-gym-floor-line-1" />
                 <span className="macho-gym-floor-line macho-gym-floor-line-2" />
               </div>
-              {visibleAmbientItems.length > 0 ? (
+              {backgroundAnimationEnabled && visibleAmbientItems.length > 0 ? (
               <div className="pointer-events-none absolute inset-0 overflow-hidden">
                 {visibleAmbientItems.map((item) => (
                   <span
@@ -3545,7 +3609,7 @@ export function MachoClickerPage() {
                     const buildingLevel = state.buildingLevels[upgrade.key];
                     const canLevelUp = state.muscleCrystals > 0 && level > 0;
                     const isBuildingFrenzyTarget = activeBuildingFrenzyTargets.includes(upgrade.key);
-                    const visibleCount = getUpgradeVisibleCount(level);
+                    const visibleCount = Math.min(getUpgradeVisibleCount(level), displayEquipmentLimit);
                     return (
                       <div
                         key={upgrade.key}
@@ -4499,6 +4563,12 @@ export function MachoClickerPage() {
                   <div className="mt-1 text-sm font-bold text-white/80">
                     オートセーブ対応。必要なら手動保存・エクスポート・インポートできます。
                   </div>
+                  <div className="mt-2 grid gap-1 text-xs font-bold text-white/60 sm:grid-cols-2">
+                    <span>開始: {formatDateTime(state.playStartedAt)}</span>
+                    <span>最終保存: {formatDateTime(lastAutoSaveAt ?? state.lastSavedAt)}</span>
+                    <span>プレイ時間: {formatDuration(totalPlaySeconds)}</span>
+                    <span>現在の表記: {numberNotation === "short" ? "英語単位" : numberNotation === "japanese" ? "日本語単位" : "全桁表示"}</span>
+                  </div>
                   {saveMessage ? <div className="mt-2 text-sm font-black text-[#FFE7C2]">{saveMessage}</div> : null}
                 </div>
                 <div className="grid grid-cols-2 gap-2 lg:w-[38rem] xl:grid-cols-5">
@@ -4529,6 +4599,116 @@ export function MachoClickerPage() {
                   </button>
                 </div>
               </div>
+              <div className="mt-5 grid gap-4 lg:grid-cols-3">
+                <div className="macho-option-box">
+                  <div className="macho-ui-label">Sound</div>
+                  <button
+                    type="button"
+                    onClick={() => setSoundEnabled((current) => !current)}
+                    className="macho-game-button mt-3 w-full rounded-2xl bg-white/10 px-4 py-3 text-sm font-black text-white transition hover:bg-white/20"
+                  >
+                    効果音 {soundEnabled ? "ON" : "OFF"}
+                  </button>
+                  <label className="mt-3 block text-xs font-black text-white/70">
+                    BGM音量 {Math.round(bgmVolume * 100)}%
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={bgmVolume}
+                      onChange={(event) => setBgmVolume(Number(event.target.value))}
+                      className="mt-2 w-full accent-[#FF8A23]"
+                    />
+                  </label>
+                  <label className="mt-3 block text-xs font-black text-white/70">
+                    クリック音量 {Math.round(soundVolume * 100)}%
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={soundVolume}
+                      onChange={(event) => setSoundVolume(Number(event.target.value))}
+                      className="mt-2 w-full accent-[#FF8A23]"
+                    />
+                  </label>
+                  <label className="mt-3 block text-xs font-black text-white/70">
+                    通知音量 {Math.round(notificationVolume * 100)}%
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={notificationVolume}
+                      onChange={(event) => setNotificationVolume(Number(event.target.value))}
+                      className="mt-2 w-full accent-[#FF8A23]"
+                    />
+                  </label>
+                </div>
+                <div className="macho-option-box">
+                  <div className="macho-ui-label">Visual Effects</div>
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    {(["low", "normal", "high"] as const).map((density) => (
+                      <button
+                        key={density}
+                        type="button"
+                        onClick={() => setEffectDensity(density)}
+                        className={`macho-game-button rounded-xl px-3 py-2 text-xs font-black ${
+                          effectDensity === density ? "bg-[#FF8A23] text-white" : "bg-white/10 text-white/75"
+                        }`}
+                      >
+                        {density === "low" ? "少" : density === "normal" ? "標準" : "多"}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setBackgroundAnimationEnabled((current) => !current)}
+                    className="macho-game-button mt-3 w-full rounded-2xl bg-white/10 px-4 py-3 text-sm font-black text-white transition hover:bg-white/20"
+                  >
+                    背景アニメ {backgroundAnimationEnabled ? "ON" : "OFF"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReducedEffects((current) => !current)}
+                    className="macho-game-button mt-2 w-full rounded-2xl bg-white/10 px-4 py-3 text-sm font-black text-white transition hover:bg-white/20"
+                  >
+                    軽量モード {reducedEffects ? "ON" : "OFF"}
+                  </button>
+                </div>
+                <div className="macho-option-box">
+                  <div className="macho-ui-label">Equipment View</div>
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    {(["compact", "normal", "dense"] as const).map((mode) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        onClick={() => setEquipmentDisplayMode(mode)}
+                        className={`macho-game-button rounded-xl px-3 py-2 text-xs font-black ${
+                          equipmentDisplayMode === mode ? "bg-[#FF8A23] text-white" : "bg-white/10 text-white/75"
+                        }`}
+                      >
+                        {mode === "compact" ? "少" : mode === "normal" ? "標準" : "多"}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mt-3 rounded-2xl bg-black/20 px-4 py-3 text-xs font-bold leading-5 text-white/65">
+                    設備アイコンは最大 {displayEquipmentLimit} 個まで表示します。多すぎる場合は残数表示にまとめます。
+                  </div>
+                </div>
+              </div>
+              {exportedSaveText ? (
+                <div className="mt-5">
+                  <div className="macho-ui-label">Exported Save</div>
+                  <textarea
+                    readOnly
+                    value={exportedSaveText}
+                    className="mt-2 h-24 w-full resize-none rounded-2xl border border-white/10 bg-black/25 px-4 py-3 font-mono text-xs text-white/80 outline-none"
+                    onFocus={(event) => event.currentTarget.select()}
+                  />
+                </div>
+              ) : null}
             </div>
             <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-4 xl:col-span-7 ${desktopDetailPanel === "stats" ? "" : "hidden"}`}>
               <div className="macho-panel-scene-header">
@@ -4548,6 +4728,7 @@ export function MachoClickerPage() {
                   ["毎秒", `+${displayNumber(perSecond)}`],
                   ["クリック", formatFullNumber(state.clickCount)],
                   ["手動獲得", displayNumber(state.handMadeMuscle)],
+                  ["自動獲得", displayNumber(Math.max(0, state.totalMuscle - state.handMadeMuscle))],
                   ["設備数", formatFullNumber(ownedUpgradeCount)],
                   ["設備Lv", formatFullNumber(totalBuildingLevel)],
                   ["実績", `${state.unlockedAchievements.length}/${achievements.length}`],
@@ -4555,12 +4736,35 @@ export function MachoClickerPage() {
                   ["仕上げ直し", `${formatFullNumber(state.ascensionCount)}回`],
                   ["永久倍率", `+${formatFullNumber(state.prestigeLevel)}%`],
                   ["筋肉結晶", `${formatFullNumber(state.muscleCrystals)}個`],
+                  ["開始日", formatDateTime(state.playStartedAt)],
+                  ["プレイ時間", formatDuration(totalPlaySeconds)],
+                  ["最終保存", formatDateTime(lastAutoSaveAt ?? state.lastSavedAt)],
                 ].map(([label, value]) => (
                   <div key={label} className="macho-stat-tile">
                     <div className="macho-ui-label">{label}</div>
                     <div className="macho-ui-number mt-1 break-words text-xl">{value}</div>
                   </div>
                 ))}
+              </div>
+              <div className="mt-5">
+                <div className="macho-ui-label">Building Production</div>
+                <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                  {buildingStats.map(({ upgrade, owned, totalProduction, unitProduction, percentage }) => (
+                    <div key={`stat-building-${upgrade.key}`} className="macho-building-stat-card">
+                      <div className="flex items-center gap-3">
+                        <Image src={upgrade.spriteSrc} alt="" width={42} height={42} className="h-10 w-10 object-contain" />
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-black text-[#FFE7C2]">{upgrade.name}</div>
+                          <div className="mt-1 text-xs font-bold text-white/55">所持 {formatFullNumber(owned)} / 1個 +{formatRate(unitProduction)}/秒</div>
+                        </div>
+                      </div>
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+                        <div className="h-full rounded-full bg-[#FF8A23]" style={{ width: `${percentage}%` }} />
+                      </div>
+                      <div className="mt-2 text-xs font-black text-white/75">合計 +{formatRate(totalProduction)}/秒</div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </section>
