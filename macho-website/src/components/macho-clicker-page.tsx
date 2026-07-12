@@ -1953,7 +1953,7 @@ const getBodyStage = (totalMuscle: number) => {
   if (totalMuscle >= 250_000) {
     return {
       label: "ゴリマッチョ目前",
-      imageSrc: "/picture/macho-evolution/stage-3-muscular.webp",
+      imageSrc: "/picture/macho-evolution/stage-3-muscular.png",
       ring: "border-orange-100 bg-[#FF9D2E]",
       scale: 1.04,
       aura: "opacity-75",
@@ -1962,7 +1962,7 @@ const getBodyStage = (totalMuscle: number) => {
   if (totalMuscle >= 50_000) {
     return {
       label: "筋肉が見えてきた",
-      imageSrc: "/picture/macho-evolution/stage-2-athletic.webp",
+      imageSrc: "/picture/macho-evolution/stage-2-athletic.png",
       ring: "border-white/80 bg-[#FFB45D]",
       scale: 1,
       aura: "opacity-55",
@@ -1971,7 +1971,7 @@ const getBodyStage = (totalMuscle: number) => {
   if (totalMuscle >= 5_000) {
     return {
       label: "メタボ脱出中",
-      imageSrc: "/picture/macho-evolution/stage-1-training.webp",
+      imageSrc: "/picture/macho-evolution/stage-1-training.png",
       ring: "border-white/70 bg-[#FFC46F]",
       scale: 0.98,
       aura: "opacity-40",
@@ -1980,7 +1980,7 @@ const getBodyStage = (totalMuscle: number) => {
   if (totalMuscle >= 500) {
     return {
       label: "動き始めたメタボ",
-      imageSrc: "/picture/macho-evolution/stage-0-metabo.webp",
+      imageSrc: "/picture/macho-evolution/stage-0-metabo.png",
       ring: "border-white/70 bg-[#FFD89A]",
       scale: 0.96,
       aura: "opacity-25",
@@ -1988,7 +1988,7 @@ const getBodyStage = (totalMuscle: number) => {
   }
   return {
     label: "だらしないメタボ期",
-    imageSrc: "/picture/macho-evolution/stage-0-metabo.webp",
+    imageSrc: "/picture/macho-evolution/stage-0-metabo.png",
     ring: "border-white/60 bg-[#FFE7C2]",
     scale: 0.94,
     aura: "opacity-10",
