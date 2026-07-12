@@ -113,6 +113,8 @@ type GameState = {
   dailyTrainingDate: string | null;
   dailySupplementIds: SupplementId[];
   dailySupplementDate: string | null;
+  dailyConditionId: DailyConditionId | null;
+  dailyConditionDate: string | null;
 };
 
 type RankingEntry = {
@@ -239,6 +241,7 @@ type BuildingCountCheckpoint = {
 type BodyPartKey = "chest" | "back" | "legs" | "shoulders" | "arms" | "abs";
 type TrainingPlanId = "chest" | "back" | "legs" | "shoulders" | "arms" | "abs" | "off";
 type SupplementId = "protein" | "creatine" | "preworkout";
+type DailyConditionId = "normal" | "drunk" | "hangover";
 
 type BodyPartDefinition = {
   key: BodyPartKey;
@@ -263,6 +266,15 @@ type TrainingPlan = {
 
 type SupplementDefinition = {
   id: SupplementId;
+  label: string;
+  description: string;
+  productionMultiplier: number;
+  clickMultiplier: number;
+  bonusLabel: string;
+};
+
+type DailyConditionDefinition = {
+  id: DailyConditionId;
   label: string;
   description: string;
   productionMultiplier: number;
@@ -679,6 +691,33 @@ const supplementDefinitions: SupplementDefinition[] = [
     productionMultiplier: 1,
     clickMultiplier: 1.08,
     bonusLabel: "クリック +8%",
+  },
+];
+
+const dailyConditionDefinitions: DailyConditionDefinition[] = [
+  {
+    id: "normal",
+    label: "通常運転",
+    description: "今日は普通にトレーニングできます。余計な補正はありません。",
+    productionMultiplier: 1,
+    clickMultiplier: 1,
+    bonusLabel: "補正なし",
+  },
+  {
+    id: "drunk",
+    label: "飲酒テンション",
+    description: "変なテンションでクリックは少し伸びますが、自動生産は少し落ちます。",
+    productionMultiplier: 0.97,
+    clickMultiplier: 1.04,
+    bonusLabel: "クリック +4% / 自動生産 -3%",
+  },
+  {
+    id: "hangover",
+    label: "二日酔い",
+    description: "マチョ田らしいネタ状態。全体的に弱りますが、回復のありがたみが分かります。",
+    productionMultiplier: 0.9,
+    clickMultiplier: 0.95,
+    bonusLabel: "クリック -5% / 自動生産 -10%",
   },
 ];
 
@@ -1248,6 +1287,8 @@ const initialState: GameState = {
   dailyTrainingDate: null,
   dailySupplementIds: [],
   dailySupplementDate: null,
+  dailyConditionId: null,
+  dailyConditionDate: null,
 };
 
 const legacyUpgrades: LegacyUpgrade[] = [
@@ -1623,14 +1664,23 @@ const getClickPower = (state: GameState, pendingPowerUp?: PowerUpgrade) => {
     return total + getPerSecond(state) * (powerUp.clickCpsPercent ?? 0);
   }, 0);
 
-  const currentClick = (baseClick * clickMultiplier + cpsClickBonus) * getSupplementClickMultiplier(state) * getClickFrenzyMultiplier(state);
+  const currentClick =
+    (baseClick * clickMultiplier + cpsClickBonus) *
+    getSupplementClickMultiplier(state) *
+    getDailyConditionClickMultiplier(state) *
+    getClickFrenzyMultiplier(state);
   if (!pendingPowerUp || state.purchasedPowerUps.includes(pendingPowerUp.id)) return currentClick;
 
   const pendingBase = baseClick + (pendingPowerUp.clickBonus ?? 0);
   const pendingMultiplier = clickMultiplier * (pendingPowerUp.clickMultiplier ?? 1);
   const pendingCpsBonus = cpsClickBonus + getPerSecond(state) * (pendingPowerUp.clickCpsPercent ?? 0);
 
-  return (pendingBase * pendingMultiplier + pendingCpsBonus) * getSupplementClickMultiplier(state) * getClickFrenzyMultiplier(state);
+  return (
+    (pendingBase * pendingMultiplier + pendingCpsBonus) *
+    getSupplementClickMultiplier(state) *
+    getDailyConditionClickMultiplier(state) *
+    getClickFrenzyMultiplier(state)
+  );
 };
 
 const getBuildingMultiplier = (state: GameState, key: UpgradeKey) =>
@@ -1697,11 +1747,20 @@ const getActiveSupplements = (state: GameState) => {
   return supplementDefinitions.filter((supplement) => state.dailySupplementIds.includes(supplement.id));
 };
 
+const getActiveDailyCondition = (state: GameState) => {
+  if (!state.dailyConditionId || state.dailyConditionDate !== getTodayKey()) return null;
+  return dailyConditionDefinitions.find((condition) => condition.id === state.dailyConditionId) ?? null;
+};
+
 const getSupplementProductionMultiplier = (state: GameState) =>
   getActiveSupplements(state).reduce((total, supplement) => total * supplement.productionMultiplier, 1);
 
 const getSupplementClickMultiplier = (state: GameState) =>
   getActiveSupplements(state).reduce((total, supplement) => total * supplement.clickMultiplier, 1);
+
+const getDailyConditionProductionMultiplier = (state: GameState) => getActiveDailyCondition(state)?.productionMultiplier ?? 1;
+
+const getDailyConditionClickMultiplier = (state: GameState) => getActiveDailyCondition(state)?.clickMultiplier ?? 1;
 
 const getBasePerSecond = (state: GameState) =>
   upgrades.reduce((total, upgrade) => total + getBuildingUnitProduction(state, upgrade) * state.upgrades[upgrade.key], 0);
@@ -1714,6 +1773,7 @@ const getPerSecond = (state: GameState) =>
   getAchievementSupportMultiplier(state) *
   getDailyTrainingMultiplier(state) *
   getSupplementProductionMultiplier(state) *
+  getDailyConditionProductionMultiplier(state) *
   getSeasonalEvent().multiplier;
 
 const createBenchmarkState = (): GameState => ({
@@ -2142,6 +2202,9 @@ const normalizeSupplementIds = (value: unknown): SupplementId[] =>
     ? value.filter((id): id is SupplementId => supplementDefinitions.some((supplement) => supplement.id === id))
     : [];
 
+const normalizeDailyConditionId = (value: unknown): DailyConditionId | null =>
+  dailyConditionDefinitions.some((condition) => condition.id === value) ? (value as DailyConditionId) : null;
+
 const readSavedState = (): GameState => {
   if (typeof window === "undefined") return initialState;
 
@@ -2185,6 +2248,8 @@ const readSavedState = (): GameState => {
       dailyTrainingDate: normalizeTrainingDate(saved.dailyTrainingDate),
       dailySupplementIds: normalizeSupplementIds(saved.dailySupplementIds),
       dailySupplementDate: normalizeTrainingDate(saved.dailySupplementDate),
+      dailyConditionId: normalizeDailyConditionId(saved.dailyConditionId),
+      dailyConditionDate: normalizeTrainingDate(saved.dailyConditionDate),
     };
 
     const offlineSeconds = Math.min(
@@ -2250,6 +2315,7 @@ export function MachoClickerPage() {
   const seasonalEvent = getSeasonalEvent();
   const activeTrainingPlan = getActiveTrainingPlan(state);
   const activeSupplements = getActiveSupplements(state);
+  const activeDailyCondition = getActiveDailyCondition(state);
   const proteinShakeLevel = getProteinShakeLevel(state.unlockedAchievements.length);
   const proteinShakeName = getProteinShakeName(state.unlockedAchievements.length);
   const achievementSupportMultiplier = getAchievementSupportMultiplier(state);
@@ -2839,6 +2905,38 @@ export function MachoClickerPage() {
     window.setTimeout(() => setPurchaseFlash(null), 1400);
   };
 
+  const selectDailyCondition = (condition: DailyConditionDefinition) => {
+    const today = getTodayKey();
+    setState((current) => ({
+      ...current,
+      dailyConditionId: condition.id,
+      dailyConditionDate: today,
+      lastSavedAt: Date.now(),
+    }));
+    setPurchaseFlash(`${condition.label}: ${condition.bonusLabel}`);
+    window.setTimeout(() => setPurchaseFlash(null), 1400);
+  };
+
+  const shareResult = async () => {
+    const text = `マチョクリッカーで「${title}」まで到達。累計筋肉ポイント ${formatFullNumber(state.totalMuscle)}、毎秒 +${formatRate(
+      perSecond
+    )} 筋肉。https://www.machoda.com/macho-clicker`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "マチョクリッカー", text, url: "https://www.machoda.com/macho-clicker" });
+        setSaveMessage("共有画面を開きました。");
+      } else {
+        await navigator.clipboard.writeText(text);
+        setSaveMessage("共有テキストをコピーしました。");
+      }
+    } catch {
+      window.prompt("共有テキストをコピーしてください。", text);
+      setSaveMessage("共有テキストを表示しました。");
+    }
+    window.setTimeout(() => setSaveMessage(""), 2200);
+  };
+
   const resetGame = () => {
     if (!window.confirm("マチョクリッカーの進行状況をリセットしますか？")) return;
     const nextState = {
@@ -2912,6 +3010,8 @@ export function MachoClickerPage() {
         dailyTrainingDate: normalizeTrainingDate(parsed.dailyTrainingDate),
         dailySupplementIds: normalizeSupplementIds(parsed.dailySupplementIds),
         dailySupplementDate: normalizeTrainingDate(parsed.dailySupplementDate),
+        dailyConditionId: normalizeDailyConditionId(parsed.dailyConditionId),
+        dailyConditionDate: normalizeTrainingDate(parsed.dailyConditionDate),
       };
       setState(importedState);
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(importedState));
@@ -2948,6 +3048,8 @@ export function MachoClickerPage() {
       dailyTrainingDate: state.dailyTrainingDate,
       dailySupplementIds: state.dailySupplementIds,
       dailySupplementDate: state.dailySupplementDate,
+      dailyConditionId: state.dailyConditionId,
+      dailyConditionDate: state.dailyConditionDate,
     };
 
     setState(nextState);
@@ -4000,6 +4102,69 @@ export function MachoClickerPage() {
                   );
                 })}
               </div>
+            </div>
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-3 ${desktopDetailPanel === "overview" ? "" : "hidden"}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="macho-ui-label">Machoda Event</div>
+                  <div className="mt-1 text-lg font-black">{activeDailyCondition ? activeDailyCondition.label : "未設定"}</div>
+                  <div className="mt-1 text-xs font-bold text-white/70">
+                    飲酒テンションや二日酔いなど、マチョ田らしい日替わり状態を選べます。
+                  </div>
+                </div>
+                <div className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-[#FFE7C2]">
+                  {state.dailyConditionDate === getTodayKey() ? "本日分" : "未設定"}
+                </div>
+              </div>
+              <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                {dailyConditionDefinitions.map((condition) => {
+                  const selected = activeDailyCondition?.id === condition.id;
+                  return (
+                    <button
+                      key={condition.id}
+                      type="button"
+                      onClick={() => selectDailyCondition(condition)}
+                      className={`rounded-2xl border px-3 py-3 text-left transition ${
+                        selected
+                          ? "border-[#FFE7C2] bg-[#FF8A23] text-white shadow-[0_0_0_3px_rgba(255,138,35,0.22)]"
+                          : "border-white/10 bg-black/20 text-white/80 hover:border-[#FFB45D] hover:bg-white/10"
+                      }`}
+                    >
+                      <div className="text-sm font-black">{condition.label}</div>
+                      <div className="mt-1 text-[11px] font-bold leading-5 opacity-75">{condition.description}</div>
+                      <div className="mt-2 rounded-full bg-black/20 px-2 py-1 text-[10px] font-black">{condition.bonusLabel}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-4 ${desktopDetailPanel === "overview" ? "" : "hidden"}`}>
+              <div className="macho-ui-label">Machoda Links</div>
+              <div className="mt-1 text-lg font-black">筋トレ情報と連携</div>
+              <div className="mt-1 text-xs font-bold text-white/70">ゲームの邪魔にならないよう、必要な時だけ関連ページへ移動できます。</div>
+              <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                <Link href="/supplements-ranking" className="rounded-2xl border border-white/10 bg-black/20 px-3 py-3 text-sm font-black text-white/85 transition hover:border-[#FFB45D] hover:bg-white/10">
+                  おすすめサプリ
+                </Link>
+                <Link href="/training-gear" className="rounded-2xl border border-white/10 bg-black/20 px-3 py-3 text-sm font-black text-white/85 transition hover:border-[#FFB45D] hover:bg-white/10">
+                  トレーニングギア
+                </Link>
+                <Link href="/training-faq" className="rounded-2xl border border-white/10 bg-black/20 px-3 py-3 text-sm font-black text-white/85 transition hover:border-[#FFB45D] hover:bg-white/10">
+                  筋トレFAQ
+                </Link>
+              </div>
+            </div>
+            <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-3 ${desktopDetailPanel === "overview" || desktopDetailPanel === "save" ? "" : "hidden"}`}>
+              <div className="macho-ui-label">Share</div>
+              <div className="mt-1 text-lg font-black">今の結果を共有</div>
+              <div className="mt-1 text-xs font-bold text-white/70">称号、累計筋肉ポイント、毎秒生産を共有用テキストにします。</div>
+              <button
+                type="button"
+                onClick={shareResult}
+                className="macho-game-button mt-4 rounded-2xl bg-[#FF8A23] px-4 py-3 text-sm font-black text-white transition hover:bg-[#f57200]"
+              >
+                共有テキストを作成
+              </button>
             </div>
             <div className={`macho-dark-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-2 ${desktopDetailPanel === "overview" || desktopDetailPanel === "levels" ? "" : "hidden"}`}>
               <div className="flex items-start justify-between gap-3">
