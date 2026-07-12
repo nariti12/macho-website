@@ -232,6 +232,20 @@ type BuildingCountCheckpoint = {
   perSecond: number;
 };
 
+type BodyPartKey = "chest" | "back" | "legs" | "shoulders" | "arms" | "abs";
+
+type BodyPartDefinition = {
+  key: BodyPartKey;
+  label: string;
+  mainUpgrades: UpgradeKey[];
+  accent: string;
+};
+
+type BodyPartProgress = BodyPartDefinition & {
+  level: number;
+  progress: number;
+};
+
 type GoldenEffect = {
   id: "lucky" | "frenzy" | "clickFrenzy" | "buildingFrenzy" | "jackpot";
   weight: number;
@@ -518,6 +532,45 @@ const upgrades: Upgrade[] = [
 ];
 
 const visualUpgrades = upgrades.filter((upgrade) => upgrade.key !== "pushUp");
+
+const bodyPartDefinitions: BodyPartDefinition[] = [
+  {
+    key: "chest",
+    label: "胸",
+    mainUpgrades: ["benchPress", "trainer", "finalMacho"],
+    accent: "from-rose-300 to-red-600",
+  },
+  {
+    key: "back",
+    label: "背中",
+    mainUpgrades: ["dumbbell", "gym", "machoPortal"],
+    accent: "from-sky-300 to-blue-700",
+  },
+  {
+    key: "legs",
+    label: "脚",
+    mainUpgrades: ["chicken", "antiGravityGym", "timeGym"],
+    accent: "from-emerald-300 to-green-700",
+  },
+  {
+    key: "shoulders",
+    label: "肩",
+    mainUpgrades: ["proteinPrism", "chanceMachine", "fractalMuscle"],
+    accent: "from-violet-300 to-purple-700",
+  },
+  {
+    key: "arms",
+    label: "腕",
+    mainUpgrades: ["pushUp", "dumbbell", "muscleConsole"],
+    accent: "from-amber-300 to-orange-700",
+  },
+  {
+    key: "abs",
+    label: "腹筋",
+    mainUpgrades: ["abRoller", "mealPrepLab", "cortexTrainer"],
+    accent: "from-cyan-200 to-teal-700",
+  },
+];
 
 const getUpgradeTier = (key: UpgradeKey) => {
   const index = upgrades.findIndex((upgrade) => upgrade.key === key);
@@ -1641,6 +1694,10 @@ const getRangeStatus = (value: number, [min, max]: [number, number]) => {
 };
 
 const getTitle = (totalMuscle: number) => {
+  if (totalMuscle >= 1_000_000_000_000) return "伝説のマチョ田";
+  if (totalMuscle >= 100_000_000_000) return "宇宙マチョ";
+  if (totalMuscle >= 1_000_000_000) return "神域トレーニー";
+  if (totalMuscle >= 100_000_000) return "歩くパワーラック";
   if (totalMuscle >= 10_000_000) return "マチョ神";
   if (totalMuscle >= 1_000_000) return "マチョ田級";
   if (totalMuscle >= 250_000) return "ゴリマッチョ";
@@ -1658,9 +1715,32 @@ const getNextTitleGoal = (totalMuscle: number) => {
     { title: "ゴリマッチョ", value: 250_000 },
     { title: "マチョ田級", value: 1_000_000 },
     { title: "マチョ神", value: 10_000_000 },
+    { title: "歩くパワーラック", value: 100_000_000 },
+    { title: "神域トレーニー", value: 1_000_000_000 },
+    { title: "宇宙マチョ", value: 100_000_000_000 },
+    { title: "伝説のマチョ田", value: 1_000_000_000_000 },
   ];
   return goals.find((goal) => totalMuscle < goal.value) ?? goals[goals.length - 1];
 };
+
+const getBodyPartProgress = (state: GameState): BodyPartProgress[] =>
+  bodyPartDefinitions.map((part) => {
+    const rawScore = part.mainUpgrades.reduce((total, key, index) => {
+      const countScore = state.upgrades[key] * (index === 0 ? 1 : 1.35);
+      const levelScore = (state.buildingLevels[key] ?? 0) * 3;
+      return total + countScore + levelScore;
+    }, 0);
+    const titleScore = Math.log10(Math.max(1, state.totalMuscle)) * 2;
+    const score = rawScore + titleScore;
+    const level = Math.max(1, Math.min(10, Math.floor(score / 18) + 1));
+    const progress = Math.min(100, Math.max(0, ((score % 18) / 18) * 100));
+
+    return {
+      ...part,
+      level,
+      progress,
+    };
+  });
 
 const getBodyStage = (totalMuscle: number) => {
   if (totalMuscle >= 1_000_000) {
@@ -2021,6 +2101,10 @@ export function MachoClickerPage() {
   const achievementSupportMultiplier = getAchievementSupportMultiplier(state);
   const title = getTitle(state.totalMuscle);
   const nextGoal = getNextTitleGoal(state.totalMuscle);
+  const bodyPartProgress = useMemo(() => getBodyPartProgress(state), [state]);
+  const bodyPartAverageLevel = Math.round(
+    bodyPartProgress.reduce((total, part) => total + part.level, 0) / Math.max(1, bodyPartProgress.length)
+  );
   const titleProgress = Math.min(100, Math.max(0, (state.totalMuscle / nextGoal.value) * 100));
   const ownedUpgradeCount = Object.values(state.upgrades).reduce((total, level) => total + level, 0);
   const totalBuildingLevel = Object.values(state.buildingLevels).reduce((total, level) => total + level, 0);
@@ -2763,7 +2847,9 @@ export function MachoClickerPage() {
             <div className="grid gap-px bg-[#FED7AA] lg:grid-cols-[420px_minmax(0,1fr)_390px]">
               <div className="bg-[#9A3412] px-5 py-4">
                 <h1 className="text-3xl font-black tracking-tight text-[#FFE7C2]">マチョクリッカー</h1>
-                <div className="mt-1 text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">{bodyStage.label}</div>
+                <div className="mt-1 text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">
+                  {bodyStage.label} / 肉体Lv {bodyPartAverageLevel}
+                </div>
               </div>
               <div className="bg-[#9A3412] px-5 py-4">
                 <div className="grid grid-cols-4 gap-3 text-center">
@@ -3045,6 +3131,28 @@ export function MachoClickerPage() {
                 <div className="macho-paper-card rounded-2xl px-4 py-3 text-[#7C2D12]">
                   <div className="text-xs font-black text-[#C2410C]">クリック数</div>
                   <div className="mt-1 text-xl font-black">{formatFullNumber(state.clickCount)}</div>
+                </div>
+              </div>
+              <div className="macho-paper-card relative z-10 mt-3 w-full rounded-2xl px-4 py-3 text-left text-[#7C2D12]">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-xs font-black text-[#C2410C]">部位成長</div>
+                    <div className="mt-1 text-sm font-black text-[#7C2D12]">設備に連動して胸・背中・脚・肩・腕・腹筋が育ちます。</div>
+                  </div>
+                  <div className="rounded-full bg-[#7C2D12] px-3 py-1 text-xs font-black text-[#FFE7C2]">平均Lv {bodyPartAverageLevel}</div>
+                </div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {bodyPartProgress.map((part) => (
+                    <div key={part.key} className="rounded-2xl border border-[#FCD27B] bg-white/70 px-3 py-2">
+                      <div className="flex items-center justify-between gap-2 text-xs font-black">
+                        <span>{part.label}</span>
+                        <span>Lv {part.level}</span>
+                      </div>
+                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#FED7AA]">
+                        <div className={`h-full rounded-full bg-gradient-to-r ${part.accent}`} style={{ width: `${part.progress}%` }} />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </aside>
