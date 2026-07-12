@@ -11,7 +11,8 @@ const SAVE_INTERVAL_MS = 1000;
 const GAME_TICK_MS = 50;
 const NUMBER_ANIMATION_MS = 420;
 const NEWS_INTERVAL_MS = 18_000;
-const OFFLINE_LIMIT_SECONDS = 60 * 60 * 8;
+const OFFLINE_BASE_LIMIT_SECONDS = 60 * 30;
+const OFFLINE_LEGACY_BONUS_SECONDS = 60 * 60 * 8;
 const MAX_SCORE = 1e300;
 const PRESTIGE_REQUIREMENT = 1_000_000_000_000;
 const PRESTIGE_BONUS_RATE = 0.01;
@@ -222,6 +223,7 @@ type CookieStyleBenchmarkTarget = {
 type GoldenEffect = {
   id: "lucky" | "frenzy" | "clickFrenzy" | "buildingFrenzy" | "jackpot";
   weight: number;
+  unlock?: (state: GameState) => boolean;
 };
 
 const cookieStyleBenchmarkTargets: CookieStyleBenchmarkTarget[] = [
@@ -715,12 +717,17 @@ const buildingPowerUpgradeTiers = [
   { owned: 150, costMultiplier: 500_000, label: "宇宙規模化" },
 ] as const;
 
-const buildingPowerUpgrades: PowerUpgrade[] = upgrades.flatMap((upgrade) =>
+const getBuildingPowerUpgradeCost = (upgrade: Upgrade, upgradeIndex: number, costMultiplier: number) => {
+  const rankMultiplier = 1 + upgradeIndex * 0.08;
+  return Math.ceil(upgrade.baseCost * costMultiplier * rankMultiplier);
+};
+
+const buildingPowerUpgrades: PowerUpgrade[] = upgrades.flatMap((upgrade, upgradeIndex) =>
   buildingPowerUpgradeTiers.map((tier) => ({
     id: `${upgrade.key}-${tier.owned}`,
     name: `${upgrade.name}${tier.label}`,
     description: `${upgrade.name}の毎秒生産が2倍になります。`,
-    cost: Math.ceil(upgrade.baseCost * tier.costMultiplier),
+    cost: getBuildingPowerUpgradeCost(upgrade, upgradeIndex, tier.costMultiplier),
     spriteSrc: upgrade.spriteSrc,
     effectLabel: `${upgrade.name} x2`,
     target: upgrade.key,
@@ -1078,7 +1085,7 @@ const legacyUpgrades: LegacyUpgrade[] = [
     name: "留守番トレーナー",
     description: "オフライン中に貯められる筋肉ポイントの上限時間が伸びます。",
     cost: 3,
-    effectLabel: "オフライン上限 +4時間",
+    effectLabel: "オフライン上限 +8時間",
     unlock: (state) => state.prestigeLevel >= 3,
   },
   {
@@ -1245,7 +1252,7 @@ const getAvailableLegacyPoints = (state: GameState) => Math.max(0, state.prestig
 const getLegacyProductionMultiplier = (state: GameState) => (hasLegacyUpgrade(state, "permanent-pump") ? 1.05 : 1);
 
 const getOfflineLimitSeconds = (state: GameState) =>
-  OFFLINE_LIMIT_SECONDS + (hasLegacyUpgrade(state, "offline-coach") ? 60 * 60 * 4 : 0);
+  OFFLINE_BASE_LIMIT_SECONDS + (hasLegacyUpgrade(state, "offline-coach") ? OFFLINE_LEGACY_BONUS_SECONDS : 0);
 
 const getCrystalGrowMs = (state: GameState) => (hasLegacyUpgrade(state, "crystal-gym") ? 20 * 60 * 60 * 1000 : MUSCLE_CRYSTAL_GROW_MS);
 
@@ -1369,20 +1376,29 @@ const goldenEffects: GoldenEffect[] = [
   { id: "lucky", weight: 45 },
   { id: "frenzy", weight: 30 },
   { id: "clickFrenzy", weight: 14 },
-  { id: "buildingFrenzy", weight: 9 },
-  { id: "jackpot", weight: 2 },
+  {
+    id: "buildingFrenzy",
+    weight: 9,
+    unlock: (state) => getOwnedUpgradeCount(state.upgrades) >= 20 && getPerSecond(state) >= 10,
+  },
+  {
+    id: "jackpot",
+    weight: 2,
+    unlock: (state) => state.totalMuscle >= 1_000_000 && getPerSecond(state) >= 100,
+  },
 ];
 
-const pickGoldenEffect = () => {
-  const totalWeight = goldenEffects.reduce((total, effect) => total + effect.weight, 0);
+const pickGoldenEffect = (state: GameState) => {
+  const availableEffects = goldenEffects.filter((effect) => !effect.unlock || effect.unlock(state));
+  const totalWeight = availableEffects.reduce((total, effect) => total + effect.weight, 0);
   let roll = Math.random() * totalWeight;
 
-  for (const effect of goldenEffects) {
+  for (const effect of availableEffects) {
     roll -= effect.weight;
     if (roll <= 0) return effect.id;
   }
 
-  return goldenEffects[0].id;
+  return availableEffects[0]?.id ?? "lucky";
 };
 
 const getDumbbellOrbitItems = (count: number) => {
@@ -2378,7 +2394,7 @@ export function MachoClickerPage() {
 
   const collectGoldenProtein = () => {
     if (!goldenProtein) return;
-    const effect = pickGoldenEffect();
+    const effect = pickGoldenEffect(state);
     const now = Date.now();
     let historyEntry: GoldenHistoryEntry = {
       id: `golden-${now}`,
@@ -2392,7 +2408,7 @@ export function MachoClickerPage() {
         Math.min(state.muscle * LUCKY_BANK_RATE + LUCKY_FLAT_BONUS, perSecond * LUCKY_CPS_SECONDS + LUCKY_FLAT_BONUS) *
           getGoldenMultiplier(state)
       );
-      const safeBonus = Math.max(15, bonus);
+      const safeBonus = Math.max(LUCKY_FLAT_BONUS, bonus);
       historyEntry = {
         ...historyEntry,
         name: "Lucky",
