@@ -30,6 +30,12 @@ const GOLDEN_SPAWN_MAX_MS = 15 * 60 * 1000;
 const GOLDEN_LIFETIME_MS = 13_000;
 const MUSCLE_CRYSTAL_GROW_MS = 24 * 60 * 60 * 1000;
 const BUILDING_LEVEL_BONUS_RATE = 0.01;
+const MAX_BUILDING_LEVEL_MULTIPLIER = 4;
+const MAX_PRESTIGE_MULTIPLIER = 25;
+const MAX_ACHIEVEMENT_SUPPORT_MULTIPLIER = 3;
+const BALANCE_CLICKS_PER_SECOND = 1;
+const BALANCE_MAX_MINUTES = 240;
+const BUILDING_COUNT_CHECKPOINTS = [1, 5, 10, 25, 50, 100, 150, 200] as const;
 const GOLDEN_HISTORY_LIMIT = 12;
 const LEGACY_STARTING_MUSCLE = 100;
 
@@ -218,6 +224,12 @@ type CookieStyleBenchmarkTarget = {
   perSecondRange: [number, number];
   ownedRange: [number, number];
   focus: string;
+};
+
+type BuildingCountCheckpoint = {
+  owned: number;
+  minute: number | null;
+  perSecond: number;
 };
 
 type GoldenEffect = {
@@ -1265,7 +1277,7 @@ const getGoldenSpawnMaxMs = (state: GameState) =>
 const getAscensionStartingMuscle = (state: GameState) => (hasLegacyUpgrade(state, "starter-dumbbell") ? LEGACY_STARTING_MUSCLE : 0);
 
 const getBuildingLevelMultiplier = (state: GameState, key: UpgradeKey) =>
-  1 + (state.buildingLevels[key] ?? 0) * BUILDING_LEVEL_BONUS_RATE;
+  Math.min(MAX_BUILDING_LEVEL_MULTIPLIER, 1 + (state.buildingLevels[key] ?? 0) * BUILDING_LEVEL_BONUS_RATE);
 
 const getNextMuscleCrystalText = (timestamp: number) => {
   const remainingMs = timestamp - Date.now();
@@ -1285,7 +1297,7 @@ const getUpgradeVisibleCount = (level: number) => Math.min(180, level);
 
 const getActiveBuffs = (state: GameState) => state.activeBuffs.filter((buff) => buff.endAt > Date.now());
 
-const getPrestigeMultiplier = (state: GameState) => 1 + state.prestigeLevel * PRESTIGE_BONUS_RATE;
+const getPrestigeMultiplier = (state: GameState) => Math.min(MAX_PRESTIGE_MULTIPLIER, 1 + state.prestigeLevel * PRESTIGE_BONUS_RATE);
 
 const getFrenzyMultiplier = (state: GameState) =>
   getActiveBuffs(state).reduce((total, buff) => (buff.type === "frenzy" ? total * buff.multiplier : total), 1);
@@ -1501,7 +1513,7 @@ const getAchievementSupportMultiplier = (state: GameState) => {
     return total + (powerUp.achievementSupportRate ?? 0);
   }, 0);
 
-  return 1 + state.unlockedAchievements.length * supportRate;
+  return Math.min(MAX_ACHIEVEMENT_SUPPORT_MULTIPLIER, 1 + state.unlockedAchievements.length * supportRate);
 };
 
 const getBasePerSecond = (state: GameState) =>
@@ -1521,41 +1533,53 @@ const createBenchmarkState = (): GameState => ({
   lastSavedAt: Date.now(),
 });
 
-const simulateBalanceBenchmark = (minutes: number, clicksPerSecond = 1): BalanceBenchmark => {
+const buyAffordableBenchmarkBuildings = (state: GameState) => {
+  let simulated = state;
+  let purchased = true;
+
+  while (purchased) {
+    purchased = false;
+    const nextUpgrade = [...upgrades]
+      .reverse()
+      .find((upgrade) => simulated.muscle >= getUpgradeCost(upgrade, simulated.upgrades[upgrade.key]));
+
+    if (!nextUpgrade) continue;
+
+    const cost = getUpgradeCost(nextUpgrade, simulated.upgrades[nextUpgrade.key]);
+    simulated = {
+      ...simulated,
+      muscle: clampScore(simulated.muscle - cost),
+      upgrades: {
+        ...simulated.upgrades,
+        [nextUpgrade.key]: simulated.upgrades[nextUpgrade.key] + 1,
+      },
+    };
+    purchased = true;
+  }
+
+  return simulated;
+};
+
+const advanceBenchmarkSecond = (state: GameState, clicksPerSecond = BALANCE_CLICKS_PER_SECOND) => {
+  const clickGain = getClickPower(state) * clicksPerSecond;
+  const passiveGain = getPerSecond(state);
+  const nextState = {
+    ...state,
+    muscle: clampScore(state.muscle + clickGain + passiveGain),
+    totalMuscle: clampScore(state.totalMuscle + clickGain + passiveGain),
+    handMadeMuscle: clampScore(state.handMadeMuscle + clickGain),
+    clickCount: state.clickCount + clicksPerSecond,
+  };
+
+  return buyAffordableBenchmarkBuildings(nextState);
+};
+
+const simulateBalanceBenchmark = (minutes: number, clicksPerSecond = BALANCE_CLICKS_PER_SECOND): BalanceBenchmark => {
   let simulated = createBenchmarkState();
   const seconds = minutes * 60;
 
   for (let second = 0; second < seconds; second += 1) {
-    const clickGain = getClickPower(simulated) * clicksPerSecond;
-    const passiveGain = getPerSecond(simulated);
-    simulated = {
-      ...simulated,
-      muscle: clampScore(simulated.muscle + clickGain + passiveGain),
-      totalMuscle: clampScore(simulated.totalMuscle + clickGain + passiveGain),
-      handMadeMuscle: clampScore(simulated.handMadeMuscle + clickGain),
-      clickCount: simulated.clickCount + clicksPerSecond,
-    };
-
-    let purchased = true;
-    while (purchased) {
-      purchased = false;
-      const nextUpgrade = [...upgrades]
-        .reverse()
-        .find((upgrade) => simulated.muscle >= getUpgradeCost(upgrade, simulated.upgrades[upgrade.key]));
-
-      if (!nextUpgrade) continue;
-
-      const cost = getUpgradeCost(nextUpgrade, simulated.upgrades[nextUpgrade.key]);
-      simulated = {
-        ...simulated,
-        muscle: clampScore(simulated.muscle - cost),
-        upgrades: {
-          ...simulated.upgrades,
-          [nextUpgrade.key]: simulated.upgrades[nextUpgrade.key] + 1,
-        },
-      };
-      purchased = true;
-    }
+    simulated = advanceBenchmarkSecond(simulated, clicksPerSecond);
   }
 
   return {
@@ -1570,6 +1594,42 @@ const balanceBenchmarks = [5, 10, 30, 60].map((minutes) => simulateBalanceBenchm
 
 const getOwnedUpgradeCount = (upgradeCounts: Record<UpgradeKey, number>) =>
   Object.values(upgradeCounts).reduce((total, level) => total + level, 0);
+
+const simulateBuildingCountCheckpoints = (): BuildingCountCheckpoint[] => {
+  let simulated = createBenchmarkState();
+  const reached = new Map<number, BuildingCountCheckpoint>();
+  const maxSeconds = BALANCE_MAX_MINUTES * 60;
+
+  for (let second = 0; second <= maxSeconds; second += 1) {
+    if (second > 0) {
+      simulated = advanceBenchmarkSecond(simulated);
+    }
+
+    const owned = getOwnedUpgradeCount(simulated.upgrades);
+    for (const checkpoint of BUILDING_COUNT_CHECKPOINTS) {
+      if (owned >= checkpoint && !reached.has(checkpoint)) {
+        reached.set(checkpoint, {
+          owned: checkpoint,
+          minute: Math.round((second / 60) * 10) / 10,
+          perSecond: getPerSecond(simulated),
+        });
+      }
+    }
+
+    if (reached.size === BUILDING_COUNT_CHECKPOINTS.length) break;
+  }
+
+  return BUILDING_COUNT_CHECKPOINTS.map(
+    (checkpoint) =>
+      reached.get(checkpoint) ?? {
+        owned: checkpoint,
+        minute: null,
+        perSecond: getPerSecond(simulated),
+      }
+  );
+};
+
+const buildingCountCheckpoints = simulateBuildingCountCheckpoints();
 
 const getCookieBenchmarkTarget = (minutes: number) =>
   cookieStyleBenchmarkTargets.find((target) => target.minutes === minutes);
@@ -3832,6 +3892,31 @@ export function MachoClickerPage() {
                     </div>
                   );
                 })}
+              </div>
+              <div className="mt-4 grid gap-3 lg:grid-cols-[1.2fr_0.8fr]">
+                <div className="macho-dark-card rounded-2xl px-4 py-3">
+                  <div className="text-sm font-black text-[#FFB45D]">建物購入数チェックポイント</div>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                    {buildingCountCheckpoints.map((checkpoint) => (
+                      <div key={checkpoint.owned} className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                        <div className="text-xs font-black text-white/60">設備 {checkpoint.owned}個</div>
+                        <div className="mt-1 text-base font-black text-white">
+                          {checkpoint.minute === null ? `${BALANCE_MAX_MINUTES}分超` : `${checkpoint.minute}分`}
+                        </div>
+                        <div className="mt-1 text-[11px] font-bold text-white/60">毎秒 +{displayNumber(checkpoint.perSecond)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="macho-dark-card rounded-2xl px-4 py-3">
+                  <div className="text-sm font-black text-[#FFB45D]">倍率上限</div>
+                  <div className="mt-3 space-y-2 text-xs font-bold leading-5 text-white/70">
+                    <div>仕上げ直し: 最大 x{MAX_PRESTIGE_MULTIPLIER}</div>
+                    <div>設備レベル: 1設備あたり最大 x{MAX_BUILDING_LEVEL_MULTIPLIER}</div>
+                    <div>実績サポート: 最大 x{MAX_ACHIEVEMENT_SUPPORT_MULTIPLIER}</div>
+                    <div>検証条件: 1秒{BALANCE_CLICKS_PER_SECOND}クリック / 自動購入</div>
+                  </div>
+                </div>
               </div>
             </div>
           </section>
