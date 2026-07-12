@@ -127,3 +127,5 @@ npm run build
 ## 構成図
 
 draw.io で開く構成図は `docs/architecture.drawio` です。
+
+Mermaid で確認できる構成図は `docs/site-architecture-mermaid.md` です。
