@@ -99,6 +99,7 @@ type GameState = {
   upgrades: Record<UpgradeKey, number>;
   buildingLevels: Record<UpgradeKey, number>;
   muscleCrystals: number;
+  crystalResearch: string[];
   nextMuscleCrystalAt: number;
   goldenClicks: number;
   goldenHistory: GoldenHistoryEntry[];
@@ -283,6 +284,16 @@ type LegacyUpgrade = {
   description: string;
   cost: number;
   effectLabel: string;
+  unlock: (state: GameState) => boolean;
+};
+
+type CrystalResearch = {
+  id: string;
+  name: string;
+  description: string;
+  cost: number;
+  effectLabel: string;
+  icon: string;
   unlock: (state: GameState) => boolean;
 };
 
@@ -1318,6 +1329,7 @@ const initialState: GameState = {
   upgrades: emptyUpgrades,
   buildingLevels: emptyBuildingLevels,
   muscleCrystals: 0,
+  crystalResearch: [],
   nextMuscleCrystalAt: Date.now() + MUSCLE_CRYSTAL_GROW_MS,
   goldenClicks: 0,
   goldenHistory: [],
@@ -1377,6 +1389,36 @@ const legacyUpgrades: LegacyUpgrade[] = [
     cost: 10,
     effectLabel: "全体生産 +5%",
     unlock: (state) => state.prestigeLevel >= 10,
+  },
+];
+
+const crystalResearches: CrystalResearch[] = [
+  {
+    id: "crystal-incubator",
+    name: "結晶培養器",
+    description: "筋肉結晶の成長時間をさらに短縮します。設備レベルを上げるための結晶を集めやすくなります。",
+    cost: 1,
+    effectLabel: "結晶の成長時間 -10%",
+    icon: "培",
+    unlock: (state) => state.muscleCrystals >= 1 || state.ascensionCount >= 1,
+  },
+  {
+    id: "crystal-golden-lens",
+    name: "黄金レンズ",
+    description: "ゴールデンプロテインを見つけやすくする結晶研究です。",
+    cost: 2,
+    effectLabel: "黄金の出現間隔 -8%",
+    icon: "金",
+    unlock: (state) => state.goldenClicks >= 3 || state.ascensionCount >= 1,
+  },
+  {
+    id: "crystal-training-log",
+    name: "トレーニング記録帳",
+    description: "積み重ねた研究記録を自動生産へ還元します。",
+    cost: 3,
+    effectLabel: "全体生産 x1.05",
+    icon: "記",
+    unlock: (state) => state.unlockedAchievements.length >= 10 || state.ascensionCount >= 1,
   },
 ];
 
@@ -1544,14 +1586,20 @@ const getLegacyProductionMultiplier = (state: GameState) => (hasLegacyUpgrade(st
 const getOfflineLimitSeconds = (state: GameState) =>
   OFFLINE_BASE_LIMIT_SECONDS + (hasLegacyUpgrade(state, "offline-coach") ? OFFLINE_LEGACY_BONUS_SECONDS : 0);
 
-const getCrystalGrowMs = (state: GameState) => (hasLegacyUpgrade(state, "crystal-gym") ? 20 * 60 * 60 * 1000 : MUSCLE_CRYSTAL_GROW_MS);
-
 const getGoldenSpawnMultiplier = (state: GameState) =>
   powerUpgrades.reduce(
     (total, powerUp) =>
       state.purchasedPowerUps.includes(powerUp.id) ? total * (powerUp.goldenSpawnMultiplier ?? 1) : total,
-    hasLegacyUpgrade(state, "golden-beacon") ? 0.85 : 1
+    (hasLegacyUpgrade(state, "golden-beacon") ? 0.85 : 1) * (state.crystalResearch.includes("crystal-golden-lens") ? 0.92 : 1)
   );
+
+const getCrystalGrowMs = (state: GameState) => {
+  const legacyMs = hasLegacyUpgrade(state, "crystal-gym") ? 20 * 60 * 60 * 1000 : MUSCLE_CRYSTAL_GROW_MS;
+  return state.crystalResearch.includes("crystal-incubator") ? legacyMs * 0.9 : legacyMs;
+};
+
+const getCrystalResearchProductionMultiplier = (state: GameState) =>
+  state.crystalResearch.includes("crystal-training-log") ? 1.05 : 1;
 
 const getGoldenSpawnMinMs = (state: GameState) => GOLDEN_SPAWN_MIN_MS * getGoldenSpawnMultiplier(state);
 
@@ -1891,6 +1939,7 @@ const getPerSecond = (state: GameState) =>
   getFrenzyMultiplier(state) *
   getAchievementSupportMultiplier(state) *
   getPowerUpgradeProductionMultiplier(state) *
+  getCrystalResearchProductionMultiplier(state) *
   getDailyTrainingMultiplier(state) *
   getSupplementProductionMultiplier(state) *
   getDailyConditionProductionMultiplier(state) *
@@ -2281,6 +2330,11 @@ const normalizeLegacyUpgrades = (value?: string[]) =>
     ? value.filter((id) => legacyUpgrades.some((legacy) => legacy.id === id))
     : [];
 
+const normalizeCrystalResearch = (value?: string[]) =>
+  Array.isArray(value)
+    ? value.filter((id) => crystalResearches.some((research) => research.id === id))
+    : [];
+
 const normalizeTrainingPlanId = (value: unknown): TrainingPlanId | null =>
   trainingPlans.some((plan) => plan.id === value) ? (value as TrainingPlanId) : null;
 
@@ -2314,6 +2368,7 @@ const readSavedState = (): GameState => {
       upgrades: normalizeSavedUpgrades(saved.upgrades),
       buildingLevels: normalizeSavedBuildingLevels(saved.buildingLevels),
       muscleCrystals: typeof saved.muscleCrystals === "number" ? Math.max(0, Math.floor(saved.muscleCrystals)) : 0,
+      crystalResearch: normalizeCrystalResearch(saved.crystalResearch),
       nextMuscleCrystalAt:
         typeof saved.nextMuscleCrystalAt === "number" ? saved.nextMuscleCrystalAt : Date.now() + MUSCLE_CRYSTAL_GROW_MS,
       goldenClicks: typeof saved.goldenClicks === "number" ? Math.max(0, Math.floor(saved.goldenClicks)) : 0,
@@ -2407,6 +2462,7 @@ export function MachoClickerPage() {
   const [exportedSaveText, setExportedSaveText] = useState("");
   const [lastAutoSaveAt, setLastAutoSaveAt] = useState<number | null>(null);
   const [evolutionFlash, setEvolutionFlash] = useState(false);
+  const [ascensionModalOpen, setAscensionModalOpen] = useState(false);
   const effectIdRef = useRef(0);
   const stateRef = useRef<GameState>(initialState);
   const lastTickAtRef = useRef(Date.now());
@@ -2841,6 +2897,27 @@ export function MachoClickerPage() {
     });
   };
 
+  const buyCrystalResearch = (research: CrystalResearch) => {
+    setState((current) => {
+      const purchased = current.crystalResearch.includes(research.id);
+      if (purchased || !research.unlock(current) || current.muscleCrystals < research.cost) {
+        playSound("blocked");
+        return current;
+      }
+
+      setPurchaseFlash(`${research.name}: ${research.effectLabel}`);
+      window.setTimeout(() => setPurchaseFlash(null), 1400);
+      playSound("buy");
+
+      return {
+        ...current,
+        muscleCrystals: current.muscleCrystals - research.cost,
+        crystalResearch: [...current.crystalResearch, research.id],
+        lastSavedAt: Date.now(),
+      };
+    });
+  };
+
   const buyLegacyUpgrade = (legacy: LegacyUpgrade) => {
     setState((current) => {
       if (current.legacyUpgrades.includes(legacy.id) || !legacy.unlock(current) || getAvailableLegacyPoints(current) < legacy.cost) {
@@ -3087,6 +3164,7 @@ export function MachoClickerPage() {
       upgrades: { ...emptyUpgrades },
       buildingLevels: { ...emptyBuildingLevels },
       muscleCrystals: 0,
+      crystalResearch: [],
       nextMuscleCrystalAt: Date.now() + MUSCLE_CRYSTAL_GROW_MS,
       goldenClicks: 0,
       goldenHistory: [],
@@ -3145,6 +3223,7 @@ export function MachoClickerPage() {
         upgrades: normalizeSavedUpgrades(parsed.upgrades),
         buildingLevels: normalizeSavedBuildingLevels(parsed.buildingLevels),
         muscleCrystals: typeof parsed.muscleCrystals === "number" ? Math.max(0, Math.floor(parsed.muscleCrystals)) : 0,
+        crystalResearch: normalizeCrystalResearch(parsed.crystalResearch),
         nextMuscleCrystalAt:
           typeof parsed.nextMuscleCrystalAt === "number" ? parsed.nextMuscleCrystalAt : Date.now() + MUSCLE_CRYSTAL_GROW_MS,
         goldenClicks: typeof parsed.goldenClicks === "number" ? Math.max(0, Math.floor(parsed.goldenClicks)) : 0,
@@ -3175,9 +3254,17 @@ export function MachoClickerPage() {
     window.setTimeout(() => setSaveMessage(""), 2200);
   };
 
+  const openAscensionModal = () => {
+    if (pendingPrestige <= 0) {
+      setPurchaseFlash("仕上げ直しには累計 1 trillion 筋肉ポイントが必要です。");
+      window.setTimeout(() => setPurchaseFlash(null), 1800);
+      return;
+    }
+    setAscensionModalOpen(true);
+  };
+
   const ascend = () => {
     if (pendingPrestige <= 0) return;
-    if (!window.confirm(`仕上げ直しを実行して、永久倍率 +${pendingPrestige}% を獲得しますか？`)) return;
 
     const nextState: GameState = {
       ...initialState,
@@ -3188,6 +3275,7 @@ export function MachoClickerPage() {
       upgrades: { ...emptyUpgrades },
       buildingLevels: state.buildingLevels,
       muscleCrystals: state.muscleCrystals,
+      crystalResearch: state.crystalResearch,
       nextMuscleCrystalAt: state.nextMuscleCrystalAt,
       goldenClicks: state.goldenClicks,
       goldenHistory: state.goldenHistory,
@@ -3209,6 +3297,7 @@ export function MachoClickerPage() {
 
     setState(nextState);
     setCombo(0);
+    setAscensionModalOpen(false);
     setPurchaseFlash(`仕上げ直し完了: 永久倍率 +${pendingPrestige}%`);
     window.setTimeout(() => setPurchaseFlash(null), 1600);
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
@@ -3288,6 +3377,95 @@ export function MachoClickerPage() {
         </div>
       ) : null}
 
+      {ascensionModalOpen ? (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-[#080604]/80 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="ascension-title"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setAscensionModalOpen(false);
+          }}
+        >
+          <section className="macho-ascension-modal w-full max-w-2xl overflow-hidden rounded-[2rem] border-2 border-[#FCD27B] bg-[#20120B] text-[#FFF7EB] shadow-[0_32px_100px_rgba(0,0,0,0.68)]">
+            <div className="border-b border-[#FCD27B]/30 bg-[linear-gradient(135deg,#6A1E0D,#B84A13_55%,#2A140B)] px-6 py-6 sm:px-8">
+              <div className="flex items-start justify-between gap-5">
+                <div>
+                  <div className="macho-ui-label text-[#FFD58A]">Legacy Ascension</div>
+                  <h2 id="ascension-title" className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">仕上げ直し</h2>
+                  <p className="mt-2 max-w-xl text-sm font-bold leading-6 text-white/80">
+                    現在の設備をリセットして、次の周回を永久的に強くします。周回するほど、より速くジムを育てられます。
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAscensionModalOpen(false)}
+                  className="macho-game-button rounded-full border border-white/20 bg-black/20 px-3 py-2 text-sm font-black text-white/85 hover:bg-white/10"
+                  aria-label="仕上げ直し画面を閉じる"
+                >
+                  閉じる
+                </button>
+              </div>
+              <div className="mt-5 flex flex-wrap gap-3">
+                <div className="rounded-2xl border border-[#FFE0A6]/40 bg-black/20 px-4 py-3">
+                  <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#FFD58A]">獲得する永久倍率</div>
+                  <div className="mt-1 text-3xl font-black text-white">+{pendingPrestige}%</div>
+                </div>
+                <div className="rounded-2xl border border-white/15 bg-black/20 px-4 py-3">
+                  <div className="text-[10px] font-black uppercase tracking-[0.16em] text-white/55">仕上げ直し後</div>
+                  <div className="mt-1 text-xl font-black text-white">永久倍率 +{state.prestigeLevel + pendingPrestige}%</div>
+                </div>
+                <div className="rounded-2xl border border-white/15 bg-black/20 px-4 py-3">
+                  <div className="text-[10px] font-black uppercase tracking-[0.16em] text-white/55">周回数</div>
+                  <div className="mt-1 text-xl font-black text-white">{state.ascensionCount + 1} 周目</div>
+                </div>
+              </div>
+            </div>
+            <div className="grid gap-4 p-5 sm:grid-cols-2 sm:p-7">
+              <div className="rounded-2xl border border-emerald-200/20 bg-emerald-950/35 p-4">
+                <div className="text-sm font-black text-emerald-200">残るもの</div>
+                <ul className="mt-3 space-y-2 text-sm font-bold leading-5 text-white/80">
+                  <li>永久倍率、マチョ田の遺産</li>
+                  <li>筋肉結晶、設備レベル、体型進化</li>
+                  <li>実績、ゴールデン履歴、累計筋肉ポイント</li>
+                  <li>今日選んだトレーニングとサプリ</li>
+                </ul>
+              </div>
+              <div className="rounded-2xl border border-rose-200/20 bg-rose-950/30 p-4">
+                <div className="text-sm font-black text-rose-200">リセットされるもの</div>
+                <ul className="mt-3 space-y-2 text-sm font-bold leading-5 text-white/80">
+                  <li>所持筋肉ポイントと設備の所持数</li>
+                  <li>通常アップグレードと一時バフ</li>
+                  <li>手動クリック数と現在の連打コンボ</li>
+                  <li>開始時ポイントは遺産で増やせます</li>
+                </ul>
+              </div>
+            </div>
+            <div className="flex flex-col-reverse gap-3 border-t border-white/10 bg-black/20 p-5 sm:flex-row sm:items-center sm:justify-between sm:px-7">
+              <div className="text-xs font-bold leading-5 text-white/60">
+                累計 {displayNumber(state.totalMuscle)} 筋肉から、今回 +{pendingPrestige}% の永久倍率を獲得します。
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAscensionModalOpen(false)}
+                  className="macho-game-button rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-black text-white hover:bg-white/15"
+                >
+                  まだ鍛える
+                </button>
+                <button
+                  type="button"
+                  onClick={ascend}
+                  className="macho-game-button rounded-2xl bg-[#FF8A23] px-5 py-3 text-sm font-black text-white shadow-[0_0_24px_rgba(255,138,35,0.38)] transition hover:bg-[#FF9C41]"
+                >
+                  仕上げ直しを実行
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
       <main className="relative z-10 px-0 pb-0 pt-0">
         <div className="flex w-full max-w-none flex-col gap-0">
           <section className="macho-game-topbar macho-game-panel overflow-hidden border-b-4 border-[#7C2D12] bg-[#7C2D12] text-white shadow-2xl md:border-x-0 md:border-t-0">
@@ -3343,7 +3521,7 @@ export function MachoClickerPage() {
                   <span>基礎CPS +{displayNumber(basePerSecond)}</span>
                   <button
                     type="button"
-                    onClick={ascend}
+                    onClick={openAscensionModal}
                     disabled={pendingPrestige <= 0}
                     className="macho-game-button rounded-full bg-[#FF8A23] px-3 py-1 text-white transition disabled:bg-white/20 disabled:text-white/45"
                   >
@@ -4106,6 +4284,38 @@ export function MachoClickerPage() {
                   </div>
                 </div>
                 <div className="mt-5 rounded-2xl bg-[#FFF4E7] p-4">
+                  <div className="text-sm font-black text-[#7C2D12]">結晶研究</div>
+                  <div className="mt-1 text-xs font-bold text-[#9A3412]">設備レベル以外にも使える、仕上げ直し後も残る研究です。</div>
+                  <div className="mt-3 grid gap-2">
+                    {crystalResearches.map((research) => {
+                      const owned = state.crystalResearch.includes(research.id);
+                      const unlocked = research.unlock(state);
+                      const canBuy = !owned && unlocked && state.muscleCrystals >= research.cost;
+                      return (
+                        <button
+                          key={`mobile-${research.id}`}
+                          type="button"
+                          onClick={() => buyCrystalResearch(research)}
+                          disabled={!canBuy}
+                          className={`rounded-xl border px-3 py-3 text-left transition ${
+                            owned
+                              ? "border-cyan-500 bg-cyan-50 text-cyan-950"
+                              : canBuy
+                              ? "border-cyan-300 bg-white text-[#7C2D12] shadow-sm"
+                              : "border-[#FED7AA] bg-white/50 text-[#9A3412]/55"
+                          }`}
+                        >
+                          <span className="flex items-center justify-between gap-2 text-sm font-black">
+                            <span>{research.icon} {research.name}</span>
+                            <span>{owned ? "研究済み" : `${research.cost}晶`}</span>
+                          </span>
+                          <span className="mt-1 block text-xs font-bold">{unlocked ? research.effectLabel : "進行で解放"}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="mt-5 rounded-2xl bg-[#FFF4E7] p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <div className="text-sm font-black text-[#7C2D12]">筋肉結晶</div>
@@ -4579,6 +4789,53 @@ export function MachoClickerPage() {
                             所持 {state.upgrades[upgrade.key]} / 設備Lv.{state.buildingLevels[upgrade.key]}
                           </span>
                         </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="mt-5 border-t border-white/10 pt-5">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <div className="macho-ui-label">Crystal Research</div>
+                    <div className="mt-1 text-base font-black text-[#FFE7C2]">設備レベル以外にも、結晶を長期研究へ使える</div>
+                    <div className="mt-1 text-xs font-bold text-white/65">研究は仕上げ直し後も残ります。</div>
+                  </div>
+                  <div className="rounded-full bg-cyan-300/10 px-3 py-2 text-xs font-black text-cyan-100">
+                    所持結晶 {formatFullNumber(state.muscleCrystals)}個
+                  </div>
+                </div>
+                <div className="mt-3 grid gap-3 md:grid-cols-3">
+                  {crystalResearches.map((research) => {
+                    const owned = state.crystalResearch.includes(research.id);
+                    const unlocked = research.unlock(state);
+                    const canBuy = !owned && unlocked && state.muscleCrystals >= research.cost;
+                    return (
+                      <button
+                        key={research.id}
+                        type="button"
+                        onClick={() => buyCrystalResearch(research)}
+                        disabled={!canBuy}
+                        data-shop-state={owned ? "owned" : canBuy ? "purchasable" : "unavailable"}
+                        className={`macho-game-button macho-shop-card rounded-2xl border p-4 text-left transition ${
+                          owned
+                            ? "border-cyan-200/60 bg-cyan-300/15 text-cyan-50"
+                            : canBuy
+                            ? "border-cyan-200/60 bg-slate-950/40 text-white hover:-translate-y-0.5"
+                            : "border-white/10 bg-black/20 text-white/40"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-100/30 bg-cyan-300/10 text-lg font-black text-cyan-100">
+                            {research.icon}
+                          </span>
+                          <span className="rounded-full bg-black/20 px-2 py-1 text-xs font-black">{owned ? "研究済み" : `${research.cost}晶`}</span>
+                        </div>
+                        <div className="mt-3 text-base font-black">{research.name}</div>
+                        <div className="mt-1 text-xs font-black text-cyan-100">{research.effectLabel}</div>
+                        <div className="mt-2 text-xs font-bold leading-5 opacity-80">
+                          {unlocked ? research.description : "結晶や周回の進行で解放されます。"}
+                        </div>
                       </button>
                     );
                   })}
