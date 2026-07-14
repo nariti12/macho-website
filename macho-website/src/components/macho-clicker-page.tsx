@@ -10,7 +10,6 @@ const STORAGE_KEY = "machoda:macho-clicker:v3";
 const SAVE_INTERVAL_MS = 1000;
 const GAME_TICK_MS = 50;
 const NUMBER_ANIMATION_MS = 420;
-const NEWS_INTERVAL_MS = 18_000;
 const OFFLINE_BASE_LIMIT_SECONDS = 60 * 30;
 const OFFLINE_LEGACY_BONUS_SECONDS = 60 * 60 * 8;
 const MAX_SCORE = 1e300;
@@ -85,6 +84,8 @@ type PowerUpgrade = {
   clickMultiplier?: number;
   clickCpsPercent?: number;
   goldenMultiplier?: number;
+  goldenSpawnMultiplier?: number;
+  goldenDurationMultiplier?: number;
   achievementSupportRate?: number;
   unlock: (state: GameState) => boolean;
 };
@@ -852,6 +853,47 @@ const manualPowerUpgrades: PowerUpgrade[] = [
     unlock: (state) => state.totalMuscle >= 10_000,
   },
   {
+    id: "golden-scout",
+    name: "ゴールデン探索隊",
+    description: "ゴールデンプロテインの出現間隔が少し短くなります。見つける回数を増やすための中盤強化です。",
+    cost: 3_000_000,
+    spriteSrc: "/game/macho-clicker/icons/generated-v3/golden-protein.png",
+    effectLabel: "黄金の出現間隔 -12%",
+    goldenSpawnMultiplier: 0.88,
+    unlock: (state) => state.goldenClicks >= 3 && getPerSecond(state) >= 100,
+  },
+  {
+    id: "golden-shaker",
+    name: "黄金シェイカー",
+    description: "ゴールデンプロテインで得られる即時報酬をさらに増やします。",
+    cost: 25_000_000,
+    spriteSrc: "/game/macho-clicker/icons/generated-v3/golden-protein.png",
+    effectLabel: "黄金報酬 x1.5",
+    goldenMultiplier: 1.5,
+    unlock: (state) => state.goldenClicks >= 10 && state.totalMuscle >= 5_000_000,
+  },
+  {
+    id: "pump-timer",
+    name: "パンプタイマー",
+    description: "ゴールデンプロテイン由来のパンプアップ効果が長く続きます。",
+    cost: 250_000_000,
+    spriteSrc: "/game/macho-clicker/icons/generated-v3/golden-protein.png",
+    effectLabel: "黄金効果時間 x1.25",
+    goldenDurationMultiplier: 1.25,
+    unlock: (state) => state.goldenClicks >= 25 && getPerSecond(state) >= 10_000,
+  },
+  {
+    id: "golden-lab-pass",
+    name: "黄金ラボ会員証",
+    description: "ゴールデンプロテインの報酬と出現頻度をまとめて強化します。",
+    cost: 5_000_000_000,
+    spriteSrc: "/game/macho-clicker/icons/generated-v3/golden-protein.png",
+    effectLabel: "黄金報酬 x1.5 / 出現間隔 -8%",
+    goldenMultiplier: 1.5,
+    goldenSpawnMultiplier: 0.92,
+    unlock: (state) => state.goldenClicks >= 50 && state.totalMuscle >= 1_000_000_000,
+  },
+  {
     id: "macho-cat-rookie",
     name: "マチョ猫サポート",
     description: "実績数に応じて毎秒生産が伸びます。実績を集めるほど強くなります。",
@@ -1504,11 +1546,23 @@ const getOfflineLimitSeconds = (state: GameState) =>
 
 const getCrystalGrowMs = (state: GameState) => (hasLegacyUpgrade(state, "crystal-gym") ? 20 * 60 * 60 * 1000 : MUSCLE_CRYSTAL_GROW_MS);
 
-const getGoldenSpawnMinMs = (state: GameState) =>
-  hasLegacyUpgrade(state, "golden-beacon") ? GOLDEN_SPAWN_MIN_MS * 0.85 : GOLDEN_SPAWN_MIN_MS;
+const getGoldenSpawnMultiplier = (state: GameState) =>
+  powerUpgrades.reduce(
+    (total, powerUp) =>
+      state.purchasedPowerUps.includes(powerUp.id) ? total * (powerUp.goldenSpawnMultiplier ?? 1) : total,
+    hasLegacyUpgrade(state, "golden-beacon") ? 0.85 : 1
+  );
 
-const getGoldenSpawnMaxMs = (state: GameState) =>
-  hasLegacyUpgrade(state, "golden-beacon") ? GOLDEN_SPAWN_MAX_MS * 0.85 : GOLDEN_SPAWN_MAX_MS;
+const getGoldenSpawnMinMs = (state: GameState) => GOLDEN_SPAWN_MIN_MS * getGoldenSpawnMultiplier(state);
+
+const getGoldenSpawnMaxMs = (state: GameState) => GOLDEN_SPAWN_MAX_MS * getGoldenSpawnMultiplier(state);
+
+const getGoldenDurationMultiplier = (state: GameState) =>
+  powerUpgrades.reduce(
+    (total, powerUp) =>
+      state.purchasedPowerUps.includes(powerUp.id) ? total * (powerUp.goldenDurationMultiplier ?? 1) : total,
+    1
+  );
 
 const getAscensionStartingMuscle = (state: GameState) => (hasLegacyUpgrade(state, "starter-dumbbell") ? LEGACY_STARTING_MUSCLE : 0);
 
@@ -2007,6 +2061,13 @@ const getNewsLines = (state: GameState, title: string, perSecond: number) => {
   if (state.totalMuscle >= 1_000_000_000_000) lines.push("筋肉ポイントが trillion に到達。もはや単位が現実離れしています。");
   if (state.prestigeLevel > 0) lines.push(`仕上げ直しの効果で永久倍率が +${state.prestigeLevel}% になっています。`);
   if (state.activeBuffs.length > 0) lines.push("ゴールデン効果発動中。今すぐクリックする価値があります。");
+  if (state.goldenClicks >= 1) lines.push(`ゴールデンプロテインを ${formatFullNumber(state.goldenClicks)} 回獲得。次の出現に備えてください。`);
+  if (state.unlockedAchievements.length >= 10) {
+    lines.push(`実績 ${formatFullNumber(state.unlockedAchievements.length)} 個を解除。プロテインシェイクが少し濃くなっています。`);
+  }
+  if (state.purchasedPowerUps.length >= 5) {
+    lines.push(`強化 ${formatFullNumber(state.purchasedPowerUps.length)} 個を取得。ジムの自動化が進んでいます。`);
+  }
   if (seasonalEvent.id === "winter") lines.push("冬の増量期。食べて鍛えて、筋肉ポイントの土台を作る時期です。");
   if (seasonalEvent.id === "spring") lines.push("春の入会キャンペーンで、ジムに新しいトレーニーが増えています。");
   if (seasonalEvent.id === "summer") lines.push("夏の仕上げ期。クリックにも少し気合いが入っています。");
@@ -2041,7 +2102,17 @@ const getPowerUpgradeSummary = (powerUp: PowerUpgrade, state: GameState) => {
   }
 
   if (powerUp.goldenMultiplier) {
-    return `ゴールデンプロテイン x${powerUp.goldenMultiplier}`;
+    const labels = [`黄金報酬 x${powerUp.goldenMultiplier}`];
+    if (powerUp.goldenSpawnMultiplier) labels.push(`出現間隔 -${Math.round((1 - powerUp.goldenSpawnMultiplier) * 100)}%`);
+    return labels.join(" / ");
+  }
+
+  if (powerUp.goldenSpawnMultiplier) {
+    return `黄金の出現間隔 -${Math.round((1 - powerUp.goldenSpawnMultiplier) * 100)}%`;
+  }
+
+  if (powerUp.goldenDurationMultiplier) {
+    return `黄金効果時間 x${powerUp.goldenDurationMultiplier}`;
   }
 
   if (powerUp.productionMultiplier) {
@@ -2340,6 +2411,7 @@ export function MachoClickerPage() {
   const stateRef = useRef<GameState>(initialState);
   const lastTickAtRef = useRef(Date.now());
   const soundRefs = useRef<Partial<Record<SoundType, HTMLAudioElement>>>({});
+  const lastSoundAtRef = useRef<Partial<Record<SoundType, number>>>({});
   const clickPower = useMemo(() => getClickPower(state), [state]);
   const perSecond = useMemo(() => getPerSecond(state), [state]);
   const basePerSecond = useMemo(() => getBasePerSecond(state), [state]);
@@ -2460,13 +2532,6 @@ export function MachoClickerPage() {
   }, [notificationVolume, soundVolume]);
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      setNewsIndex((current) => current + 1);
-    }, NEWS_INTERVAL_MS);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
     if (!isLoaded) return;
     const timer = window.setInterval(() => {
       const now = Date.now();
@@ -2525,6 +2590,7 @@ export function MachoClickerPage() {
         x: 12 + Math.random() * 76,
         y: 14 + Math.random() * 62,
       });
+      playSound("golden");
       hideTimer = window.setTimeout(() => setGoldenProtein(null), GOLDEN_LIFETIME_MS);
       scheduleNext();
     };
@@ -2662,6 +2728,11 @@ export function MachoClickerPage() {
     if (!soundEnabled) return;
 
     try {
+      const now = Date.now();
+      const cooldown = type === "click" ? 55 : 110;
+      if (now - (lastSoundAtRef.current[type] ?? 0) < cooldown) return;
+      lastSoundAtRef.current[type] = now;
+
       const audio = soundRefs.current[type];
       if (!audio) return;
 
@@ -2816,6 +2887,7 @@ export function MachoClickerPage() {
     if (!goldenProtein) return;
     const effect = pickGoldenEffect(state);
     const now = Date.now();
+    const goldenDurationMultiplier = getGoldenDurationMultiplier(state);
     let historyEntry: GoldenHistoryEntry = {
       id: `golden-${now}`,
       name: "ゴールデンプロテイン",
@@ -2850,12 +2922,12 @@ export function MachoClickerPage() {
         type: "frenzy",
         name: "パンプアップ",
         multiplier: FRENZY_MULTIPLIER,
-        endAt: now + FRENZY_DURATION_MS,
+        endAt: now + FRENZY_DURATION_MS * goldenDurationMultiplier,
       };
       historyEntry = {
         ...historyEntry,
         name: "パンプアップ",
-        detail: `${FRENZY_MULTIPLIER}倍 / ${Math.round(FRENZY_DURATION_MS / 1000)}秒`,
+        detail: `${FRENZY_MULTIPLIER}倍 / ${Math.round((FRENZY_DURATION_MS * goldenDurationMultiplier) / 1000)}秒`,
       };
       setState((current) => ({
         ...current,
@@ -2871,12 +2943,12 @@ export function MachoClickerPage() {
         type: "clickFrenzy",
         name: "鬼クリック",
         multiplier: CLICK_FRENZY_MULTIPLIER,
-        endAt: now + CLICK_FRENZY_DURATION_MS,
+        endAt: now + CLICK_FRENZY_DURATION_MS * goldenDurationMultiplier,
       };
       historyEntry = {
         ...historyEntry,
         name: "鬼クリック",
-        detail: `${CLICK_FRENZY_MULTIPLIER}倍 / ${Math.round(CLICK_FRENZY_DURATION_MS / 1000)}秒`,
+        detail: `${CLICK_FRENZY_MULTIPLIER}倍 / ${Math.round((CLICK_FRENZY_DURATION_MS * goldenDurationMultiplier) / 1000)}秒`,
       };
       setState((current) => ({
         ...current,
@@ -2894,13 +2966,13 @@ export function MachoClickerPage() {
         type: "buildingFrenzy",
         name: `${target.name}暴走`,
         multiplier: BUILDING_FRENZY_MULTIPLIER,
-        endAt: now + BUILDING_FRENZY_DURATION_MS,
+        endAt: now + BUILDING_FRENZY_DURATION_MS * goldenDurationMultiplier,
         target: target.key,
       };
       historyEntry = {
         ...historyEntry,
         name: `${target.name}暴走`,
-        detail: `${target.name} ${BUILDING_FRENZY_MULTIPLIER}倍 / ${Math.round(BUILDING_FRENZY_DURATION_MS / 1000)}秒`,
+        detail: `${target.name} ${BUILDING_FRENZY_MULTIPLIER}倍 / ${Math.round((BUILDING_FRENZY_DURATION_MS * goldenDurationMultiplier) / 1000)}秒`,
       };
       setState((current) => ({
         ...current,
@@ -3294,7 +3366,11 @@ export function MachoClickerPage() {
                 Macho News
               </span>
               <div className="min-w-0 flex-1 overflow-hidden">
-                <div key={newsIndex} className="macho-news whitespace-nowrap text-sm font-bold text-orange-100">
+                <div
+                  key={newsIndex}
+                  className="macho-news whitespace-nowrap text-sm font-bold text-orange-100"
+                  onAnimationIteration={() => setNewsIndex((current) => current + 1)}
+                >
                   {news}
                 </div>
               </div>
