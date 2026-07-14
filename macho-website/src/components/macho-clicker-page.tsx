@@ -211,6 +211,17 @@ type SeasonalTheme = {
   accentClass: string;
 };
 
+type LimitedEvent = {
+  id: "newYear" | "valentine" | "halloween" | "christmas";
+  name: string;
+  description: string;
+  icon: string;
+  productionMultiplier: number;
+  clickMultiplier: number;
+  bonusLabel: string;
+  goldenLabel: string;
+};
+
 type AmbientItem = {
   id: string;
   src: string;
@@ -1314,6 +1325,34 @@ const generatedAchievements: Achievement[] = [
     description: "秋のバルク期にプレイした",
     isUnlocked: () => getSeasonalEvent().id === "autumn",
   },
+  {
+    key: "limited-new-year",
+    category: "隠し",
+    title: "初パンプ",
+    description: "初パンプ祭の期間にプレイした",
+    isUnlocked: () => getLimitedEvent()?.id === "newYear",
+  },
+  {
+    key: "limited-valentine",
+    category: "隠し",
+    title: "甘党トレーニー",
+    description: "チョコパンプ週間の期間にプレイした",
+    isUnlocked: () => getLimitedEvent()?.id === "valentine",
+  },
+  {
+    key: "limited-halloween",
+    category: "隠し",
+    title: "夜ジムの住人",
+    description: "ハロウィン増量祭の期間にプレイした",
+    isUnlocked: () => getLimitedEvent()?.id === "halloween",
+  },
+  {
+    key: "limited-christmas",
+    category: "隠し",
+    title: "ホリデーパンプ",
+    description: "クリスマス増量期の期間にプレイした",
+    isUnlocked: () => getLimitedEvent()?.id === "christmas",
+  },
 ];
 
 const achievements: Achievement[] = [...baseAchievements, ...generatedAchievements].filter(
@@ -1699,6 +1738,70 @@ const getSeasonalEvent = (date = new Date()): SeasonalEvent => {
   };
 };
 
+const getTokyoMonthDay = (date = new Date()) => {
+  const values = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Tokyo",
+    month: "numeric",
+    day: "numeric",
+  }).formatToParts(date);
+  const valueFor = (type: "month" | "day") => Number(values.find((value) => value.type === type)?.value ?? 0);
+  return { month: valueFor("month"), day: valueFor("day") };
+};
+
+const getLimitedEvent = (date = new Date()): LimitedEvent | null => {
+  const { month, day } = getTokyoMonthDay(date);
+
+  if (month === 1 && day <= 7) {
+    return {
+      id: "newYear",
+      name: "初パンプ祭",
+      description: "新年の初トレーニング期間。気合いで生産とクリックが少し伸びます。",
+      icon: "初",
+      productionMultiplier: 1.05,
+      clickMultiplier: 1.08,
+      bonusLabel: "生産 +5% / クリック +8%",
+      goldenLabel: "お年玉プロテイン",
+    };
+  }
+  if (month === 2 && day >= 10 && day <= 14) {
+    return {
+      id: "valentine",
+      name: "チョコパンプ週間",
+      description: "甘いものも筋肉へ還元する期間。クリック効率が少し伸びます。",
+      icon: "CHO",
+      productionMultiplier: 1.03,
+      clickMultiplier: 1.1,
+      bonusLabel: "生産 +3% / クリック +10%",
+      goldenLabel: "チョコプロテイン",
+    };
+  }
+  if (month === 10 && day >= 25 && day <= 31) {
+    return {
+      id: "halloween",
+      name: "ハロウィン増量祭",
+      description: "夜のジムに特別なプロテインが出現する期間です。",
+      icon: "HAL",
+      productionMultiplier: 1.06,
+      clickMultiplier: 1.04,
+      bonusLabel: "生産 +6% / クリック +4%",
+      goldenLabel: "パンプキンプロテイン",
+    };
+  }
+  if (month === 12 && day >= 20 && day <= 25) {
+    return {
+      id: "christmas",
+      name: "クリスマス増量期",
+      description: "チキンとケーキをトレーニングへ還元する特別期間です。",
+      icon: "XMAS",
+      productionMultiplier: 1.08,
+      clickMultiplier: 1.05,
+      bonusLabel: "生産 +8% / クリック +5%",
+      goldenLabel: "ホリデープロテイン",
+    };
+  }
+  return null;
+};
+
 const getSeasonalTheme = (event: SeasonalEvent): SeasonalTheme => {
   switch (event.id) {
     case "winter":
@@ -1829,6 +1932,7 @@ const getClickPower = (state: GameState, pendingPowerUp?: PowerUpgrade) => {
     (baseClick * clickMultiplier + cpsClickBonus) *
     getSupplementClickMultiplier(state) *
     getDailyConditionClickMultiplier(state) *
+    (getLimitedEvent()?.clickMultiplier ?? 1) *
     getClickFrenzyMultiplier(state);
   if (!pendingPowerUp || state.purchasedPowerUps.includes(pendingPowerUp.id)) return currentClick;
 
@@ -1840,6 +1944,7 @@ const getClickPower = (state: GameState, pendingPowerUp?: PowerUpgrade) => {
     (pendingBase * pendingMultiplier + pendingCpsBonus) *
     getSupplementClickMultiplier(state) *
     getDailyConditionClickMultiplier(state) *
+    (getLimitedEvent()?.clickMultiplier ?? 1) *
     getClickFrenzyMultiplier(state)
   );
 };
@@ -1943,7 +2048,8 @@ const getPerSecond = (state: GameState) =>
   getDailyTrainingMultiplier(state) *
   getSupplementProductionMultiplier(state) *
   getDailyConditionProductionMultiplier(state) *
-  getSeasonalEvent().multiplier;
+  getSeasonalEvent().multiplier *
+  (getLimitedEvent()?.productionMultiplier ?? 1);
 
 const getOwnedUpgradeCount = (upgradeCounts: Record<UpgradeKey, number>) =>
   Object.values(upgradeCounts).reduce((total, level) => total + level, 0);
@@ -2091,6 +2197,7 @@ const getBodyStage = (stage: number) =>
 
 const getNewsLines = (state: GameState, title: string, perSecond: number) => {
   const seasonalEvent = getSeasonalEvent();
+  const limitedEvent = getLimitedEvent();
   const lines = [
     "ジムの片隅で謎のクリック音が鳴り響いています。",
     "マチョ田、今日も腹筋ローラーを抱えて登場。",
@@ -2103,6 +2210,11 @@ const getNewsLines = (state: GameState, title: string, perSecond: number) => {
     "専門家は『腹筋ローラーは裏切らない』とコメントしています。",
     "ジムの床が少しずつ強化されています。",
   ];
+
+  if (limitedEvent) {
+    lines.unshift(`${limitedEvent.name} 開催中。${limitedEvent.description} ${limitedEvent.bonusLabel}`);
+    lines.push(`${limitedEvent.goldenLabel}がジムのどこかに現れるかもしれません。`);
+  }
 
   if (state.totalMuscle >= 50_000) lines.push("近所のジムで『あの人、仕上がってない？』という声が増えています。");
   if (state.totalMuscle >= 1_000_000) lines.push("マチョ田級の肉体が完成しつつあります。もはや歩くパワーラックです。");
@@ -2477,6 +2589,7 @@ export function MachoClickerPage() {
   );
   const pendingPrestige = getPendingPrestige(state);
   const seasonalEvent = getSeasonalEvent();
+  const limitedEvent = getLimitedEvent();
   const seasonalTheme = getSeasonalTheme(seasonalEvent);
   const activeTrainingPlan = getActiveTrainingPlan(state);
   const activeSupplements = getActiveSupplements(state);
@@ -3724,7 +3837,7 @@ export function MachoClickerPage() {
                   onClick={collectGoldenProtein}
                   className="macho-golden macho-golden-alert absolute z-50 flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-gradient-to-br from-yellow-100 via-yellow-300 to-orange-500 shadow-2xl"
                   style={{ left: `${goldenProtein.x}%`, top: `${goldenProtein.y}%` }}
-                  aria-label="ゴールデンプロテインを獲得"
+                  aria-label={`${limitedEvent?.goldenLabel ?? "ゴールデンプロテイン"}を獲得`}
                 >
                   <Image
                     src="/game/macho-clicker/icons/generated-v3/golden-protein.png"
@@ -3744,6 +3857,13 @@ export function MachoClickerPage() {
                     <div className="mt-1 text-[11px] font-bold text-white/70">{seasonalEvent.bonusLabel}</div>
                   </div>
                 </div>
+                {limitedEvent ? (
+                  <div className="rounded-2xl border border-yellow-100/60 bg-[#2A140B]/90 px-3 py-2 text-[#FFF4D4] shadow-xl backdrop-blur">
+                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-yellow-200">Limited Event</div>
+                    <div className="mt-1 text-sm font-black">{limitedEvent.name}</div>
+                    <div className="mt-1 text-[11px] font-bold text-white/75">{limitedEvent.bonusLabel}</div>
+                  </div>
+                ) : null}
                 {activeBuffs.map((buff) => (
                   <div key={`click-buff-${buff.id}`} className="rounded-2xl border border-[#FCD27B]/60 bg-[#2A140B]/88 px-3 py-2 text-[#FFE7C2] shadow-xl backdrop-blur">
                     <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#FFB45D]">Golden Effect</div>
@@ -4266,6 +4386,7 @@ export function MachoClickerPage() {
                     ["遺産ポイント", `${formatFullNumber(availableLegacyPoints)} / ${formatFullNumber(state.prestigeLevel)}`],
                     ["実績", `${state.unlockedAchievements.length}/${achievements.length}`],
                     ["季節イベント", seasonalEvent.name],
+                    ...(limitedEvent ? [["限定イベント", limitedEvent.name]] : []),
                   ].map(([label, value]) => (
                     <div key={label} className="rounded-2xl bg-[#FFF4E7] px-4 py-3">
                       <div className="text-xs font-black text-[#C2410C]">{label}</div>
@@ -4460,6 +4581,16 @@ export function MachoClickerPage() {
               </div>
               <div className={`macho-season-badge bg-gradient-to-br ${seasonalTheme.accentClass}`}>{seasonalEvent.icon}</div>
             </div>
+            {limitedEvent ? (
+              <div className={`macho-status-hero md:col-span-2 xl:col-span-2 ${desktopDetailPanel === "overview" ? "" : "hidden"}`}>
+                <div>
+                  <div className="macho-ui-label">Limited Event</div>
+                  <div className="mt-1 text-xl font-black text-[#FFF2C5]">{limitedEvent.name}</div>
+                  <div className="mt-1 text-xs font-bold text-white/70">{limitedEvent.bonusLabel}</div>
+                </div>
+                <div className="macho-season-badge bg-gradient-to-br from-yellow-100 via-amber-400 to-orange-600 text-[#5B2109]">{limitedEvent.icon}</div>
+              </div>
+            ) : null}
             <div className={`macho-visual-panel md:col-span-4 xl:col-span-7 ${desktopDetailPanel === "daily" ? "" : "hidden"}`}>
               <div className="macho-daily-stage">
                 <Image
