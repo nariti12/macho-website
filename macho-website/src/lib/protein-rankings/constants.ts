@@ -162,7 +162,7 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
 
 export const MALE_FIXED_COMMENTS: Record<(typeof MALE_FIXED_BRAND_ORDER)[number], string> = {
   verifyst:
-    "ホエイの中でコスパを重視するなら第一候補。さらに価格を抑えたい場合は同ブランドのソイも選べ、マチョ田はソイを購入しています。",
+    "コスパ最強王者のプロテイン。ホエイが高くて手が出せないのであればソイならホエイの半額で買えるので、そちらを購入しましょう。マチョ田もベリフィストのソイプロテインを購入しています。",
   "x-plosion":
     "ベリフィストの次にコスパがいいプロテイン。",
   "gold standard":

@@ -3451,12 +3451,14 @@ export function MachoClickerPage() {
     >
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_18%_8%,rgba(255,184,77,0.34),transparent_32%),radial-gradient(circle_at_86%_0%,rgba(251,146,60,0.26),transparent_30%),linear-gradient(180deg,#FFF7EB_0%,#FDBA74_48%,#7C2D12_100%)]" />
       <header className="macho-game-nav sticky top-0 z-50 flex h-14 items-center justify-between border-b-4 border-[#7C2D12] bg-[#1F120A]/95 px-3 text-[#FFE7C2] shadow-2xl backdrop-blur md:px-5">
-        <Link
-          href="/"
+        <button
+          type="button"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={() => window.location.assign("/")}
           className="macho-game-button rounded-full border-2 border-[#FFB45D]/60 bg-[#7C2D12] px-4 py-2 text-xs font-black text-[#FFE7C2] transition hover:bg-[#9A3412] sm:text-sm"
         >
           ← トップへ戻る
-        </Link>
+        </button>
         <div className="min-w-0 px-3 text-center">
           <div className="truncate text-base font-black tracking-tight sm:text-xl">マチョクリッカー</div>
           <div className="hidden text-[10px] font-black uppercase tracking-[0.18em] text-[#FFB45D] sm:block">Full Screen Gym Game</div>

@@ -63,9 +63,7 @@
 - クレアチンは `INNOCECT` と `Nature In` の TOP2 を固定表示します。
 - プレワークアウトは `PRE-X` を固定表示します。
 - Amazon / iHerb の価格は公式APIで取得していないため、固定表示として管理します。
-- 各カードに「こんな人向け」「注意点」「選定根拠」を表示します。
-- Verifystの表示商品はホエイです。マチョ田の購入経験として記載している商品は同ブランドのソイであることを明示します。
-- ページ上部にアフィリエイトリンクを含む旨を表示し、ランキングごとの `ItemList` 構造化データを出力します。
+- ランキングごとの `ItemList` 構造化データを出力します。
 
 詳細は `docs/protein-rankings.md` を参照してください。
 
@@ -77,15 +75,13 @@
 - Amazon / 公式サイトのみの商品は固定価格を表示します。
 - 楽天URLは `buildRakutenAffiliateUrl`、Amazon URLは `buildAmazonAffiliateUrl` でアフィリエイトURLに変換します。
 - Amazonのタグは `src/lib/protein-rankings/links.ts` の `AMAZON_ASSOCIATE_TAG` で管理します。
-- 各カードに購入対象、注意点、選定根拠を表示します。
-- 各ページにアフィリエイト表示と `ItemList` 構造化データを出力します。
+- 各ページに `ItemList` 構造化データを出力します。
 
 ## アフィリエイト計測
 
 - 外部ECボタンは `src/components/affiliate-link.tsx` を共通利用します。
 - クリック時にGA4へ `affiliate_click` イベントを送信します。
 - イベントには購入先、商品名、順位、ページパス、配置、遷移先URLを含めます。
-- アフィリエイト表示は `src/components/affiliate-disclosure.tsx` を共通利用します。
 - GA4側の確認方法と日常運用は `docs/site-growth-operations.md` を参照してください。
 
 ## マチョクリッカー

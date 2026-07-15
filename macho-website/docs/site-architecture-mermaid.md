@@ -147,8 +147,7 @@ flowchart LR
   layout --> gtm[Google Tag Manager]
   layout --> adsense[Google AdSense]
 
-  productPages[おすすめ商品ページ] --> disclosure[affiliate-disclosure.tsx<br/>広告表示]
-  productPages --> notes[recommendation-notes.tsx<br/>対象者 / 注意点 / 選定根拠]
+  productPages[おすすめ商品ページ] --> affiliateLink[affiliate-link.tsx<br/>外部ECクリック計測]
   productPages --> itemList[ItemList JSON-LD]
 
   pages[各ページ] --> picture[public/picture<br/>プロフィール / 商品補助画像]

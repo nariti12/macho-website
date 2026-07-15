@@ -1,9 +1,7 @@
 import Image from "next/image";
 import type { Metadata } from "next";
 
-import { AffiliateDisclosure } from "@/components/affiliate-disclosure";
 import { AffiliateLink } from "@/components/affiliate-link";
-import { RecommendationNotes } from "@/components/recommendation-notes";
 import { SiteHeader } from "@/components/site-header";
 import { buildAmazonAffiliateUrl, buildRakutenAffiliateUrl } from "@/lib/protein-rankings/links";
 import { fetchRakutenPriceLabel, formatYen } from "@/lib/rakuten-price";
@@ -30,9 +28,6 @@ type GearItem = {
   fallbackPriceYen: number;
   searchUrl?: string;
   amazonUrl?: string;
-  bestFor: string;
-  caution: string;
-  evaluation: string;
 };
 
 type GearSection = {
@@ -52,9 +47,6 @@ const gearSections: GearSection[] = [
         comment: "憧れのSBD。でも価格が高騰しすぎて買えません。高杉や・・・。",
         imageUrl: "https://shop.r10s.jp/jumblestore/cabinet/05987/2341684105987-01.jpg",
         fallbackPriceYen: 48800,
-        bestFor: "高重量で使う本格的なレバー式ベルトが欲しい人",
-        caution: "価格が高く、サイズ選びを誤ると使いにくいため事前確認が必須です。",
-        evaluation: "剛性、固定力、定番ブランドとしての信頼性を評価",
       },
       {
         rank: 2,
@@ -64,9 +56,6 @@ const gearSections: GearSection[] = [
           "https://search.rakuten.co.jp/search/mall/ONI%E3%80%80%E3%83%91%E3%83%AF%E3%83%BC%E3%83%99%E3%83%AB%E3%83%88/200170/",
         imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/tfgoods/cabinet/goodsp/compass1534142264.jpg",
         fallbackPriceYen: 19800,
-        bestFor: "硬めのベルトを長く馴染ませて使いたい人",
-        caution: "最初は硬く、身体に馴染むまで時間がかかります。",
-        evaluation: "馴染んだ後の固定力と耐久性を評価",
       },
       {
         rank: 3,
@@ -74,9 +63,6 @@ const gearSections: GearSection[] = [
         comment: "木澤さんの魂が込められたベルト。",
         imageUrl: "https://fitnessshop.jp/cdn/shop/files/2d9c4804812069d1138604546f3593c3_1200x1200.png?v=1684400831",
         fallbackPriceYen: 19800,
-        bestFor: "選手のこだわりが反映された国産レザーベルトが欲しい人",
-        caution: "販売状況やサイズ在庫は公式ページで確認が必要です。",
-        evaluation: "木澤大祐さん監修の設計とレザー仕様を評価",
       },
       {
         rank: 4,
@@ -88,9 +74,6 @@ const gearSections: GearSection[] = [
           "https://www.amazon.co.jp/s?k=%E3%82%B4%E3%83%BC%E3%83%AB%E3%83%89%E3%82%B8%E3%83%A0+%E3%83%88%E3%83%AC%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E3%83%99%E3%83%AB%E3%83%88",
         imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/powerpit/cabinet/04825845/imgrc0092518792.jpg",
         fallbackPriceYen: 7920,
-        bestFor: "初めてでも扱いやすい王道レザーベルトが欲しい人",
-        caution: "レバー式ほど素早く締め外しできるタイプではありません。",
-        evaluation: "価格、革の馴染みやすさ、入手しやすさを評価",
       },
       {
         rank: 5,
@@ -100,9 +83,6 @@ const gearSections: GearSection[] = [
           "https://www.amazon.co.jp/P-L-College-P-L-College%E3%83%91%E3%83%AF%E3%83%BC%E3%83%99%E3%83%AB%E3%83%88-%E3%83%91%E3%83%AF%E3%83%BC%E3%83%81%E3%83%A5%E3%83%BC%E3%83%96%E9%96%8B%E7%99%BA-%E3%83%88%E3%83%AC%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E3%83%99%E3%83%AB%E3%83%88-M/dp/B0F53HGKQP/ref=sr_1_6?sr=8-6",
         imageUrl: "https://m.media-amazon.com/images/I/31unTrG-pXL.jpg",
         fallbackPriceYen: 18000,
-        bestFor: "比較的手頃なレバー式ベルトを探している人",
-        caution: "Amazonのみの掲載なので、サイズと返品条件を確認してください。",
-        evaluation: "レバー式の使いやすさと価格のバランスを評価",
       },
     ],
   },
@@ -120,9 +100,6 @@ const gearSections: GearSection[] = [
           "https://www.amazon.co.jp/s?k=versa+gripps+%E3%83%91%E3%83%AF%E3%83%BC%E3%82%B0%E3%83%AA%E3%83%83%E3%83%97",
         imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/tkikaku/cabinet/traininggoods/vgripps/powergripps-aii2.jpg",
         fallbackPriceYen: 11980,
-        bestFor: "背中トレで握力をしっかり補助したい人",
-        caution: "手首周りのサイズと装着方向に慣れが必要です。",
-        evaluation: "使用者の多さ、グリップ力、耐久性を評価",
       },
       {
         rank: 2,
@@ -134,9 +111,6 @@ const gearSections: GearSection[] = [
           "https://www.amazon.co.jp/s?k=%E3%82%B4%E3%83%BC%E3%83%AB%E3%83%89%E3%82%B8%E3%83%A0+%E3%83%91%E3%83%AF%E3%83%BC%E3%82%B0%E3%83%AA%E3%83%83%E3%83%97&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
         imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/goldsgym/cabinet/ggp/3710-2.jpg",
         fallbackPriceYen: 10450,
-        bestFor: "定番ブランドの安心感を重視したい人",
-        caution: "類似商品が多いため、正規品とサイズを確認してください。",
-        evaluation: "機能性と入手しやすさをVersa Grippsと比較して選定",
       },
     ],
   },
@@ -211,7 +185,6 @@ export default async function TrainingGearPage() {
 またパワーグリップは、握力を補助してくれるため、主に背中トレーニングで狙った筋肉に集中しやすくなり、効率よく追い込めます。`}
               </p>
               <p className="text-sm text-slate-500">最終更新: {updatedAtLabel}</p>
-              <AffiliateDisclosure />
             </div>
           </section>
 
@@ -255,12 +228,6 @@ export default async function TrainingGearPage() {
                         <div className="text-xs font-semibold uppercase tracking-wide text-[#C2410C]">参考価格</div>
                         <div className="mt-1 font-medium text-slate-800">{item.priceLabel}</div>
                       </div>
-
-                      <RecommendationNotes
-                        bestFor={item.bestFor}
-                        caution={item.caution}
-                        evaluation={item.evaluation}
-                      />
 
                       {item.affiliateUrl || item.amazonAffiliateUrl ? (
                         <div className="flex flex-wrap items-center gap-3">

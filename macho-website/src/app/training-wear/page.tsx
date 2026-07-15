@@ -1,9 +1,7 @@
 import Image from "next/image";
 import type { Metadata } from "next";
 
-import { AffiliateDisclosure } from "@/components/affiliate-disclosure";
 import { AffiliateLink } from "@/components/affiliate-link";
-import { RecommendationNotes } from "@/components/recommendation-notes";
 import { SiteHeader } from "@/components/site-header";
 import { buildAmazonAffiliateUrl, buildRakutenAffiliateUrl } from "@/lib/protein-rankings/links";
 import { fetchRakutenPriceLabel } from "@/lib/rakuten-price";
@@ -30,9 +28,6 @@ type ShoeItem = {
   amazonUrl: string;
   imageUrl: string;
   fallbackPriceYen: number;
-  bestFor: string;
-  caution: string;
-  evaluation: string;
 };
 
 const shoeItems: ShoeItem[] = [
@@ -46,9 +41,6 @@ const shoeItems: ShoeItem[] = [
       "https://www.amazon.co.jp/s?k=INOV8+%E3%83%88%E3%83%AC%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E3%82%B7%E3%83%A5%E3%83%BC%E3%82%BA&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
     imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/store-descente/cabinet/542/nt5ssz93m_1001.jpg",
     fallbackPriceYen: 19800,
-    bestFor: "見た目とトレーニング性能の両方を重視したい人",
-    caution: "モデルによってサイズ感が異なるため、購入前にサイズ表を確認してください。",
-    evaluation: "デザイン性とジムでの使いやすさを重視した個人的No.1",
   },
   {
     rank: 2,
@@ -60,9 +52,6 @@ const shoeItems: ShoeItem[] = [
       "https://www.amazon.co.jp/s?k=vibram+fivefingers&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
     imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/vibramfivefingers/cabinet/fivefingers/imgrc0087708199.jpg",
     fallbackPriceYen: 25300,
-    bestFor: "素足感覚と踏ん張りやすさを重視したい人",
-    caution: "五本指型は履き心地が独特なので、サイズと用途の確認が必要です。",
-    evaluation: "使用者の多さと、足裏感覚を生かせる構造を評価",
   },
   {
     rank: 3,
@@ -74,9 +63,6 @@ const shoeItems: ShoeItem[] = [
       "https://www.amazon.co.jp/s?k=saguaro+%E3%83%99%E3%82%A2%E3%83%95%E3%83%83%E3%83%88%E3%82%B7%E3%83%A5%E3%83%BC%E3%82%BA",
     imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/saguaro/cabinet/09107349/09133691/xza32_15.jpg",
     fallbackPriceYen: 4580,
-    bestFor: "低価格でベアフットシューズを試したい人",
-    caution: "クッション性を求めるランニング用途には向かない場合があります。",
-    evaluation: "ベアフット系の中で試しやすい価格を評価",
   },
   {
     rank: 4,
@@ -88,9 +74,6 @@ const shoeItems: ShoeItem[] = [
       "https://www.amazon.co.jp/s?k=NIKE+Metcon&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
     imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/supersportsxebio/cabinet/1/8250401/8631591_m.jpg",
     fallbackPriceYen: 13900,
-    bestFor: "NIKEのデザインと安定感を重視したい人",
-    caution: "モデルや世代によって価格差が大きいため、検索結果を比較してください。",
-    evaluation: "デザイン、横方向の安定性、入手しやすさを評価",
   },
   {
     rank: 5,
@@ -102,9 +85,6 @@ const shoeItems: ShoeItem[] = [
       "https://www.amazon.co.jp/s?k=%E8%A6%AA%E6%96%B9%E5%AF%85%E3%81%95%E3%82%93+%E3%82%B9%E3%83%AA%E3%83%83%E3%83%9D%E3%83%B3&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
     imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/luce-8/cabinet/1bn863.jpg",
     fallbackPriceYen: 1980,
-    bestFor: "安さと持ち運びやすさを最優先したい人",
-    caution: "現場用シューズのため、競技専用シューズほどのサポート性はありません。",
-    evaluation: "価格、薄さ、荷物になりにくい点を評価",
   },
 ];
 
@@ -170,7 +150,6 @@ export default async function TrainingWearPage() {
                 カッコよくてジムに最適なトレーニングシューズをご紹介します。
               </p>
               <p className="text-sm text-slate-500">最終更新: {updatedAtLabel}</p>
-              <AffiliateDisclosure />
             </div>
           </section>
 
@@ -206,12 +185,6 @@ export default async function TrainingWearPage() {
                       <div className="text-xs font-semibold uppercase tracking-wide text-[#C2410C]">参考価格</div>
                       <div className="mt-1 font-medium text-slate-800">{item.priceLabel}</div>
                     </div>
-
-                    <RecommendationNotes
-                      bestFor={item.bestFor}
-                      caution={item.caution}
-                      evaluation={item.evaluation}
-                    />
 
                     <div className="flex flex-wrap items-center gap-3">
                       <AffiliateLink
