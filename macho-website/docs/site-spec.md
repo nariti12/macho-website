@@ -36,7 +36,8 @@
 ## トップページ
 
 - メニュー導線は `src/components/home-page.tsx` の `menuItems` で管理します。
-- Blogセクションは `/api/blogs` から最新6件を取得します。
+- Blogセクションは `src/lib/blogs.ts` を通じてサーバー側で最新6件を取得し、初期HTMLに含めます。
+- `/api/blogs` も同じ `src/lib/blogs.ts` を利用し、Blogカードの正規化処理を共通化しています。
 - Blogカードの日付は `publishedAt` を使い、ラベルは `公開日` です。
 - 構造化データは `WebSite` と `Organization` を出力します。SNSは X のみを `sameAs` に含めます。
 
@@ -47,6 +48,8 @@
 - 詳細ページは次の本文構造に対応します。
   - `content2` がある場合: 繰り返しフィールドとして本文ブロック/吹き出しブロックを描画
   - `content2` がない場合: `richEditor` / `content` / `body` を通常本文として描画
+- 詳細ページには公開日、更新日、プロフィールへ遷移する著者表示、関連記事を表示します。
+- 構造化データは `Article` と `BreadcrumbList` を出力します。
 - microCMS Webhook から `/api/revalidate` を呼ぶと `blog-list` と該当記事タグを再検証します。
 
 ## おすすめサプリ
@@ -60,6 +63,9 @@
 - クレアチンは `INNOCECT` と `Nature In` の TOP2 を固定表示します。
 - プレワークアウトは `PRE-X` を固定表示します。
 - Amazon / iHerb の価格は公式APIで取得していないため、固定表示として管理します。
+- 各カードに「こんな人向け」「注意点」「選定根拠」を表示します。
+- Verifystの表示商品はホエイです。マチョ田の購入経験として記載している商品は同ブランドのソイであることを明示します。
+- ページ上部にアフィリエイトリンクを含む旨を表示し、ランキングごとの `ItemList` 構造化データを出力します。
 
 詳細は `docs/protein-rankings.md` を参照してください。
 
@@ -71,6 +77,16 @@
 - Amazon / 公式サイトのみの商品は固定価格を表示します。
 - 楽天URLは `buildRakutenAffiliateUrl`、Amazon URLは `buildAmazonAffiliateUrl` でアフィリエイトURLに変換します。
 - Amazonのタグは `src/lib/protein-rankings/links.ts` の `AMAZON_ASSOCIATE_TAG` で管理します。
+- 各カードに購入対象、注意点、選定根拠を表示します。
+- 各ページにアフィリエイト表示と `ItemList` 構造化データを出力します。
+
+## アフィリエイト計測
+
+- 外部ECボタンは `src/components/affiliate-link.tsx` を共通利用します。
+- クリック時にGA4へ `affiliate_click` イベントを送信します。
+- イベントには購入先、商品名、順位、ページパス、配置、遷移先URLを含めます。
+- アフィリエイト表示は `src/components/affiliate-disclosure.tsx` を共通利用します。
+- GA4側の確認方法と日常運用は `docs/site-growth-operations.md` を参照してください。
 
 ## マチョクリッカー
 

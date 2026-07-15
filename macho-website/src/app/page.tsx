@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { HomePage } from "@/components/home-page";
+import { fetchLatestBlogCards } from "@/lib/blogs";
 import { buildUrl } from "@/lib/seo";
 
 const DESCRIPTION =
@@ -26,6 +27,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Page() {
-  return <HomePage />;
+export default async function Page() {
+  const blogItems = await fetchLatestBlogCards(6).catch((error) => {
+    console.error("Failed to render latest blogs on the home page", error);
+    return [];
+  });
+
+  return <HomePage blogItems={blogItems} />;
 }

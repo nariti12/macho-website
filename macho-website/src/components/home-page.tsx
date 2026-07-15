@@ -2,20 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 import { SiteHeader } from "@/components/site-header";
+import type { BlogCardData } from "@/lib/blogs";
 import { buildUrl, toJsonLd } from "@/lib/seo";
-
-type BlogCardData = {
-  id: string;
-  category: string;
-  title: string;
-  imageUrl: string;
-  summary: string;
-  publishedAt: string | null;
-  updatedAt: string | null;
-};
 
 const formatDate = (value: string | null) =>
   value
@@ -26,14 +17,9 @@ const formatDate = (value: string | null) =>
       })
     : null;
 
-export function HomePage() {
+export function HomePage({ blogItems }: { blogItems: BlogCardData[] }) {
   const blogSectionRef = useRef<HTMLDivElement | null>(null);
   const animationTimeouts = useRef<number[]>([]);
-  const [blogItems, setBlogItems] = useState<BlogCardData[]>([]);
-  const [isLoadingBlogs, setIsLoadingBlogs] = useState(true);
-  const [showLoading, setShowLoading] = useState(false);
-  const [blogError, setBlogError] = useState<string | null>(null);
-  const loadingTimeoutRef = useRef<number | null>(null);
 
   const menuItems = [
     { label: "マチョクリッカー", href: "/macho-clicker", wide: true },
@@ -44,55 +30,6 @@ export function HomePage() {
     { label: "おすすめ\nトレーニングギア", href: "/training-gear" },
     { label: "筋トレFAQ", href: "/training-faq" },
   ];
-
-  useEffect(() => {
-    let isCancelled = false;
-
-    const loadBlogs = async () => {
-      if (loadingTimeoutRef.current !== null) {
-        window.clearTimeout(loadingTimeoutRef.current);
-      }
-      loadingTimeoutRef.current = window.setTimeout(() => setShowLoading(true), 400);
-      try {
-        const response = await fetch("/api/blogs");
-        if (!response.ok) {
-          throw new Error(`Failed to load blogs: ${response.status}`);
-        }
-        const data: { items?: BlogCardData[] } = await response.json();
-        if (!isCancelled) {
-          if (Array.isArray(data.items) && data.items.length > 0) {
-            setBlogItems(data.items);
-            setBlogError(null);
-          } else {
-            setBlogItems([]);
-            setBlogError("現在表示できる記事がありません。");
-          }
-        }
-      } catch (error) {
-        console.error("Failed to load blog entries", error);
-        if (!isCancelled) {
-          setBlogItems([]);
-          setBlogError("ブログ記事の読み込みに失敗しました。");
-        }
-      } finally {
-        if (!isCancelled) {
-          setIsLoadingBlogs(false);
-          setShowLoading(false);
-        }
-      }
-    };
-
-    loadBlogs();
-
-    return () => {
-      isCancelled = true;
-      if (loadingTimeoutRef.current !== null) {
-        window.clearTimeout(loadingTimeoutRef.current);
-        loadingTimeoutRef.current = null;
-      }
-      setShowLoading(false);
-    };
-  }, []);
 
   useEffect(() => {
     const section = blogSectionRef.current;
@@ -265,15 +202,9 @@ export function HomePage() {
               </Link>
             ))}
 
-            {!isLoadingBlogs && blogItems.length === 0 && (
+            {blogItems.length === 0 && (
               <div className="col-span-full rounded-3xl bg-white/90 p-8 text-center text-sm font-semibold text-gray-600 shadow-lg">
-                {blogError ?? "現在表示できる記事がありません。"}
-              </div>
-            )}
-
-            {showLoading && blogItems.length === 0 && (
-              <div className="col-span-full rounded-3xl bg-white/80 p-8 text-center text-sm font-semibold text-gray-500 shadow">
-                記事を読み込んでいます...
+                現在表示できる記事がありません。
               </div>
             )}
           </div>

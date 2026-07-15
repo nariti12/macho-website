@@ -326,6 +326,16 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ id:
                 )}
               </p>
             )}
+            <p className="text-xs text-gray-500 sm:text-sm md:text-base">
+              執筆:{" "}
+              <Link
+                href="/profile"
+                rel="author"
+                className="font-semibold text-[#C2410C] underline-offset-4 hover:underline"
+              >
+                マチョ田
+              </Link>
+            </p>
           </div>
 
           {blog.imageUrl && (

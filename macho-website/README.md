@@ -6,6 +6,7 @@
 
 - 全体仕様: `docs/site-spec.md`
 - プロテイン/クレアチン仕様: `docs/protein-rankings.md`
+- 集客・アフィリエイト運用: `docs/site-growth-operations.md`
 - 構成図: `docs/architecture.drawio`
 
 ## Getting Started

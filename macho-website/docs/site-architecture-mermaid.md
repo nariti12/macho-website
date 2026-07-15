@@ -1,6 +1,6 @@
 # マチョ田の部屋 Mermaid 構成図
 
-最終更新: 2026-07-12
+最終更新: 2026-07-15
 
 巨大な1枚図にすると読みづらいため、まず全体像を小さく示し、その下に詳細図を分けています。
 
@@ -16,6 +16,7 @@ flowchart LR
 
   pages --> assets[静的アセット<br/>public/]
   pages --> affiliate[外部ECリンク<br/>楽天 / Amazon / iHerb]
+  pages --> analytics[GA4<br/>affiliate_click]
   pages --> api
 
   api --> microcms[microCMS<br/>Blog]
@@ -56,12 +57,12 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-  home[トップページ<br/>Blog最新表示] --> apiBlogs["/api/blogs"]
-  blogList["/blog"] --> apiBlogs
-  blogDetail["/blog/[id]"] --> apiBlogId["/api/blogs/[id]"]
+  home[トップページ<br/>Blog最新表示] --> blogLib[src/lib/blogs.ts<br/>サーバー取得 / 正規化]
+  apiBlogs["/api/blogs"] --> blogLib
+  blogList["/blog"] --> microcms[microCMS<br/>blogs API]
+  blogDetail["/blog/[id]"] --> microcms
 
-  apiBlogs --> microcms[microCMS<br/>blogs API]
-  apiBlogId --> microcms
+  blogLib --> microcms
 
   microcmsWebhook[microCMS Webhook] --> revalidate["/api/revalidate"]
   revalidate --> nextCache[Next.js Cache<br/>blog-list / blog-detail 再検証]
@@ -113,6 +114,10 @@ flowchart TB
   gear --> rakutenAffiliate
   gear --> amazonAffiliate
 
+  shoes --> affiliateLink[src/components/affiliate-link.tsx]
+  gear --> affiliateLink
+  affiliateLink --> ga4[GA4 affiliate_click]
+
   cronShoes[Vercel Cron<br/>毎週日曜 18:10 UTC] --> shoes
   cronGear[Vercel Cron<br/>毎週日曜 18:20 UTC] --> gear
 ```
@@ -141,6 +146,10 @@ flowchart LR
   layout[src/app/layout.tsx] --> ga[Google Analytics]
   layout --> gtm[Google Tag Manager]
   layout --> adsense[Google AdSense]
+
+  productPages[おすすめ商品ページ] --> disclosure[affiliate-disclosure.tsx<br/>広告表示]
+  productPages --> notes[recommendation-notes.tsx<br/>対象者 / 注意点 / 選定根拠]
+  productPages --> itemList[ItemList JSON-LD]
 
   pages[各ページ] --> picture[public/picture<br/>プロフィール / 商品補助画像]
   pages --> favicon[public/icon.png<br/>favicon]
