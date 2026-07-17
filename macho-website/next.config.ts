@@ -4,6 +4,7 @@ import path from "path";
 const nextConfig: NextConfig = {
   outputFileTracingRoot: process.env.VERCEL ? __dirname : path.join(__dirname, "../"),
   images: {
+    qualities: [68, 75, 78],
     remotePatterns: [
       {
         protocol: "https",

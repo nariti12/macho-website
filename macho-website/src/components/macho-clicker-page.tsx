@@ -3638,7 +3638,7 @@ export function MachoClickerPage() {
       </header>
 
       {achievementToast ? (
-        <div className="macho-toast macho-achievement-flash fixed right-4 top-24 z-50 max-w-xs rounded-3xl border-2 border-[#FCD27B] bg-[#FFF7EB] px-5 py-4 text-[#7C2D12] shadow-2xl">
+        <div className="macho-toast macho-achievement-flash relative z-50 mx-3 my-3 rounded-3xl border-2 border-[#FCD27B] bg-[#FFF7EB] px-4 py-3 text-[#7C2D12] shadow-2xl sm:fixed sm:right-4 sm:top-24 sm:mx-0 sm:my-0 sm:max-w-xs sm:px-5 sm:py-4">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FF8A23] text-2xl shadow-inner">★</div>
             <div>
@@ -3756,7 +3756,7 @@ export function MachoClickerPage() {
                 </div>
               </div>
               <div className="bg-[#9A3412] px-5 py-4">
-                <div className="grid grid-cols-4 gap-3 text-center">
+                <div className="grid grid-cols-2 gap-x-3 gap-y-4 text-center sm:grid-cols-4">
                   <div>
                     <div className="macho-ui-label">Current</div>
                     <div className="macho-counter macho-ui-number mt-1 text-2xl" title={formatFullNumber(state.muscle)}>
@@ -3854,7 +3854,7 @@ export function MachoClickerPage() {
             ))}
           </nav>
 
-          <section className="macho-game-panel macho-main-grid grid min-h-[calc(100dvh-15rem)] overflow-hidden border-b-4 border-[#7C2D12] bg-[#7C2D12] shadow-2xl md:h-[calc(100dvh-12.75rem)] md:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)] md:border-b-0 xl:grid-cols-[minmax(700px,920px)_minmax(0,1fr)_400px] 2xl:grid-cols-[minmax(780px,1040px)_minmax(0,1fr)_420px]">
+          <section className="macho-game-panel macho-main-grid grid min-h-[calc(100dvh-15rem)] overflow-hidden border-b-4 border-[#7C2D12] bg-[#7C2D12] shadow-2xl md:h-[calc(100dvh-12.75rem)] md:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)] md:border-b-0 xl:grid-cols-[minmax(620px,1.3fr)_minmax(260px,0.7fr)_360px] 2xl:grid-cols-[minmax(780px,1040px)_minmax(320px,1fr)_400px]">
             <aside
               className={`macho-click-stage relative min-h-[calc(100dvh-15rem)] flex-col items-center justify-between overflow-hidden border-b-4 border-[#7C2D12] bg-[#451A03] p-4 text-center sm:p-5 md:col-start-1 md:row-span-2 md:flex md:min-h-0 md:border-b-0 md:border-r-4 xl:col-auto xl:row-auto xl:flex xl:min-h-0 xl:border-b-0 xl:border-r-4 ${
                 mobilePanel === "click" ? "flex" : "hidden"
