@@ -5,8 +5,11 @@ import { hasServiceSupabaseEnv } from "@/lib/supabase/config";
 
 export const dynamic = "force-dynamic";
 
-const MAX_SCORE = 999_999_999_999_999;
+const MAX_SCORE = Number.MAX_SAFE_INTEGER;
 const MAX_NICKNAME_LENGTH = 12;
+const MAX_REQUEST_BYTES = 2_048;
+const MAX_CLICKS_PER_SECOND = 25;
+const CLICK_BURST_ALLOWANCE = 100;
 
 type RankingRecord = {
   id: string;
@@ -16,14 +19,31 @@ type RankingRecord = {
 };
 
 const normalizeNickname = (value: unknown) => {
-  const nickname = typeof value === "string" ? value.trim() : "";
+  const nickname = typeof value === "string" ? value.replace(/[\u0000-\u001f\u007f]/g, "").trim() : "";
   return (nickname || "名無しマッチョ").slice(0, MAX_NICKNAME_LENGTH);
 };
 
 const normalizeScore = (value: unknown) => {
   const score = typeof value === "number" ? value : Number(value);
-  if (!Number.isFinite(score) || score < 0) return null;
-  return Math.min(MAX_SCORE, Math.floor(score));
+  if (!Number.isFinite(score) || score < 0 || score > MAX_SCORE) return null;
+  return Math.floor(score);
+};
+
+const normalizeNonNegativeInteger = (value: unknown) => {
+  const number = typeof value === "number" ? value : Number(value);
+  if (!Number.isSafeInteger(number) || number < 0) return null;
+  return number;
+};
+
+const hasValidOrigin = (request: Request) => {
+  const origin = request.headers.get("origin");
+  if (!origin) return true;
+
+  try {
+    return new URL(origin).host === new URL(request.url).host;
+  } catch {
+    return false;
+  }
 };
 
 const toResponseItem = (item: RankingRecord) => ({
@@ -69,12 +89,37 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "ランキング保存設定が完了していません。" }, { status: 500 });
     }
 
-    const body = (await request.json()) as { nickname?: unknown; score?: unknown };
+    const contentLength = Number(request.headers.get("content-length") ?? 0);
+    if (contentLength > MAX_REQUEST_BYTES) {
+      return NextResponse.json({ error: "送信データが大きすぎます。" }, { status: 413 });
+    }
+
+    if (!hasValidOrigin(request)) {
+      return NextResponse.json({ error: "このサイト以外からは登録できません。" }, { status: 403 });
+    }
+
+    const body = (await request.json()) as {
+      nickname?: unknown;
+      score?: unknown;
+      playSeconds?: unknown;
+      clickCount?: unknown;
+    };
     const nickname = normalizeNickname(body.nickname);
     const score = normalizeScore(body.score);
+    const playSeconds = normalizeNonNegativeInteger(body.playSeconds);
+    const clickCount = normalizeNonNegativeInteger(body.clickCount);
 
     if (score === null || score <= 0) {
       return NextResponse.json({ error: "登録できるスコアがありません。" }, { status: 400 });
+    }
+
+    if (playSeconds === null || clickCount === null || playSeconds < 5) {
+      return NextResponse.json({ error: "プレイ情報を確認できませんでした。" }, { status: 400 });
+    }
+
+    if (clickCount > playSeconds * MAX_CLICKS_PER_SECOND + CLICK_BURST_ALLOWANCE) {
+      console.warn("Rejected suspicious Macho Clicker ranking", { nickname, score, playSeconds, clickCount });
+      return NextResponse.json({ error: "クリック数に異常な値があるため登録できません。" }, { status: 422 });
     }
 
     const supabase = createSupabaseAdminClient();

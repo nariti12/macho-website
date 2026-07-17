@@ -34,6 +34,10 @@ const MAX_PRESTIGE_MULTIPLIER = 25;
 const MAX_ACHIEVEMENT_SUPPORT_MULTIPLIER = 3;
 const GOLDEN_HISTORY_LIMIT = 12;
 const LEGACY_STARTING_MUSCLE = 100;
+const FOCUS_MAX_CHARGES = 3;
+const FOCUS_RECHARGE_MS = 30 * 60 * 1000;
+const FOCUS_DURATION_MS = 5 * 60 * 1000;
+const FOCUS_PRODUCTION_MULTIPLIER = 1.5;
 
 type UpgradeKey =
   | "pushUp"
@@ -101,6 +105,8 @@ type GameState = {
   muscleCrystals: number;
   crystalResearch: string[];
   nextMuscleCrystalAt: number;
+  focusCharges: number;
+  focusChargeUpdatedAt: number;
   goldenClicks: number;
   goldenHistory: GoldenHistoryEntry[];
   legacyUpgrades: string[];
@@ -158,7 +164,7 @@ type PurchaseFlight = {
 type MobilePanel = "click" | "gym" | "shop" | "stats";
 type DesktopDetailPanel = "overview" | "daily" | "achievements" | "legacy" | "levels" | "stats" | "save";
 
-type SoundType = "click" | "buy" | "blocked" | "golden";
+type SoundType = "click" | "buy" | "blocked" | "achievement" | "goldenSpawn" | "goldenCollect";
 
 type NumberNotation = "short" | "japanese" | "full";
 type EffectDensity = "low" | "normal" | "high";
@@ -178,11 +184,12 @@ type GoldenProtein = {
   id: number;
   x: number;
   y: number;
+  variant: LimitedEvent["id"] | "standard";
 };
 
 type ActiveBuff = {
   id: string;
-  type: "frenzy" | "clickFrenzy" | "buildingFrenzy";
+  type: "frenzy" | "clickFrenzy" | "buildingFrenzy" | "focus";
   name: string;
   multiplier: number;
   endAt: number;
@@ -220,6 +227,14 @@ type LimitedEvent = {
   clickMultiplier: number;
   bonusLabel: string;
   goldenLabel: string;
+};
+
+const goldenVariantDetails: Record<GoldenProtein["variant"], { badge: string; className: string }> = {
+  standard: { badge: "", className: "macho-golden-standard" },
+  newYear: { badge: "初", className: "macho-golden-new-year" },
+  valentine: { badge: "♥", className: "macho-golden-valentine" },
+  halloween: { badge: "☾", className: "macho-golden-halloween" },
+  christmas: { badge: "★", className: "macho-golden-christmas" },
 };
 
 type AmbientItem = {
@@ -386,7 +401,7 @@ const upgrades: Upgrade[] = [
     name: "専属トレーナー",
     label: "COACH",
     icon: "T",
-    spriteSrc: "/game/macho-clicker/icons/generated-v3/trainer.png",
+    spriteSrc: "/game/macho-clicker/icons/macho-cat.svg",
     description: "フォーム改善で筋肉生産を加速します。",
     baseCost: 20000000,
     costRate: 1.15,
@@ -849,7 +864,7 @@ const manualPowerUpgrades: PowerUpgrade[] = [
     name: "神経伝達強化",
     description: "クリック時に毎秒生産量の0.1%が追加されます。",
     cost: 500_000,
-    spriteSrc: "/game/macho-clicker/icons/generated-v3/trainer.png",
+    spriteSrc: "/game/macho-clicker/icons/macho-cat.svg",
     effectLabel: "クリック +CpS 0.1%",
     clickCpsPercent: 0.001,
     unlock: (state) => state.upgrades.pushUp >= 25 && getPerSecond(state) >= 25,
@@ -940,7 +955,7 @@ const manualPowerUpgrades: PowerUpgrade[] = [
     name: "伝説のマチョ猫",
     description: "大量実績を集めたプレイヤー向けの長期ボーナスです。",
     cost: 25_000_000_000,
-    spriteSrc: "/game/macho-clicker/icons/generated-v3/final-macho.png",
+    spriteSrc: "/game/macho-clicker/icons/macho-cat.svg",
     effectLabel: "実績1個ごとに +0.5%",
     achievementSupportRate: 0.005,
     unlock: (state) => state.unlockedAchievements.length >= 50,
@@ -985,6 +1000,16 @@ const manualPowerUpgrades: PowerUpgrade[] = [
     effectLabel: "全体生産 x1.035",
     productionMultiplier: 1.035,
     unlock: (state) => getSeasonalEvent().id === "autumn" && state.totalMuscle >= 150_000,
+  },
+  {
+    id: "silent-pump-protocol",
+    name: "静寂のパンプ法",
+    description: "クリックを抑えて自動生産を育てた人だけが見つけられる隠しアップグレードです。",
+    cost: 5_000_000,
+    spriteSrc: "/game/macho-clicker/icons/generated-v3/muscle-console.png",
+    effectLabel: "全体生産 x1.02",
+    productionMultiplier: 1.02,
+    unlock: (state) => state.unlockedAchievements.includes("shadow-low-click"),
   },
 ];
 
@@ -1161,6 +1186,34 @@ const baseAchievements: Achievement[] = [
     title: "ダンベル百景",
     description: "ダンベルを100個購入した",
     isUnlocked: (state) => state.upgrades.pushUp >= 100,
+  },
+  {
+    key: "shadow-low-click",
+    category: "隠し",
+    title: "静かなる増量",
+    description: "100クリック以下で累計1 million筋肉ポイントに到達",
+    isUnlocked: (state) => state.totalMuscle >= 1_000_000 && state.clickCount <= 100,
+  },
+  {
+    key: "shadow-speed-run",
+    category: "隠し",
+    title: "10分パンプ",
+    description: "プレイ開始10分以内に累計100,000筋肉ポイントへ到達",
+    isUnlocked: (state) => state.totalMuscle >= 100_000 && Date.now() - state.playStartedAt <= 10 * 60 * 1000,
+  },
+  {
+    key: "shadow-hangover",
+    category: "隠し",
+    title: "二日酔いでもやる",
+    description: "二日酔いの日に500回クリックした",
+    isUnlocked: (state) => getActiveDailyCondition(state)?.id === "hangover" && state.clickCount >= 500,
+  },
+  {
+    key: "shadow-crystal-hoarder",
+    category: "隠し",
+    title: "結晶コレクター",
+    description: "筋肉結晶を10個ためた",
+    isUnlocked: (state) => state.muscleCrystals >= 10,
   },
 ];
 
@@ -1370,6 +1423,8 @@ const initialState: GameState = {
   muscleCrystals: 0,
   crystalResearch: [],
   nextMuscleCrystalAt: Date.now() + MUSCLE_CRYSTAL_GROW_MS,
+  focusCharges: FOCUS_MAX_CHARGES,
+  focusChargeUpdatedAt: Date.now(),
   goldenClicks: 0,
   goldenHistory: [],
   legacyUpgrades: [],
@@ -1459,6 +1514,15 @@ const crystalResearches: CrystalResearch[] = [
     icon: "記",
     unlock: (state) => state.unlockedAchievements.length >= 10 || state.ascensionCount >= 1,
   },
+  {
+    id: "crystal-focus-room",
+    name: "気合い注入ルーム",
+    description: "設備Lv.1で解放されるミニゲームです。チャージを使い、短時間だけ全体生産を高めます。",
+    cost: 2,
+    effectLabel: "気合い注入を解放",
+    icon: "喝",
+    unlock: (state) => Object.values(state.buildingLevels).some((level) => level >= 1),
+  },
 ];
 
 const clampScore = (value: number) => Math.min(MAX_SCORE, Math.max(0, value));
@@ -1498,6 +1562,7 @@ const largeNumberUnits = [
 const formatNumber = (value: number) => {
   const safeValue = Math.max(0, value);
   if (safeValue < 1_000_000) return Math.floor(safeValue).toLocaleString("ja-JP");
+  if (safeValue >= 1e93) return safeValue.toExponential(3).replace("e+", "e");
 
   const unit = largeNumberUnits.find((candidate) => safeValue >= candidate.value);
   if (!unit) return Math.floor(safeValue).toLocaleString("ja-JP");
@@ -1546,6 +1611,7 @@ const japaneseNumberUnits = [
 const formatJapaneseNumber = (value: number) => {
   const safeValue = Math.max(0, value);
   if (safeValue < 10_000) return Math.floor(safeValue).toLocaleString("ja-JP");
+  if (safeValue >= 1e20) return safeValue.toExponential(3).replace("e+", "e");
 
   const unit = japaneseNumberUnits.find((candidate) => safeValue >= candidate.value);
   if (!unit) return Math.floor(safeValue).toLocaleString("ja-JP");
@@ -1674,10 +1740,38 @@ const getUpgradeVisibleCount = (level: number) => Math.min(180, level);
 
 const getActiveBuffs = (state: GameState) => state.activeBuffs.filter((buff) => buff.endAt > Date.now());
 
+const rechargeFocusCharges = (state: GameState, now = Date.now()): GameState => {
+  if (state.focusCharges >= FOCUS_MAX_CHARGES) {
+    return state.focusChargeUpdatedAt === now ? state : { ...state, focusChargeUpdatedAt: now };
+  }
+
+  const elapsed = Math.max(0, now - state.focusChargeUpdatedAt);
+  const recovered = Math.floor(elapsed / FOCUS_RECHARGE_MS);
+  if (recovered <= 0) return state;
+
+  const nextCharges = Math.min(FOCUS_MAX_CHARGES, state.focusCharges + recovered);
+  return {
+    ...state,
+    focusCharges: nextCharges,
+    focusChargeUpdatedAt:
+      nextCharges >= FOCUS_MAX_CHARGES ? now : state.focusChargeUpdatedAt + recovered * FOCUS_RECHARGE_MS,
+  };
+};
+
+const getNextFocusChargeText = (state: GameState) => {
+  if (state.focusCharges >= FOCUS_MAX_CHARGES) return "満タン";
+  const remainingMs = Math.max(0, FOCUS_RECHARGE_MS - (Date.now() - state.focusChargeUpdatedAt));
+  const minutes = Math.max(1, Math.ceil(remainingMs / 60_000));
+  return `あと${minutes}分`;
+};
+
 const getPrestigeMultiplier = (state: GameState) => Math.min(MAX_PRESTIGE_MULTIPLIER, 1 + state.prestigeLevel * PRESTIGE_BONUS_RATE);
 
 const getFrenzyMultiplier = (state: GameState) =>
-  getActiveBuffs(state).reduce((total, buff) => (buff.type === "frenzy" ? total * buff.multiplier : total), 1);
+  getActiveBuffs(state).reduce(
+    (total, buff) => (buff.type === "frenzy" || buff.type === "focus" ? total * buff.multiplier : total),
+    1
+  );
 
 const getBuildingFrenzyMultiplier = (state: GameState, key: UpgradeKey) =>
   getActiveBuffs(state).reduce(
@@ -1853,7 +1947,9 @@ const soundFiles: Record<SoundType, string> = {
   click: "/sounds/macho-clicker/click.wav",
   buy: "/sounds/macho-clicker/buy.wav",
   blocked: "/sounds/macho-clicker/blocked.wav",
-  golden: "/sounds/macho-clicker/golden.wav",
+  achievement: "/sounds/macho-clicker/achievement.wav",
+  goldenSpawn: "/sounds/macho-clicker/golden-spawn.wav",
+  goldenCollect: "/sounds/macho-clicker/golden-collect.wav",
 };
 
 const goldenEffects: GoldenEffect[] = [
@@ -2483,6 +2579,12 @@ const readSavedState = (): GameState => {
       crystalResearch: normalizeCrystalResearch(saved.crystalResearch),
       nextMuscleCrystalAt:
         typeof saved.nextMuscleCrystalAt === "number" ? saved.nextMuscleCrystalAt : Date.now() + MUSCLE_CRYSTAL_GROW_MS,
+      focusCharges:
+        typeof saved.focusCharges === "number"
+          ? Math.max(0, Math.min(FOCUS_MAX_CHARGES, Math.floor(saved.focusCharges)))
+          : FOCUS_MAX_CHARGES,
+      focusChargeUpdatedAt:
+        typeof saved.focusChargeUpdatedAt === "number" ? saved.focusChargeUpdatedAt : Date.now(),
       goldenClicks: typeof saved.goldenClicks === "number" ? Math.max(0, Math.floor(saved.goldenClicks)) : 0,
       goldenHistory: normalizeGoldenHistory(saved.goldenHistory),
       legacyUpgrades: normalizeLegacyUpgrades(saved.legacyUpgrades),
@@ -2493,7 +2595,10 @@ const readSavedState = (): GameState => {
         ? saved.activeBuffs.filter(
             (buff): buff is ActiveBuff =>
               typeof buff?.id === "string" &&
-              (buff.type === "frenzy" || buff.type === "clickFrenzy" || buff.type === "buildingFrenzy") &&
+              (buff.type === "frenzy" ||
+                buff.type === "clickFrenzy" ||
+                buff.type === "buildingFrenzy" ||
+                buff.type === "focus") &&
               typeof buff.name === "string" &&
               typeof buff.multiplier === "number" &&
               typeof buff.endAt === "number" &&
@@ -2517,15 +2622,16 @@ const readSavedState = (): GameState => {
       getOfflineLimitSeconds(normalized),
       Math.max(0, Math.floor((Date.now() - normalized.lastSavedAt) / 1000))
     );
-    const offlineGain = getPerSecond(normalized) * offlineSeconds;
+    const recharged = rechargeFocusCharges(normalized, Date.now());
+    const offlineGain = getPerSecond(recharged) * offlineSeconds;
 
     return {
-      ...normalized,
-      muscle: clampScore(normalized.muscle + offlineGain),
-      totalMuscle: clampScore(normalized.totalMuscle + offlineGain),
+      ...recharged,
+      muscle: clampScore(recharged.muscle + offlineGain),
+      totalMuscle: clampScore(recharged.totalMuscle + offlineGain),
       bodyEvolutionStage: Math.min(
-        normalized.bodyEvolutionStage,
-        getUnlockedBodyEvolutionStage(clampScore(normalized.totalMuscle + offlineGain))
+        recharged.bodyEvolutionStage,
+        getUnlockedBodyEvolutionStage(clampScore(recharged.totalMuscle + offlineGain))
       ),
       lastSavedAt: Date.now(),
     };
@@ -2561,10 +2667,10 @@ export function MachoClickerPage() {
   const [recentlyPurchasedKey, setRecentlyPurchasedKey] = useState<UpgradeKey | null>(null);
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("click");
   const [desktopDetailPanel, setDesktopDetailPanel] = useState<DesktopDetailPanel>("overview");
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(false);
   const [bgmVolume, setBgmVolume] = useState(0.35);
-  const [soundVolume, setSoundVolume] = useState(0.72);
-  const [notificationVolume, setNotificationVolume] = useState(0.72);
+  const [soundVolume, setSoundVolume] = useState(0.46);
+  const [notificationVolume, setNotificationVolume] = useState(0.52);
   const [numberNotation, setNumberNotation] = useState<NumberNotation>("short");
   const [reducedEffects, setReducedEffects] = useState(false);
   const [effectDensity, setEffectDensity] = useState<EffectDensity>("normal");
@@ -2590,6 +2696,7 @@ export function MachoClickerPage() {
   const pendingPrestige = getPendingPrestige(state);
   const seasonalEvent = getSeasonalEvent();
   const limitedEvent = getLimitedEvent();
+  const goldenVariant = goldenProtein ? goldenVariantDetails[goldenProtein.variant] : goldenVariantDetails.standard;
   const seasonalTheme = getSeasonalTheme(seasonalEvent);
   const activeTrainingPlan = getActiveTrainingPlan(state);
   const activeSupplements = getActiveSupplements(state);
@@ -2597,6 +2704,7 @@ export function MachoClickerPage() {
   const proteinShakeLevel = getProteinShakeLevel(state.unlockedAchievements.length);
   const proteinShakeName = getProteinShakeName(state.unlockedAchievements.length);
   const achievementSupportMultiplier = getAchievementSupportMultiplier(state);
+  const achievementAuraTier = Math.min(4, Math.floor(state.unlockedAchievements.length / 25));
   const title = getTitle(state.totalMuscle);
   const nextGoal = getNextTitleGoal(state.totalMuscle);
   const unlockedBodyEvolutionStage = getUnlockedBodyEvolutionStage(state.totalMuscle);
@@ -2609,6 +2717,9 @@ export function MachoClickerPage() {
   const titleProgress = Math.min(100, Math.max(0, (state.totalMuscle / nextGoal.value) * 100));
   const ownedUpgradeCount = Object.values(state.upgrades).reduce((total, level) => total + level, 0);
   const totalBuildingLevel = Object.values(state.buildingLevels).reduce((total, level) => total + level, 0);
+  const focusGymAvailable = totalBuildingLevel >= 1;
+  const focusGymUnlocked = state.crystalResearch.includes("crystal-focus-room");
+  const activeFocusBuff = activeBuffs.find((buff) => buff.type === "focus") ?? null;
   const visualOwnedUpgradeCount = visualUpgrades.reduce((total, upgrade) => total + state.upgrades[upgrade.key], 0);
   const newsLines = getNewsLines(state, title, perSecond);
   const news = newsLines[newsIndex % newsLines.length];
@@ -2692,7 +2803,7 @@ export function MachoClickerPage() {
       Object.entries(soundFiles).map(([type, src]) => {
         const audio = new Audio(src);
         audio.preload = "auto";
-        audio.volume = type === "click" ? soundVolume : notificationVolume;
+        audio.volume = type === "click" || type === "buy" || type === "blocked" ? soundVolume : notificationVolume;
         return [type, audio];
       })
     ) as Record<SoundType, HTMLAudioElement>;
@@ -2722,13 +2833,16 @@ export function MachoClickerPage() {
       const deltaSeconds = Math.max(0, (now - lastTickAtRef.current) / 1000);
       lastTickAtRef.current = now;
       const gain = perSecond * deltaSeconds;
-      setState((current) => ({
-        ...current,
-        muscle: clampScore(current.muscle + gain),
-        totalMuscle: clampScore(current.totalMuscle + gain),
-        activeBuffs: getActiveBuffs(current),
+      setState((current) => {
+        const refreshed = rechargeFocusCharges(current, now);
+        return {
+        ...refreshed,
+        muscle: clampScore(refreshed.muscle + gain),
+        totalMuscle: clampScore(refreshed.totalMuscle + gain),
+        activeBuffs: getActiveBuffs(refreshed),
         lastSavedAt: now,
-      }));
+      };
+      });
     }, GAME_TICK_MS);
 
     return () => window.clearInterval(timer);
@@ -2758,8 +2872,16 @@ export function MachoClickerPage() {
         id: Date.now(),
         x: 12 + Math.random() * 76,
         y: 14 + Math.random() * 62,
+        variant: getLimitedEvent()?.id ?? "standard",
       });
-      playSound("golden");
+      if (soundEnabled) {
+        const audio = soundRefs.current.goldenSpawn;
+        if (audio) {
+          const sound = audio.cloneNode(true) as HTMLAudioElement;
+          sound.volume = audio.volume;
+          void sound.play();
+        }
+      }
       hideTimer = window.setTimeout(() => setGoldenProtein(null), GOLDEN_LIFETIME_MS);
       scheduleNext();
     };
@@ -2775,7 +2897,7 @@ export function MachoClickerPage() {
       if (hideTimer !== null) window.clearTimeout(hideTimer);
       if (spawnTimer !== null) window.clearTimeout(spawnTimer);
     };
-  }, [goldenSpawnMaxMs, goldenSpawnMinMs]);
+  }, [goldenSpawnMaxMs, goldenSpawnMinMs, soundEnabled]);
 
   useEffect(() => {
     const newlyUnlocked = achievements.filter(
@@ -2795,7 +2917,7 @@ export function MachoClickerPage() {
     }));
     setAchievementToast(newlyUnlocked[0]);
     if (soundEnabled) {
-      const audio = soundRefs.current.buy;
+      const audio = soundRefs.current.achievement;
       if (audio) {
         const sound = audio.cloneNode(true) as HTMLAudioElement;
         sound.volume = audio.volume;
@@ -3073,6 +3195,36 @@ export function MachoClickerPage() {
     });
   };
 
+  const activateFocusGym = () => {
+    setState((current) => {
+      const refreshed = rechargeFocusCharges(current);
+      if (!refreshed.crystalResearch.includes("crystal-focus-room") || refreshed.focusCharges <= 0) {
+        playSound("blocked");
+        return refreshed;
+      }
+
+      const now = Date.now();
+      const buff: ActiveBuff = {
+        id: `focus-${now}`,
+        type: "focus",
+        name: "気合い注入",
+        multiplier: FOCUS_PRODUCTION_MULTIPLIER,
+        endAt: now + FOCUS_DURATION_MS,
+      };
+      playSound("buy");
+      setPurchaseFlash(`気合い注入: 毎秒生産 x${FOCUS_PRODUCTION_MULTIPLIER}`);
+      window.setTimeout(() => setPurchaseFlash(null), 1600);
+
+      return {
+        ...refreshed,
+        focusCharges: refreshed.focusCharges - 1,
+        focusChargeUpdatedAt: refreshed.focusCharges >= FOCUS_MAX_CHARGES ? now : refreshed.focusChargeUpdatedAt,
+        activeBuffs: upsertBuff(refreshed.activeBuffs, buff),
+        lastSavedAt: now,
+      };
+    });
+  };
+
   const collectGoldenProtein = () => {
     if (!goldenProtein) return;
     const effect = pickGoldenEffect(state);
@@ -3191,7 +3343,7 @@ export function MachoClickerPage() {
       setPurchaseFlash(`レアプロテイン! +${formatNumber(jackpot)}`);
     }
     setGoldenProtein(null);
-    playSound("golden");
+    playSound("goldenCollect");
     window.setTimeout(() => setPurchaseFlash(null), 1400);
   };
 
@@ -3279,6 +3431,8 @@ export function MachoClickerPage() {
       muscleCrystals: 0,
       crystalResearch: [],
       nextMuscleCrystalAt: Date.now() + MUSCLE_CRYSTAL_GROW_MS,
+      focusCharges: FOCUS_MAX_CHARGES,
+      focusChargeUpdatedAt: Date.now(),
       goldenClicks: 0,
       goldenHistory: [],
       legacyUpgrades: [],
@@ -3339,6 +3493,12 @@ export function MachoClickerPage() {
         crystalResearch: normalizeCrystalResearch(parsed.crystalResearch),
         nextMuscleCrystalAt:
           typeof parsed.nextMuscleCrystalAt === "number" ? parsed.nextMuscleCrystalAt : Date.now() + MUSCLE_CRYSTAL_GROW_MS,
+        focusCharges:
+          typeof parsed.focusCharges === "number"
+            ? Math.max(0, Math.min(FOCUS_MAX_CHARGES, Math.floor(parsed.focusCharges)))
+            : FOCUS_MAX_CHARGES,
+        focusChargeUpdatedAt:
+          typeof parsed.focusChargeUpdatedAt === "number" ? parsed.focusChargeUpdatedAt : Date.now(),
         goldenClicks: typeof parsed.goldenClicks === "number" ? Math.max(0, Math.floor(parsed.goldenClicks)) : 0,
         goldenHistory: normalizeGoldenHistory(parsed.goldenHistory),
         legacyUpgrades: normalizeLegacyUpgrades(parsed.legacyUpgrades),
@@ -3390,6 +3550,8 @@ export function MachoClickerPage() {
       muscleCrystals: state.muscleCrystals,
       crystalResearch: state.crystalResearch,
       nextMuscleCrystalAt: state.nextMuscleCrystalAt,
+      focusCharges: state.focusCharges,
+      focusChargeUpdatedAt: state.focusChargeUpdatedAt,
       goldenClicks: state.goldenClicks,
       goldenHistory: state.goldenHistory,
       legacyUpgrades: state.legacyUpgrades,
@@ -3425,6 +3587,8 @@ export function MachoClickerPage() {
         body: JSON.stringify({
           nickname,
           score: clampScore(state.totalMuscle),
+          playSeconds: totalPlaySeconds,
+          clickCount: state.clickCount,
         }),
       });
 
@@ -3444,7 +3608,7 @@ export function MachoClickerPage() {
 
   return (
     <div
-      className={`macho-game-shell ${seasonalTheme.shellClass} min-h-dvh overflow-hidden bg-[#160D08] text-slate-900 ${
+      className={`macho-game-shell macho-achievement-aura-${achievementAuraTier} ${seasonalTheme.shellClass} min-h-dvh overflow-hidden bg-[#160D08] text-slate-900 ${
         reducedEffects ? "macho-reduced-effects" : ""
       }`}
       onPointerDown={unlockAudio}
@@ -3692,7 +3856,7 @@ export function MachoClickerPage() {
 
           <section className="macho-game-panel macho-main-grid grid min-h-[calc(100dvh-15rem)] overflow-hidden border-b-4 border-[#7C2D12] bg-[#7C2D12] shadow-2xl md:h-[calc(100dvh-12.75rem)] md:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)] md:border-b-0 xl:grid-cols-[minmax(700px,920px)_minmax(0,1fr)_400px] 2xl:grid-cols-[minmax(780px,1040px)_minmax(0,1fr)_420px]">
             <aside
-              className={`relative min-h-[calc(100dvh-15rem)] flex-col items-center justify-between overflow-hidden border-b-4 border-[#7C2D12] bg-[#451A03] p-4 text-center sm:p-5 md:col-start-1 md:row-span-2 md:flex md:min-h-0 md:border-b-0 md:border-r-4 xl:col-auto xl:row-auto xl:flex xl:min-h-0 xl:border-b-0 xl:border-r-4 ${
+              className={`macho-click-stage relative min-h-[calc(100dvh-15rem)] flex-col items-center justify-between overflow-hidden border-b-4 border-[#7C2D12] bg-[#451A03] p-4 text-center sm:p-5 md:col-start-1 md:row-span-2 md:flex md:min-h-0 md:border-b-0 md:border-r-4 xl:col-auto xl:row-auto xl:flex xl:min-h-0 xl:border-b-0 xl:border-r-4 ${
                 mobilePanel === "click" ? "flex" : "hidden"
               }`}
             >
@@ -3837,7 +4001,7 @@ export function MachoClickerPage() {
                 <button
                   type="button"
                   onClick={collectGoldenProtein}
-                  className="macho-golden macho-golden-alert absolute z-50 flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-gradient-to-br from-yellow-100 via-yellow-300 to-orange-500 shadow-2xl"
+                  className={`macho-golden macho-golden-alert ${goldenVariant.className} absolute z-50 flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-gradient-to-br from-yellow-100 via-yellow-300 to-orange-500 shadow-2xl`}
                   style={{ left: `${goldenProtein.x}%`, top: `${goldenProtein.y}%` }}
                   aria-label={`${limitedEvent?.goldenLabel ?? "ゴールデンプロテイン"}を獲得`}
                 >
@@ -3848,17 +4012,13 @@ export function MachoClickerPage() {
                     height={86}
                     className="h-20 w-20 object-contain drop-shadow-xl"
                   />
+                  {goldenVariant.badge ? (
+                    <span className="macho-golden-season-badge" aria-hidden="true">{goldenVariant.badge}</span>
+                  ) : null}
                 </button>
               ) : null}
 
               <div className="pointer-events-none absolute right-4 top-28 z-30 hidden w-56 space-y-2 text-left lg:block">
-                <div className={`rounded-2xl bg-gradient-to-r ${seasonalTheme.accentClass} p-[2px] shadow-2xl`}>
-                  <div className="rounded-2xl bg-[#1F120A]/88 px-3 py-2 text-[#FFE7C2] backdrop-blur">
-                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-white/60">Season Event</div>
-                    <div className="mt-1 text-sm font-black">{seasonalTheme.stageLabel}</div>
-                    <div className="mt-1 text-[11px] font-bold text-white/70">{seasonalEvent.bonusLabel}</div>
-                  </div>
-                </div>
                 {limitedEvent ? (
                   <div className="rounded-2xl border border-yellow-100/60 bg-[#2A140B]/90 px-3 py-2 text-[#FFF4D4] shadow-xl backdrop-blur">
                     <div className="text-[10px] font-black uppercase tracking-[0.16em] text-yellow-200">Limited Event</div>
@@ -4438,6 +4598,30 @@ export function MachoClickerPage() {
                     })}
                   </div>
                 </div>
+                <div className="mt-5 rounded-2xl border border-cyan-200 bg-cyan-50 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-black text-cyan-950">気合い注入</div>
+                      <div className="mt-1 text-xs font-bold text-cyan-800">
+                        {!focusGymAvailable
+                          ? "設備Lv.1で解放"
+                          : !focusGymUnlocked
+                          ? "結晶研究で解放"
+                          : activeFocusBuff
+                          ? `x${FOCUS_PRODUCTION_MULTIPLIER} 発動中`
+                          : `${state.focusCharges}/${FOCUS_MAX_CHARGES}チャージ / ${getNextFocusChargeText(state)}`}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={activateFocusGym}
+                      disabled={!focusGymUnlocked || state.focusCharges <= 0}
+                      className="rounded-xl bg-cyan-600 px-3 py-2 text-xs font-black text-white disabled:cursor-not-allowed disabled:bg-cyan-200"
+                    >
+                      注入
+                    </button>
+                  </div>
+                </div>
                 <div className="mt-5 rounded-2xl bg-[#FFF4E7] p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
@@ -4791,8 +4975,8 @@ export function MachoClickerPage() {
             </div>
             <div className={`macho-cat-card rounded-2xl px-4 py-3 md:col-span-2 xl:col-span-2 ${desktopDetailPanel === "achievements" ? "" : "hidden"}`}>
               <div className="flex items-start gap-3">
-                <div className="macho-cat-icon" aria-hidden="true">
-                  <span />
+                <div className="macho-cat-icon-v2" aria-hidden="true">
+                  <Image src="/game/macho-clicker/icons/macho-cat.svg" alt="" width={64} height={64} className="h-full w-full object-contain" />
                 </div>
                 <div className="min-w-0">
                   <div className="macho-ui-label">Macho Cat Support</div>
@@ -4972,6 +5156,47 @@ export function MachoClickerPage() {
                       </button>
                     );
                   })}
+                </div>
+                <div className="macho-focus-minigame mt-5 overflow-hidden rounded-3xl border border-cyan-200/35 bg-[radial-gradient(circle_at_15%_20%,rgba(34,211,238,0.18),transparent_35%),linear-gradient(135deg,rgba(8,47,73,0.88),rgba(15,23,42,0.96))] p-4">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div className="min-w-0">
+                      <div className="macho-ui-label">Mini Game / Focus Room</div>
+                      <div className="mt-1 text-lg font-black text-cyan-50">気合い注入</div>
+                      <div className="mt-1 text-xs font-bold leading-5 text-cyan-50/70">
+                        {!focusGymAvailable
+                          ? "いずれかの設備をLv.1にすると研究が解放されます。"
+                          : !focusGymUnlocked
+                          ? "筋肉結晶2個で「気合い注入ルーム」を研究してください。"
+                          : `30分で1チャージ回復。5分間、毎秒生産がx${FOCUS_PRODUCTION_MULTIPLIER}になります。`}
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-3">
+                      <div className="text-right">
+                        <div className="text-sm font-black text-cyan-100">気合い {state.focusCharges}/{FOCUS_MAX_CHARGES}</div>
+                        <div className="mt-1 text-[11px] font-bold text-cyan-100/65">
+                          {activeFocusBuff
+                            ? `発動中 あと${Math.max(1, Math.ceil((activeFocusBuff.endAt - Date.now()) / 60_000))}分`
+                            : getNextFocusChargeText(state)}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={activateFocusGym}
+                        disabled={!focusGymUnlocked || state.focusCharges <= 0}
+                        className="macho-game-button rounded-2xl border border-cyan-100/50 bg-cyan-300 px-4 py-3 text-sm font-black text-slate-950 shadow-[0_0_28px_rgba(34,211,238,0.28)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/10 disabled:text-white/35 disabled:shadow-none"
+                      >
+                        気合い注入
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mt-4 grid grid-cols-3 gap-2" aria-label={`気合いチャージ ${state.focusCharges}`}>
+                    {Array.from({ length: FOCUS_MAX_CHARGES }, (_, index) => (
+                      <span
+                        key={`focus-charge-${index}`}
+                        className={`h-2 rounded-full transition ${index < state.focusCharges ? "bg-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.7)]" : "bg-white/10"}`}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
