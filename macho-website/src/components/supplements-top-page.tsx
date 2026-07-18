@@ -2,6 +2,7 @@ import Image from "next/image";
 
 import { AffiliateLink } from "@/components/affiliate-link";
 import { SiteHeader } from "@/components/site-header";
+import type { CreatinePriceKey, CreatinePriceSnapshot } from "@/lib/amazon-price";
 import { MALE_FIXED_BRAND_CONFIG, MALE_FIXED_BRAND_ORDER, MALE_FIXED_COMMENTS, MALE_FIXED_SCORES } from "@/lib/protein-rankings/constants";
 import { buildAmazonAffiliateUrl, buildProductOutboundLink, buildRakutenAffiliateUrl } from "@/lib/protein-rankings/links";
 import type { CommerceProvider, ProteinRankingPageData, RankingCardItem } from "@/lib/protein-rankings/types";
@@ -14,6 +15,7 @@ type CreatineRecommendation = {
   name: string;
   comment: string;
   imageUrl: string;
+  priceKey: CreatinePriceKey;
   rakutenUrl?: string;
   amazonUrl?: string;
 };
@@ -31,6 +33,7 @@ const creatineRecommendations: CreatineRecommendation[] = [
     name: "INNOCECT（イノセクト）",
     comment: "イノセクトは昔からコスパ最強のクレアチンのブランド。",
     imageUrl: "https://shop.r10s.jp/innocect/cabinet/amino/creatine/new_creatin.jpg",
+    priceKey: "innocect",
     amazonUrl:
       "https://www.amazon.co.jp/INNOCECT-%E3%82%AF%E3%83%AC%E3%82%A2%E3%83%81%E3%83%B3-%E3%83%A2%E3%83%8E%E3%83%8F%E3%82%A4%E3%83%89%E3%83%AC%E3%83%BC%E3%83%88-1000g-%E9%AB%98%E7%B4%94%E5%BA%A699-9/dp/B0DHTBTPJQ/ref=sr_1_3_pp?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&s=hpc&sr=1-3",
   },
@@ -39,6 +42,7 @@ const creatineRecommendations: CreatineRecommendation[] = [
     name: "Nature In（ネイチャーイン）",
     comment: "INNOCECTの次に安いクレアチンブランド。たまに最安値になる時もあるので、INNOCECTを購入する前に確認はしておきたい。",
     imageUrl: "https://m.media-amazon.com/images/I/61Jwb0vWWZL._AC_SL1500_.jpg",
+    priceKey: "nature-in",
     amazonUrl:
       "https://www.amazon.co.jp/Nature-%EF%BC%88%E3%83%8D%E3%82%A4%E3%83%81%E3%83%A3%E3%83%BC%E3%82%A4%E3%83%B3%EF%BC%89-%E3%82%AF%E3%83%AC%E3%82%A2%E3%83%81%E3%83%B3%E3%83%A2%E3%83%8E%E3%83%8F%E3%82%A4%E3%83%89%E3%83%AC%E3%83%BC%E3%83%88-%E3%82%88%E3%81%8F%E9%96%89%E3%81%BE%E3%82%8B%E3%83%81%E3%83%A3%E3%83%83%E3%82%AF-ISO22000%E8%A6%8F%E6%A0%BC/dp/B0FY5PBSM1/ref=sr_1_7?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&sr=8-7",
   },
@@ -47,7 +51,7 @@ const creatineRecommendations: CreatineRecommendation[] = [
 const preWorkoutRecommendation: PreWorkoutRecommendation = {
   name: "Kaged（ケージド）",
   comment: "モンスターとかレッドブルを買うくらいならプレワークアウトの方がコスパも良いし、成分も段違いです。",
-  imageUrl: "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/kgd/kgd00897/l/1.jpg",
+  imageUrl: "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/kgd/kgd00798/l/2.jpg",
   iherbUrl:
     "https://jp.iherb.com/search?kw=%E3%83%97%E3%83%AC%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%A2%E3%82%A6%E3%83%88%E3%80%80kaged",
 };
@@ -292,7 +296,13 @@ const RankingCard = ({ item }: { item: RankingCardItem }) => {
   );
 };
 
-const CreatineCard = ({ item }: { item: CreatineRecommendation }) => (
+const CreatineCard = ({
+  item,
+  priceYen,
+}: {
+  item: CreatineRecommendation;
+  priceYen: number;
+}) => (
   <article id={`creatine-${item.rank}`} className="grid scroll-mt-24 gap-5 rounded-3xl border border-[#FCD27B] bg-white/95 p-5 shadow-xl sm:grid-cols-[108px_1fr] sm:p-6">
     <div className="flex items-start gap-4 sm:block">
       <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#FF8A23] text-sm font-bold text-white shadow-lg">
@@ -312,7 +322,7 @@ const CreatineCard = ({ item }: { item: CreatineRecommendation }) => (
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         <MetricChip
           label="参考価格（1kg）"
-          value={`${item.amazonUrl ? "Amazon" : "楽天"}で最新価格を確認`}
+          value={`${priceYen.toLocaleString("ja-JP")}円`}
         />
       </div>
 
@@ -379,7 +389,13 @@ const PreWorkoutCard = ({ item }: { item: PreWorkoutRecommendation }) => (
   </article>
 );
 
-export function SupplementsTopPage({ data }: { data: ProteinRankingPageData }) {
+export function SupplementsTopPage({
+  data,
+  creatinePrices,
+}: {
+  data: ProteinRankingPageData;
+  creatinePrices: CreatinePriceSnapshot;
+}) {
   const updatedAtLabel = formatUpdatedAt(data.updatedAt);
   const filteredSections = data.sections.map((section) => ({
     ...section,
@@ -484,7 +500,11 @@ export function SupplementsTopPage({ data }: { data: ProteinRankingPageData }) {
             </div>
             <div className="grid gap-5">
               {creatineRecommendations.map((item) => (
-                <CreatineCard key={item.name} item={item} />
+                <CreatineCard
+                  key={item.name}
+                  item={item}
+                  priceYen={creatinePrices[item.priceKey]}
+                />
               ))}
             </div>
           </section>

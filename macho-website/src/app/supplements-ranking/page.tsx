@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { SupplementsTopPage } from "@/components/supplements-top-page";
+import { fetchCreatinePriceSnapshot } from "@/lib/amazon-price";
 import { fetchProteinRankingPageData } from "@/lib/protein-rankings/repository";
 import { buildUrl } from "@/lib/seo";
 
@@ -30,7 +31,10 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function SupplementsRankingPage() {
-  const data = await fetchProteinRankingPageData();
+  const [data, creatinePrices] = await Promise.all([
+    fetchProteinRankingPageData(),
+    fetchCreatinePriceSnapshot(),
+  ]);
 
-  return <SupplementsTopPage data={data} />;
+  return <SupplementsTopPage data={data} creatinePrices={creatinePrices} />;
 }
