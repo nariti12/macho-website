@@ -50,8 +50,8 @@ const creatineRecommendations: CreatineRecommendation[] = [
 
 const preWorkoutRecommendation: PreWorkoutRecommendation = {
   name: "Kaged（ケージド）",
-  comment: "モンスターとかレッドブルを買うくらいならプレワークアウトの方がコスパも良いし、成分も段違いです。",
-  imageUrl: "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/kgd/kgd00798/l/2.jpg",
+  comment: "ケージドが値段と成分が凄く良く、値段も高すぎないので、一番バランスが良いのでおすすめです。",
+  imageUrl: "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/kgd/kgd00798/l/114.jpg",
   iherbUrl:
     "https://jp.iherb.com/search?kw=%E3%83%97%E3%83%AC%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%A2%E3%82%A6%E3%83%88%E3%80%80kaged",
 };
@@ -512,6 +512,9 @@ export function SupplementsTopPage({
           <section className="rounded-[32px] bg-white/95 p-6 shadow-2xl sm:p-8">
             <div className="mb-6 flex flex-col gap-3">
               <h2 className="text-2xl font-bold text-[#7C2D12] sm:text-3xl">おすすめプレワークアウト</h2>
+              <p className="rounded-2xl bg-[#FFF4E7] px-4 py-3 text-sm leading-7 text-slate-700 sm:text-base">
+                モンスターとかレッドブルを買うくらいならプレワークアウトの方がコスパも良いし、成分も段違いです。プレワークアウトはiHerbが安いのでおすすめです。
+              </p>
             </div>
             <PreWorkoutCard item={preWorkoutRecommendation} />
           </section>
