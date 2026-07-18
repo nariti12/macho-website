@@ -128,6 +128,18 @@ type RakutenItemSearchResponseV2 = {
     shopName?: string;
     mediumImageUrls?: Array<{ imageUrl?: string } | string>;
   }>;
+  items?: Array<{
+    itemCode?: string;
+    itemName?: string;
+    itemCaption?: string;
+    itemPrice?: number;
+    reviewAverage?: string | number;
+    reviewCount?: number;
+    itemUrl?: string;
+    affiliateUrl?: string;
+    shopName?: string;
+    mediumImageUrls?: Array<{ imageUrl?: string } | string>;
+  }>;
 };
 
 const getFirstMediumImageUrl = (images?: Array<{ imageUrl?: string } | string>) => {
@@ -163,7 +175,6 @@ const fetchRankingApiPage = async (page: number) => {
   const response = await fetch(url, {
     headers: {
       Accept: "application/json",
-      Authorization: `Bearer ${accessKey}`,
       Origin: getSiteOrigin(),
       Referer: `${getSiteOrigin()}/`,
     },
@@ -297,7 +308,6 @@ const fetchCuratedRakutenItem = async (
     const response = await fetch(url, {
       headers: {
         Accept: "application/json",
-        Authorization: `Bearer ${accessKey}`,
         Origin: getSiteOrigin(),
         Referer: `${getSiteOrigin()}/`,
       },
@@ -322,14 +332,28 @@ const fetchCuratedRakutenItem = async (
     return null;
   }
 
-  const items = payload.Items ?? [];
+  const items = payload.Items ?? payload.items ?? [];
   const rankedItems = items
-    .filter((entry) => matchesBrandAliases(stripHtml(entry.itemName), stripHtml(entry.shopName) || null, config.aliases))
+    .filter((entry) => {
+      const title = stripHtml(entry.itemName);
+      const normalizedTitle = title.toLowerCase();
+      const weightG = estimateWeightG(title);
+
+      return (
+        typeof entry.itemPrice === "number" &&
+        entry.itemPrice > 0 &&
+        weightG === config.preferredWeightG &&
+        matchesBrandAliases(title, stripHtml(entry.shopName) || null, config.aliases) &&
+        config.requiredTitleKeywords.every((keyword) => normalizedTitle.includes(keyword.toLowerCase())) &&
+        !(config.excludedTitleKeywords ?? []).some((keyword) => normalizedTitle.includes(keyword.toLowerCase()))
+      );
+    })
     .map((entry) => {
       const title = stripHtml(entry.itemName);
       const weightG = estimateWeightG(title);
       const weightPenalty = weightG ? Math.abs(weightG - config.preferredWeightG) / 10 : 500;
-      const penalty = weightPenalty + getCuratedItemPenalty(title);
+      const preferredItemBonus = entry.itemCode === config.preferredItemCode ? -10_000 : 0;
+      const penalty = weightPenalty + getCuratedItemPenalty(title) + preferredItemBonus;
 
       return {
         entry,
@@ -379,7 +403,7 @@ export const fetchCuratedRakutenStapleEntries = async (): Promise<NormalizedRaku
     if (item) {
       results.push(item);
     }
-    await sleep(250);
+    await sleep(RAKUTEN_REQUEST_DELAY_MS);
   }
 
   return results;

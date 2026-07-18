@@ -64,11 +64,11 @@ supabase db push
 
 プロテイン表示は Supabase に保存済みのランキングを読み込みます。Vercel Cron で週1回更新し、必要な場合は手動更新もできます。
 
-1. `/api/cron/protein-rankings` を手動実行すると、楽天の商品検索 API から固定ブランドの商品情報を取得
-2. 内容量を抽出して `1kgあたり` の価格を計算
+1. `/api/cron/protein-rankings` を手動実行すると、楽天の商品検索 API `2026-07-01` から固定ブランドの商品情報を取得
+2. 商品コード・ブランド・指定容量を照合してから `1kgあたり` の参考価格を計算
 3. 固定順のおすすめプロテインを作成
 4. Supabase の `products` / `product_metrics` / `rankings` に保存
-5. `/supplements-ranking` は保存済みデータを表示
+5. `/supplements-ranking` は保存済みのプロテイン価格を表示
 
 固定ブランドは次の順で扱います。
 
@@ -76,7 +76,7 @@ supabase db push
 2. `X-PLOSION`
 3. `Gold Standard`
 
-クレアチンとプレワークアウトは固定カードで表示します。プロテインの価格は cron 更新時に楽天の商品検索 API から取得した価格と内容量で `1kgあたり` を計算します。
+クレアチンとプレワークアウトは固定カードで表示します。プロテイン価格は週次更新し、取得失敗時はDBに保存された最後の正常値を保持します。14日を超えた価格は数値表示せず、販売ページでの確認を案内します。Amazonだけで販売する商品の価格は、Amazon PA-APIを利用していないため数値を掲載しません。
 
 ## Manual Ranking Update
 

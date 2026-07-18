@@ -61,8 +61,8 @@
 - Vercel Cron で週1回 `/api/cron/protein-rankings` を実行してDBを更新します。
 - 必要な場合は `/api/cron/protein-rankings` を手動実行してDBを更新します。
 - クレアチンは `INNOCECT` と `Nature In` の TOP2 を固定表示します。
-- プレワークアウトは `PRE-X` を固定表示します。
-- Amazon / iHerb の価格は公式APIで取得していないため、固定表示として管理します。
+- プレワークアウトは `Kaged（ケージド）` を固定表示します。
+- Amazon / iHerb の価格は公式APIで取得していないため数値表示せず、販売ページでの確認を案内します。
 - ランキングごとの `ItemList` 構造化データを出力します。
 
 詳細は `docs/protein-rankings.md` を参照してください。

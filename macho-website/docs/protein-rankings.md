@@ -6,7 +6,7 @@
 
 ## データソース
 
-- 楽天の商品検索 API
+- 楽天の商品検索 API `2026-07-01`
 - 対象ブランド:
   - `Verifyst`
   - `X-PLOSION`
@@ -16,10 +16,11 @@
 
 1. `src/app/api/cron/protein-rankings/route.ts` が手動更新または Vercel Cron のリクエストを受ける
 2. `src/lib/protein-rankings/rakuten-client.ts` が固定3ブランドの商品情報を順番に取得する
-3. `src/lib/protein-rankings/extractors.ts` が内容量を抽出し、1kgあたり価格計算に使う
-4. `src/lib/protein-rankings/scoring.ts` が固定順位のランキングを作る
-5. `src/lib/protein-rankings/repository.ts` が `products` / `product_metrics` / `rankings` に保存する
-6. 更新成功後に `/supplements-ranking` を再生成する
+3. 商品コード、必須キーワード、指定容量を照合し、容量違い・ソイ/ホエイ違いを除外する
+4. `src/lib/protein-rankings/extractors.ts` が内容量を抽出し、1kgあたり価格計算に使う
+5. `src/lib/protein-rankings/scoring.ts` が固定順位のランキングを作る
+6. `src/lib/protein-rankings/repository.ts` が `products` / `product_metrics` / `rankings` にupsertする
+7. 更新成功後に `/supplements-ranking` を再生成する
 
 ## スコア方針
 
@@ -41,12 +42,13 @@
   - `X-PLOSION（エクスプロージョン）`
   - `Gold Standard（ゴールドスタンダード）`
 - コメントは固定表示
-- `レビュー` は `4.48点/5点` 形式
-- `1kgあたり` は取得した価格と内容量から計算
+- `参考価格（1kg）` は取得した価格と内容量から計算
 - `美味しさ` と `成分` は `◎ / 〇 / △` で固定表示
 - クレアチンは `INNOCECT` と `Nature In` の固定 TOP2
-- プレワークアウトは `PRE-X` の固定表示
-- Amazon / iHerb は公式API連携していないため、クレアチンとプレワークアウトの価格は固定表示。価格変更時は表示値を更新する
+- プレワークアウトは `Kaged（ケージド）` の固定表示
+- APIや商品ページの一時障害では既存ランキングを削除せず、最後に正常取得した価格を保持する
+- 14日以上更新できていないプロテイン価格は数値を出さず、販売ページで最新価格を確認する表示へ切り替える
+- AmazonはPA-API未導入のため、Amazonだけで販売するINNOCECTとNature Inの価格を固定値やスクレイピング値で表示しない
 
 ## 運用メモ
 

@@ -1,10 +1,36 @@
 const RAKUTEN_ITEM_SEARCH_ENDPOINT =
-  "https://app.rakuten.co.jp/services/api/IchibaItem/Search/20220601";
+  "https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20260701";
+
+const RAKUTEN_REQUEST_INTERVAL_MS = 1100;
+const RAKUTEN_MAX_ATTEMPTS = 3;
+
+let requestQueue: Promise<void> = Promise.resolve();
 
 type RakutenPriceResponse = {
   Items?: Array<{
     itemPrice?: number;
   }>;
+  items?: Array<{
+    itemPrice?: number;
+  }>;
+};
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const enqueueRakutenRequest = async <T>(request: () => Promise<T>) => {
+  const previous = requestQueue;
+  let releaseQueue: () => void = () => undefined;
+  requestQueue = new Promise<void>((resolve) => {
+    releaseQueue = resolve;
+  });
+
+  await previous;
+  try {
+    return await request();
+  } finally {
+    await sleep(RAKUTEN_REQUEST_INTERVAL_MS);
+    releaseQueue();
+  }
 };
 
 const getRakutenKeywordFromSearchUrl = (url: string) => {
@@ -36,22 +62,34 @@ export const fetchRakutenPriceLabel = async (searchUrl: string | undefined, fall
     url.searchParams.set("formatVersion", "2");
     url.searchParams.set("elements", "itemPrice");
 
-    const response = await fetch(url, {
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${process.env.RAKUTEN_ACCESS_KEY}`,
-        Referer: `${process.env.RAKUTEN_SITE_ORIGIN ?? "https://www.machoda.com"}/`,
-      },
-      next: { revalidate: 604800 },
-    });
+    let payload: RakutenPriceResponse | null = null;
 
-    if (!response.ok) {
-      console.warn(`Failed to fetch Rakuten price: ${response.status}`);
-      return formatYen(fallbackPriceYen);
+    for (let attempt = 1; attempt <= RAKUTEN_MAX_ATTEMPTS; attempt += 1) {
+      const response = await enqueueRakutenRequest(() =>
+        fetch(url, {
+          headers: {
+            Accept: "application/json",
+            Origin: process.env.RAKUTEN_SITE_ORIGIN ?? "https://www.machoda.com",
+            Referer: `${process.env.RAKUTEN_SITE_ORIGIN ?? "https://www.machoda.com"}/`,
+          },
+          next: { revalidate: 604800 },
+        })
+      );
+
+      if (response.ok) {
+        payload = (await response.json()) as RakutenPriceResponse;
+        break;
+      }
+
+      const body = await response.text();
+      const retryable = response.status === 429 || response.status >= 500;
+      if (!retryable || attempt === RAKUTEN_MAX_ATTEMPTS) {
+        console.warn(`Failed to fetch Rakuten price: ${response.status} ${body.slice(0, 200)}`);
+        return formatYen(fallbackPriceYen);
+      }
     }
 
-    const payload = (await response.json()) as RakutenPriceResponse;
-    const prices = (payload.Items ?? [])
+    const prices = (payload?.Items ?? payload?.items ?? [])
       .map((item) => item.itemPrice)
       .filter((price): price is number => typeof price === "number" && price > 0);
 

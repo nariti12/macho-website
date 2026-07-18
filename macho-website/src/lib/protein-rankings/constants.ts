@@ -3,11 +3,11 @@ import type { RankingKey } from "@/lib/protein-rankings/types";
 export const RAKUTEN_RANKING_ENDPOINT =
   "https://openapi.rakuten.co.jp/ichibaranking/api/IchibaItem/Ranking/20220601";
 export const RAKUTEN_ITEM_SEARCH_ENDPOINT =
-  "https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20220601";
+  "https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20260701";
 export const RAKUTEN_PUBLIC_RANKING_URL = "https://ranking.rakuten.co.jp/daily/567603/";
 export const RAKUTEN_RANKING_PAGES = 1;
 export const RAKUTEN_RANKING_PAGE_SIZE = 80;
-export const RAKUTEN_REQUEST_DELAY_MS = 450;
+export const RAKUTEN_REQUEST_DELAY_MS = 1100;
 export const RAKUTEN_MAX_RETRIES = 3;
 export const LIKELY_PROTEIN_KEYWORDS = [
   "プロテイン",
@@ -100,6 +100,9 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     rakutenSearchUrl?: string;
     amazonSearchUrl: string;
     preferredWeightG: number;
+    preferredItemCode?: string;
+    requiredTitleKeywords: string[];
+    excludedTitleKeywords?: string[];
     fallbackPricePerKgYen: number;
     fallbackReviewAverage?: number;
     fallbackReviewCount?: number;
@@ -114,12 +117,14 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     fallbackTitle: "Verifyst ホエイプロテイン 3kg",
     fallbackSearchTerm: "ベリフィスト ホエイプロテイン 3kg",
     fallbackImagePath: "https://m.media-amazon.com/images/I/41G9IZiQ4lL._AC_SL1500_.jpg",
-    rakutenSearchUrl:
-      "https://search.rakuten.co.jp/search/mall/%E3%83%99%E3%83%AA%E3%83%95%E3%82%A3%E3%82%B9%E3%83%88+%E3%83%9B%E3%82%A8%E3%82%A4+%E3%83%97%E3%83%AD%E3%83%86%E3%82%A4%E3%83%B3/?l-id=pc_header_search_suggest",
+    rakutenSearchUrl: "https://item.rakuten.co.jp/verifyst/v00130/",
     amazonSearchUrl:
       "https://www.amazon.co.jp/Verifyst-%E3%83%99%E3%83%AA%E3%83%95%E3%82%A3%E3%82%B9%E3%83%88-%E3%83%97%E3%83%AD%E3%83%86%E3%82%A4%E3%83%B3-%E3%83%81%E3%83%A7%E3%82%B3%E3%83%AC%E3%83%BC%E3%83%88%E9%A2%A8%E5%91%B3-%E3%81%B7%E3%82%8D%E3%81%A6%E3%81%84%E3%82%93/dp/B0D229NKL9/ref=sr_1_3?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&sr=8-3",
     preferredWeightG: 3000,
-    fallbackPricePerKgYen: 3293,
+    preferredItemCode: "verifyst:10000000",
+    requiredTitleKeywords: ["ホエイ", "3kg"],
+    excludedTitleKeywords: ["ソイ", "ふるさと納税"],
+    fallbackPricePerKgYen: 3830,
     fallbackReviewAverage: 4.35,
     tasteRating: "〇",
     formulaRating: "〇",
@@ -135,7 +140,9 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     amazonSearchUrl:
       "https://www.amazon.co.jp/s?k=xplosion&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
     preferredWeightG: 3000,
-    fallbackPricePerKgYen: 3593,
+    preferredItemCode: "x-plosion:10000023",
+    requiredTitleKeywords: ["ホエイ", "3kg"],
+    fallbackPricePerKgYen: 4263,
     fallbackReviewAverage: 4.48,
     fallbackReviewCount: 2171,
     tasteRating: "〇",
@@ -152,7 +159,9 @@ export const MALE_FIXED_BRAND_CONFIG: Record<
     amazonSearchUrl:
       "https://www.amazon.co.jp/s?k=Gold+Standard&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
     preferredWeightG: 2270,
-    fallbackPricePerKgYen: 6599,
+    preferredItemCode: "iherb-official:10000088",
+    requiredTitleKeywords: ["ゴールドスタンダード", "2.27kg"],
+    fallbackPricePerKgYen: 6423,
     fallbackReviewAverage: 4.43,
     fallbackReviewCount: 149,
     tasteRating: "◎",

@@ -14,7 +14,6 @@ type CreatineRecommendation = {
   name: string;
   comment: string;
   imageUrl: string;
-  pricePerKgYen: number;
   rakutenUrl?: string;
   amazonUrl?: string;
 };
@@ -32,29 +31,25 @@ const creatineRecommendations: CreatineRecommendation[] = [
     name: "INNOCECT（イノセクト）",
     comment: "イノセクトは昔からコスパ最強のクレアチンのブランド。",
     imageUrl: "https://shop.r10s.jp/innocect/cabinet/amino/creatine/new_creatin.jpg",
-    pricePerKgYen: 2040,
     amazonUrl:
       "https://www.amazon.co.jp/INNOCECT-%E3%82%AF%E3%83%AC%E3%82%A2%E3%83%81%E3%83%B3-%E3%83%A2%E3%83%8E%E3%83%8F%E3%82%A4%E3%83%89%E3%83%AC%E3%83%BC%E3%83%88-1000g-%E9%AB%98%E7%B4%94%E5%BA%A699-9/dp/B0DHTBTPJQ/ref=sr_1_3_pp?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&s=hpc&sr=1-3",
-    rakutenUrl:
-      "https://item.rakuten.co.jp/innocect/cre_1000/?iasid=07rpp_10095___2t-mompqf6d-1a-760651ea-0acb-40b3-88ee-e30aa1bc794a",
   },
   {
     rank: 2,
     name: "Nature In（ネイチャーイン）",
     comment: "INNOCECTの次に安いクレアチンブランド。たまに最安値になる時もあるので、INNOCECTを購入する前に確認はしておきたい。",
     imageUrl: "https://m.media-amazon.com/images/I/61Jwb0vWWZL._AC_SL1500_.jpg",
-    pricePerKgYen: 2390,
     amazonUrl:
       "https://www.amazon.co.jp/Nature-%EF%BC%88%E3%83%8D%E3%82%A4%E3%83%81%E3%83%A3%E3%83%BC%E3%82%A4%E3%83%B3%EF%BC%89-%E3%82%AF%E3%83%AC%E3%82%A2%E3%83%81%E3%83%B3%E3%83%A2%E3%83%8E%E3%83%8F%E3%82%A4%E3%83%89%E3%83%AC%E3%83%BC%E3%83%88-%E3%82%88%E3%81%8F%E9%96%89%E3%81%BE%E3%82%8B%E3%83%81%E3%83%A3%E3%83%83%E3%82%AF-ISO22000%E8%A6%8F%E6%A0%BC/dp/B0FY5PBSM1/ref=sr_1_7?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&sr=8-7",
   },
 ];
 
 const preWorkoutRecommendation: PreWorkoutRecommendation = {
-  name: "PRE-X",
-  comment: "コスパ最強のプレワークアウトです。モンスターとかレッドブルを買うならこれを買って炭酸で割って飲みましょう。",
-  imageUrl: "https://cloudinary.images-iherb.com/image/upload/f_auto%2Cq_auto%3Aeco/images/ncs/ncs67096/l/8.jpg",
+  name: "Kaged（ケージド）",
+  comment: "モンスターとかレッドブルを買うくらいならプレワークアウトの方がコスパも良いし、成分も段違いです。",
+  imageUrl: "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/kgd/kgd00897/l/1.jpg",
   iherbUrl:
-    "https://jp.iherb.com/search?sug=nutricost%20pre-x&kw=nutricost%20pre-x&rank=4&rawkw=pre-x&refererLocation=suggestion",
+    "https://jp.iherb.com/search?kw=%E3%83%97%E3%83%AC%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%A2%E3%82%A6%E3%83%88%E3%80%80kaged",
 };
 
 const getBrandKey = (item: RankingCardItem) => {
@@ -80,15 +75,18 @@ const formatUpdatedAt = (value: string | null) =>
         day: "2-digit",
         hour: "2-digit",
         minute: "2-digit",
+        timeZone: "Asia/Tokyo",
       })
     : null;
+
+const isFreshPrice = (updatedAt: string) => Date.now() - Date.parse(updatedAt) <= 14 * 24 * 60 * 60 * 1000;
 
 const formatPricePerKg = (item: RankingCardItem) => {
   const brandKey = getBrandKey(item);
   const weightG = item.metrics?.content_weight_g;
   const priceYen = item.product.price_yen;
 
-  if (priceYen && priceYen > 0) {
+  if (priceYen && priceYen > 0 && isFreshPrice(item.product.updated_at)) {
     const effectiveWeightG =
       weightG && weightG > 0
         ? weightG
@@ -102,11 +100,7 @@ const formatPricePerKg = (item: RankingCardItem) => {
     }
   }
 
-  if (brandKey) {
-    return `${MALE_FIXED_BRAND_CONFIG[brandKey].fallbackPricePerKgYen.toLocaleString("ja-JP")}円`;
-  }
-
-  return "楽天で確認";
+  return "楽天で最新価格を確認";
 };
 
 const getOutboundLabel = (provider: CommerceProvider) => {
@@ -168,7 +162,7 @@ const MetricChip = ({ label, value }: { label: string; value: string }) => (
 
 const renderMaleHighlights = (item: RankingCardItem) => (
   <>
-    <MetricChip label="1kgあたり" value={formatPricePerKg(item)} />
+    <MetricChip label="参考価格（1kg）" value={formatPricePerKg(item)} />
     <MetricChip
       label="美味しさ"
       value={getBrandKey(item) ? MALE_FIXED_BRAND_CONFIG[getBrandKey(item) as (typeof MALE_FIXED_BRAND_ORDER)[number]].tasteRating : "不明"}
@@ -203,6 +197,7 @@ const buildFallbackRankingItem = (
       shop_name: config.label,
       matched_queries: ["fixed fallback"],
       source_external_id: `curated:${brandKey}`,
+      updated_at: "1970-01-01T00:00:00.000Z",
     },
     metrics: null,
   };
@@ -315,7 +310,10 @@ const CreatineCard = ({ item }: { item: CreatineRecommendation }) => (
       </div>
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        <MetricChip label="1kgあたり" value={`${item.pricePerKgYen.toLocaleString("ja-JP")}円`} />
+        <MetricChip
+          label="参考価格（1kg）"
+          value={`${item.amazonUrl ? "Amazon" : "楽天"}で最新価格を確認`}
+        />
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -481,7 +479,7 @@ export function SupplementsTopPage({ data }: { data: ProteinRankingPageData }) {
             <div className="mb-6 flex flex-col gap-3">
               <h2 className="text-2xl font-bold text-[#7C2D12] sm:text-3xl">おすすめクレアチン TOP2</h2>
               <p className="rounded-2xl bg-[#FFF4E7] px-4 py-3 text-sm leading-7 text-slate-700 sm:text-base">
-                クレアルカリンはコスパがかなり悪いので、あまりおすすめしません。粉のモノハイドレートがコスパ最強なのでおすすめです。
+                よく広告でクレアルカリンがおすすめに上がりますが、コスパがかなり悪いです。粉のモノハイドレートは1kg 2,000円台で購入できますし、効果も変わらないのでコスパが良いクレアチンを購入するようにしましょう。以下のブランドが最安ではありますが、その他のブランドについても、Amazonでよくセールもやっていますので、最安値を探して購入することをおすすめします。
               </p>
             </div>
             <div className="grid gap-5">

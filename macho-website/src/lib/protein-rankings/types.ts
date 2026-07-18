@@ -70,6 +70,7 @@ export type ProductRow = {
   shop_name: string | null;
   matched_queries: string[];
   source_external_id: string;
+  updated_at: string;
 };
 
 export type ProductMetricRow = {

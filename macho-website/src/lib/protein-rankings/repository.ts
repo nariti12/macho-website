@@ -14,6 +14,29 @@ import type {
 } from "@/lib/protein-rankings/types";
 
 const RANKING_KEYS: RankingKey[] = ["male"];
+const SUPABASE_MAX_ATTEMPTS = 3;
+
+type SupabaseOperationResult = {
+  error: { message: string } | null;
+};
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const runSupabaseOperation = async <T extends SupabaseOperationResult>(operation: () => PromiseLike<T>) => {
+  let lastResult: T | null = null;
+
+  for (let attempt = 1; attempt <= SUPABASE_MAX_ATTEMPTS; attempt += 1) {
+    lastResult = await operation();
+    const message = lastResult.error?.message ?? "";
+    const retryable = /fetch failed|network|timeout|connection/i.test(message);
+    if (!lastResult.error || !retryable || attempt === SUPABASE_MAX_ATTEMPTS) {
+      return lastResult;
+    }
+    await sleep(attempt * 500);
+  }
+
+  return lastResult as T;
+};
 
 type RankingPayload = Record<RankingKey, Array<RankedProductInput & { rankPosition: number }>>;
 
@@ -40,12 +63,14 @@ export const saveProteinRankingSnapshot = async ({ products, rankings }: SaveInp
 
   const existingCuratedProducts =
     curatedSourceExternalIds.length > 0
-      ? await supabase
-          .from("products")
-          .select(
-            "source_external_id, title, image_url, price_yen, review_average, review_count, item_url, affiliate_url, shop_name"
+      ? await runSupabaseOperation(() =>
+          supabase
+            .from("products")
+            .select(
+              "source_external_id, title, image_url, price_yen, review_average, review_count, item_url, affiliate_url, shop_name, updated_at"
+            )
+            .in("source_external_id", curatedSourceExternalIds)
           )
-          .in("source_external_id", curatedSourceExternalIds)
       : { data: [], error: null };
 
   if (existingCuratedProducts.error) {
@@ -94,13 +119,18 @@ export const saveProteinRankingSnapshot = async ({ products, rankings }: SaveInp
     matched_queries: product.matchedQueries,
     discovery_score: product.discoveryScore,
     raw_payload: product.rawPayload,
-    updated_at: timestamp,
+    updated_at:
+      product.sourceExternalId.startsWith("curated:") && product.priceYen <= 0
+        ? ((existingCuratedByExternalId.get(product.sourceExternalId)?.updated_at as string | undefined) ?? timestamp)
+        : timestamp,
   }));
 
-  const { data: upsertedProducts, error: productError } = await supabase
-    .from("products")
-    .upsert(productRows, { onConflict: "source,source_external_id" })
-    .select("id, source_external_id");
+  const { data: upsertedProducts, error: productError } = await runSupabaseOperation(() =>
+    supabase
+      .from("products")
+      .upsert(productRows, { onConflict: "source,source_external_id" })
+      .select("id, source_external_id")
+  );
 
   if (productError || !upsertedProducts) {
     throw new Error(`Failed to upsert products: ${productError?.message ?? "unknown error"}`);
@@ -130,15 +160,12 @@ export const saveProteinRankingSnapshot = async ({ products, rankings }: SaveInp
     updated_at: timestamp,
   }));
 
-  const { error: metricError } = await supabase.from("product_metrics").upsert(metricRows, { onConflict: "product_id" });
+  const { error: metricError } = await runSupabaseOperation(() =>
+    supabase.from("product_metrics").upsert(metricRows, { onConflict: "product_id" })
+  );
 
   if (metricError) {
     throw new Error(`Failed to upsert product metrics: ${metricError.message}`);
-  }
-
-  const { error: deleteError } = await supabase.from("rankings").delete().in("ranking_key", RANKING_KEYS);
-  if (deleteError) {
-    throw new Error(`Failed to reset rankings: ${deleteError.message}`);
   }
 
   const rankingRows = RANKING_KEYS.flatMap((rankingKey) =>
@@ -153,7 +180,9 @@ export const saveProteinRankingSnapshot = async ({ products, rankings }: SaveInp
     }))
   );
 
-  const { error: rankingError } = await supabase.from("rankings").insert(rankingRows);
+  const { error: rankingError } = await runSupabaseOperation(() =>
+    supabase.from("rankings").upsert(rankingRows, { onConflict: "ranking_key,rank_position" })
+  );
   if (rankingError) {
     throw new Error(`Failed to save rankings: ${rankingError.message}`);
   }
@@ -215,7 +244,7 @@ export const fetchProteinRankingPageData = async (): Promise<ProteinRankingPageD
     supabase
       .from("products")
       .select(
-        "id, ec_provider, title, image_url, price_yen, review_average, review_count, item_url, affiliate_url, shop_name, matched_queries, source_external_id"
+        "id, ec_provider, title, image_url, price_yen, review_average, review_count, item_url, affiliate_url, shop_name, matched_queries, source_external_id, updated_at"
       )
       .in("id", productIds),
     supabase
