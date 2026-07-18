@@ -50,7 +50,7 @@ const creatineRecommendations: CreatineRecommendation[] = [
 
 const preWorkoutRecommendation: PreWorkoutRecommendation = {
   name: "Kaged（ケージド）",
-  comment: "ケージドが値段と成分が凄く良く、値段も高すぎないので、一番バランスが良いのでおすすめです。",
+  comment: "ケージドは他と比べて成分が凄く良く、値段も高すぎないので、一番バランスが良いのでおすすめです。",
   imageUrl: "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/kgd/kgd00798/l/114.jpg",
   iherbUrl:
     "https://jp.iherb.com/search?kw=%E3%83%97%E3%83%AC%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%A2%E3%82%A6%E3%83%88%E3%80%80kaged",
