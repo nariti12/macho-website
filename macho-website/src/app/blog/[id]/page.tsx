@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { MessageCircle } from "lucide-react";
+import { Fragment, type ReactNode } from "react";
 
 import { SiteHeader } from "@/components/site-header";
 import { buildUrl, toJsonLd } from "@/lib/seo";
@@ -56,6 +57,12 @@ interface RelatedBlogItem {
   updatedAt: string | null;
 }
 
+interface TableOfContentsItem {
+  id: string;
+  level: 2 | 3;
+  text: string;
+}
+
 const hasText = (value?: string | null): value is string => typeof value === "string" && value.trim().length > 0;
 const stripHtml = (value: string) => value.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
 const truncate = (value: string, length = 160) =>
@@ -68,6 +75,68 @@ const getBodyBlockText = (blocks?: MicroCMSBodyBlock[] | null) =>
     .map((block) => (hasText(block.text) ? stripHtml(block.text) : ""))
     .filter(Boolean)
     .join(" ");
+
+const decodeHeadingText = (value: string) =>
+  stripHtml(value)
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'");
+
+const prepareArticleHeadings = (body: string, blocks: MicroCMSBodyBlock[]) => {
+  const items: TableOfContentsItem[] = [];
+
+  const addHeadingIds = (html: string) =>
+    html.replace(/<h([23])([^>]*)>([\s\S]*?)<\/h\1>/gi, (match, rawLevel: string, attributes: string, content: string) => {
+      const text = decodeHeadingText(content);
+      if (!text) return match;
+
+      const existingId = attributes.match(/\sid=(['"])(.*?)\1/i)?.[2];
+      const id = existingId || `section-${items.length + 1}`;
+      const level = Number(rawLevel) as 2 | 3;
+      items.push({ id, level, text });
+
+      if (existingId) return match;
+      return `<h${rawLevel}${attributes} id="${id}">${content}</h${rawLevel}>`;
+    });
+
+  if (blocks.length > 0) {
+    return {
+      body,
+      blocks: blocks.map((block) =>
+        block.fieldId === "talkText" || block.fieldId === "todayInsight" || !hasText(block.text)
+          ? block
+          : { ...block, text: addHeadingIds(block.text) },
+      ),
+      items,
+    };
+  }
+
+  return {
+    body: addHeadingIds(body),
+    blocks,
+    items,
+  };
+};
+
+function TableOfContents({ items }: { items: TableOfContentsItem[] }) {
+  if (items.length === 0) return null;
+
+  return (
+    <nav aria-label="目次" className={styles.tableOfContents}>
+      <p className={styles.tableOfContentsTitle}>目次</p>
+      <ol className={styles.tableOfContentsList}>
+        {items.map((item) => (
+          <li key={item.id} className={item.level === 3 ? styles.tableOfContentsSubItem : undefined}>
+            <a href={`#${item.id}`}>{item.text}</a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+  );
+}
 
 const normalizeBlogDetail = (data: MicroCMSBlogDetail) => {
   const rawBody = data.richEditor ?? data.content ?? data.body ?? "";
@@ -283,6 +352,17 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ id:
   });
 
   const hasConversationBlocks = blog.bodyBlocks.length > 0;
+  const preparedArticle = prepareArticleHeadings(blog.body, blog.bodyBlocks);
+  const firstTalkBlockIndex = preparedArticle.blocks.findIndex(
+    (block) => block.fieldId === "talkText" && hasText(block.text),
+  );
+  const tableOfContents = <TableOfContents items={preparedArticle.items} />;
+  const withTableOfContents = (content: ReactNode, index: number, key: string) => (
+    <Fragment key={key}>
+      {content}
+      {index === firstTalkBlockIndex ? tableOfContents : null}
+    </Fragment>
+  );
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#FCC081" }}>
@@ -357,70 +437,79 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ id:
           <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbStructuredData }} />
           <article className={`${hasConversationBlocks ? "space-y-8" : "blog-content"} ${styles.blogBody}`}>
             {hasConversationBlocks ? (
-              blog.bodyBlocks.map((block, index) => {
-                if (!hasText(block.text)) return null;
+              <>
+                {firstTalkBlockIndex === -1 ? tableOfContents : null}
+                {preparedArticle.blocks.map((block, index) => {
+                  if (!hasText(block.text)) return null;
 
-                if (block.fieldId === "talkText") {
-                  return (
-                    <div
-                      key={`${block.fieldId ?? "block"}-${index}`}
-                      className={`flex items-start gap-4 ${block.isLeft === false ? "flex-row-reverse" : ""}`}
-                    >
-                      <div className="flex w-20 shrink-0 flex-col items-center gap-2 text-center">
-                        <div className="relative h-14 w-14 overflow-hidden rounded-full border-2 border-[#FFE7C2] bg-white shadow-sm">
-                          {block.image?.url ? (
-                            <Image
-                              src={block.image.url}
-                              alt={block.name ?? "話者アイコン"}
-                              fill
-                              sizes="56px"
-                              className="object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-[#7C2D12]">
-                              ?
-                            </div>
-                          )}
+                  if (block.fieldId === "talkText") {
+                    return withTableOfContents(
+                      <div
+                        className={`flex items-start gap-4 ${block.isLeft === false ? "flex-row-reverse" : ""}`}
+                      >
+                        <div className="flex w-20 shrink-0 flex-col items-center gap-2 text-center">
+                          <div className="relative h-14 w-14 overflow-hidden rounded-full border-2 border-[#FFE7C2] bg-white shadow-sm">
+                            {block.image?.url ? (
+                              <Image
+                                src={block.image.url}
+                                alt={block.name ?? "話者アイコン"}
+                                fill
+                                sizes="56px"
+                                className="object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-[#7C2D12]">
+                                ?
+                              </div>
+                            )}
+                          </div>
+                          {hasText(block.name) ? (
+                            <div className="text-xs font-semibold leading-tight text-[#7C2D12]">{block.name}</div>
+                          ) : null}
                         </div>
-                        {hasText(block.name) ? (
-                          <div className="text-xs font-semibold leading-tight text-[#7C2D12]">{block.name}</div>
-                        ) : null}
-                      </div>
-                      <div className="min-w-0 flex-1 rounded-[24px] border border-[#FFD9A1] bg-[#FFF8F0] px-5 py-4 shadow-sm">
-                        <div className="blog-content" dangerouslySetInnerHTML={{ __html: block.text }} />
-                      </div>
-                    </div>
-                  );
-                }
+                        <div className="min-w-0 flex-1 rounded-[24px] border border-[#FFD9A1] bg-[#FFF8F0] px-5 py-4 shadow-sm">
+                          <div className="blog-content" dangerouslySetInnerHTML={{ __html: block.text }} />
+                        </div>
+                      </div>,
+                      index,
+                      `${block.fieldId}-${index}`,
+                    );
+                  }
 
-                if (block.fieldId === "todayInsight") {
-                  return (
-                    <aside
-                      key={`${block.fieldId}-${index}`}
-                      aria-label="気づき"
-                      className="overflow-hidden rounded-[24px] border-[3px] border-[#FF8A23] bg-white shadow-sm"
-                    >
-                      <div className="flex items-center gap-2.5 border-b-2 border-[#FFB56F] px-5 py-3.5 sm:px-6">
-                        <MessageCircle aria-hidden="true" className="text-[#E85D04]" size={24} strokeWidth={2.4} />
-                        <p className="text-lg font-bold tracking-[0.04em] text-[#7C2D12] sm:text-xl">気づき</p>
-                      </div>
-                      <div className="px-5 py-5 sm:px-6 sm:py-6">
-                        <div className="blog-content" dangerouslySetInnerHTML={{ __html: block.text }} />
-                      </div>
-                    </aside>
-                  );
-                }
+                  if (block.fieldId === "todayInsight") {
+                    return withTableOfContents(
+                      <aside
+                        aria-label="気づき"
+                        className="overflow-hidden rounded-[24px] border-[3px] border-[#FF8A23] bg-white shadow-sm"
+                      >
+                        <div className="flex items-center gap-2.5 border-b-2 border-[#FFB56F] px-5 py-3.5 sm:px-6">
+                          <MessageCircle aria-hidden="true" className="text-[#E85D04]" size={24} strokeWidth={2.4} />
+                          <p className="text-lg font-bold tracking-[0.04em] text-[#7C2D12] sm:text-xl">気づき</p>
+                        </div>
+                        <div className="px-5 py-5 sm:px-6 sm:py-6">
+                          <div className="blog-content" dangerouslySetInnerHTML={{ __html: block.text }} />
+                        </div>
+                      </aside>,
+                      index,
+                      `${block.fieldId}-${index}`,
+                    );
+                  }
 
-                return (
-                  <div
-                    key={`${block.fieldId ?? "block"}-${index}`}
-                    className="blog-content"
-                    dangerouslySetInnerHTML={{ __html: block.text }}
-                  />
-                );
-              })
+                  return withTableOfContents(
+                    <div
+                      className="blog-content"
+                      dangerouslySetInnerHTML={{ __html: block.text }}
+                    />,
+                    index,
+                    `${block.fieldId ?? "block"}-${index}`,
+                  );
+                })}
+              </>
             ) : (
-              <div dangerouslySetInnerHTML={{ __html: blog.body }} />
+              <>
+                {tableOfContents}
+                <div dangerouslySetInnerHTML={{ __html: preparedArticle.body }} />
+              </>
             )}
           </article>
 
