@@ -15,8 +15,75 @@ type FaqSection = {
 };
 
 const ALL_CATEGORIES = "すべて";
+const QUICK_SEARCHES = ["初心者", "プロテイン", "クレアチン", "ダイエット", "腰が痛い"];
 
-const normalizeText = (value: string) => value.normalize("NFKC").toLocaleLowerCase("ja-JP");
+const normalizeText = (value: string) =>
+  value
+    .normalize("NFKC")
+    .toLocaleLowerCase("ja-JP")
+    .replace(/[ァ-ヶ]/g, (character) => String.fromCharCode(character.charCodeAt(0) - 0x60))
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
+
+const SEARCH_SYNONYM_GROUPS = [
+  ["ダイエット", "減量", "痩せる", "痩せたい"],
+  ["家トレ", "自宅トレ", "ホームジム"],
+  ["お酒", "酒", "アルコール"],
+  ["有酸素", "ランニング", "ジョギング"],
+  ["腰痛", "腰が痛い", "腰の痛み"],
+  ["膝痛", "膝が痛い", "膝の痛み"],
+  ["頻度", "回数", "週何回"],
+  ["大豆", "ソイ"],
+].map((group) => group.map(normalizeText));
+
+const isWithinOneEdit = (left: string, right: string) => {
+  if (Math.abs(left.length - right.length) > 1) return false;
+
+  let leftIndex = 0;
+  let rightIndex = 0;
+  let edits = 0;
+
+  while (leftIndex < left.length && rightIndex < right.length) {
+    if (left[leftIndex] === right[rightIndex]) {
+      leftIndex += 1;
+      rightIndex += 1;
+      continue;
+    }
+
+    edits += 1;
+    if (edits > 1) return false;
+
+    if (left.length > right.length) leftIndex += 1;
+    else if (right.length > left.length) rightIndex += 1;
+    else {
+      leftIndex += 1;
+      rightIndex += 1;
+    }
+  }
+
+  return edits + Number(leftIndex < left.length || rightIndex < right.length) <= 1;
+};
+
+const fuzzyIncludes = (searchableText: string, term: string) => {
+  if (term.length < 4) return false;
+  const compactText = searchableText.replace(/\s+/g, "");
+  const compactTerm = term.replace(/\s+/g, "");
+
+  for (const windowLength of [compactTerm.length - 1, compactTerm.length, compactTerm.length + 1]) {
+    if (windowLength < 1 || windowLength > compactText.length) continue;
+    for (let index = 0; index <= compactText.length - windowLength; index += 1) {
+      if (isWithinOneEdit(compactText.slice(index, index + windowLength), compactTerm)) return true;
+    }
+  }
+
+  return false;
+};
+
+const matchesSearchTerm = (searchableText: string, term: string) => {
+  const synonymGroup = SEARCH_SYNONYM_GROUPS.find((group) => group.includes(term));
+  const alternatives = synonymGroup ?? [term];
+  return alternatives.some((alternative) => searchableText.includes(alternative)) || fuzzyIncludes(searchableText, term);
+};
 
 const renderAnswer = (answer: string) => {
   const parts = answer.split(/(https:\/\/www\.machoda\.com\/[^\s]+)/g);
@@ -63,7 +130,7 @@ export function TrainingFaqBrowser({ sections }: { sections: FaqSection[] }) {
       items: section.items.filter((item) => {
         if (searchTerms.length === 0) return true;
         const searchableText = normalizeText(`${section.title} ${item.question} ${item.answer}`);
-        return searchTerms.every((term) => searchableText.includes(term));
+        return searchTerms.every((term) => matchesSearchTerm(searchableText, term));
       }),
     }))
     .filter((section) => section.items.length > 0);
@@ -105,6 +172,25 @@ export function TrainingFaqBrowser({ sections }: { sections: FaqSection[] }) {
             </button>
           ) : null}
         </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+          <span className="mr-1 text-slate-500">よく検索される質問</span>
+          {QUICK_SEARCHES.map((keyword) => (
+            <button
+              key={keyword}
+              type="button"
+              onClick={() => {
+                setQuery(keyword);
+                setSelectedCategory(ALL_CATEGORIES);
+              }}
+              className="rounded-full border border-[#F6C982] bg-white px-3 py-1.5 font-semibold text-[#9A3412] transition hover:border-[#FF8A23] hover:bg-[#FFF7ED]"
+            >
+              {keyword}
+            </button>
+          ))}
+        </div>
+
+        <p className="mt-2 text-xs text-slate-500">ひらがな・カタカナのどちらでも検索できます。</p>
 
         <div className="mt-4 flex flex-wrap gap-2" aria-label="カテゴリで絞り込む">
           {[ALL_CATEGORIES, ...sections.map((section) => section.title)].map((category) => {
