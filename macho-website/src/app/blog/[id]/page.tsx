@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Lightbulb } from "lucide-react";
 
 import { SiteHeader } from "@/components/site-header";
 import { buildUrl, toJsonLd } from "@/lib/seo";
@@ -387,6 +388,26 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ id:
                         <div className="blog-content" dangerouslySetInnerHTML={{ __html: block.text }} />
                       </div>
                     </div>
+                  );
+                }
+
+                if (block.fieldId === "todayInsight") {
+                  return (
+                    <aside
+                      key={`${block.fieldId}-${index}`}
+                      aria-label="今日の気づき"
+                      className="overflow-hidden rounded-[24px] border border-[#F6B863] bg-gradient-to-br from-[#FFF9ED] via-[#FFF4DA] to-[#FFEBC7] shadow-[0_14px_32px_rgba(154,52,18,0.10)]"
+                    >
+                      <div className="flex items-center gap-3 border-b border-[#F6C982] bg-white/55 px-5 py-3.5 sm:px-6">
+                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#FF8A23] text-white shadow-sm">
+                          <Lightbulb aria-hidden="true" size={20} strokeWidth={2.4} />
+                        </span>
+                        <p className="text-lg font-bold tracking-[0.04em] text-[#7C2D12] sm:text-xl">今日の気づき</p>
+                      </div>
+                      <div className="px-5 py-5 sm:px-6 sm:py-6">
+                        <div className="blog-content" dangerouslySetInnerHTML={{ __html: block.text }} />
+                      </div>
+                    </aside>
                   );
                 }
 
