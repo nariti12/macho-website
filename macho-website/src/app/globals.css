@@ -34,6 +34,21 @@ body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
+body:has(.macho-game-shell) {
+  height: 100dvh;
+  overflow: hidden;
+}
+
+body:has(.macho-game-shell) > main {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body:has(.macho-game-shell) > footer {
+  display: none;
+}
+
 main {
   position: relative;
 }
@@ -1604,6 +1619,7 @@ main {
 }
 
 .macho-main-grid {
+  min-height: 0;
   background:
     linear-gradient(90deg, rgba(42, 20, 11, 0.34), transparent 22%, transparent 78%, rgba(42, 20, 11, 0.34)),
     linear-gradient(180deg, #7c2d12 0%, #451a03 100%);
@@ -2450,16 +2466,9 @@ main {
     opacity: 0.16;
   }
 
-  .macho-main-grid {
-    min-height: calc(100vh - 9.5rem);
-  }
 }
 
 @media (min-width: 768px) and (max-width: 1279px) {
-  .macho-main-grid {
-    min-height: calc(100vh - 11rem);
-  }
-
   .macho-shop-shelf {
     border-left: 0;
   }

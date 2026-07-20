@@ -2635,8 +2635,10 @@ export function MachoClickerPage() {
   const titleProgress = Math.min(100, Math.max(0, (state.totalMuscle / nextGoal.value) * 100));
   const ownedUpgradeCount = Object.values(state.upgrades).reduce((total, level) => total + level, 0);
   const totalBuildingLevel = Object.values(state.buildingLevels).reduce((total, level) => total + level, 0);
-  const advancedSystemsUnlocked = state.prestigeLevel > 0 || state.totalMuscle >= 1_000_000_000_000;
-  const legacyPanelsVisible = state.totalMuscle < 0;
+  // V2 keeps the core loop intentionally narrow. Legacy research, daily and
+  // equipment-level systems remain save-compatible but never enter the UI.
+  const advancedSystemsUnlocked = false;
+  const legacyPanelsVisible = false;
   const focusGymAvailable = totalBuildingLevel >= 1;
   const focusGymUnlocked = state.crystalResearch.includes("crystal-focus-room");
   const activeFocusBuff = activeBuffs.find((buff) => buff.type === "focus") ?? null;
@@ -3659,13 +3661,13 @@ export function MachoClickerPage() {
 
   return (
     <div
-      className={`macho-game-shell macho-achievement-aura-${achievementAuraTier} ${seasonalTheme.shellClass} min-h-dvh overflow-hidden bg-[#160D08] text-slate-900 ${
+      className={`macho-game-shell macho-achievement-aura-${achievementAuraTier} ${seasonalTheme.shellClass} flex h-dvh flex-col overflow-hidden bg-[#160D08] text-slate-900 ${
         reducedEffects ? "macho-reduced-effects" : ""
       }`}
       onPointerDown={unlockAudio}
     >
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_18%_8%,rgba(255,184,77,0.34),transparent_32%),radial-gradient(circle_at_86%_0%,rgba(251,146,60,0.26),transparent_30%),linear-gradient(180deg,#FFF7EB_0%,#FDBA74_48%,#7C2D12_100%)]" />
-      <header className="macho-game-nav sticky top-0 z-50 flex h-14 items-center justify-between border-b-4 border-[#7C2D12] bg-[#1F120A]/95 px-3 text-[#FFE7C2] shadow-2xl backdrop-blur md:px-5">
+      <header className="macho-game-nav relative z-50 flex h-14 shrink-0 items-center justify-between border-b-4 border-[#7C2D12] bg-[#1F120A]/95 px-3 text-[#FFE7C2] shadow-2xl backdrop-blur md:px-5">
         <button
           type="button"
           onPointerDown={(event) => event.stopPropagation()}
@@ -3900,7 +3902,7 @@ export function MachoClickerPage() {
                   <div className="macho-ui-label text-[#FFD58A]">Legacy Ascension</div>
                   <h2 id="ascension-title" className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">仕上げ直し</h2>
                   <p className="mt-2 max-w-xl text-sm font-bold leading-6 text-white/80">
-                    現在の設備をリセットして、次の周回を永久的に強くします。周回するほど、より速くジムを育てられます。
+                    設備を最初から育て直す代わりに、次の周回から筋肉ポイントの生産が永久に強くなります。
                   </p>
                 </div>
                 <button
@@ -3930,21 +3932,15 @@ export function MachoClickerPage() {
             <div className="grid gap-4 p-5 sm:grid-cols-2 sm:p-7">
               <div className="rounded-2xl border border-emerald-200/20 bg-emerald-950/35 p-4">
                 <div className="text-sm font-black text-emerald-200">残るもの</div>
-                <ul className="mt-3 space-y-2 text-sm font-bold leading-5 text-white/80">
-                  <li>永久倍率、マチョ田の遺産</li>
-                  <li>筋肉結晶、設備レベル、体型進化</li>
-                  <li>実績、ゴールデン履歴、累計筋肉ポイント</li>
-                  <li>今日選んだトレーニングとサプリ</li>
-                </ul>
+                <p className="mt-3 text-sm font-bold leading-6 text-white/80">
+                  永久倍率、体型進化、実績、累計筋肉ポイントはそのまま残ります。
+                </p>
               </div>
               <div className="rounded-2xl border border-rose-200/20 bg-rose-950/30 p-4">
-                <div className="text-sm font-black text-rose-200">リセットされるもの</div>
-                <ul className="mt-3 space-y-2 text-sm font-bold leading-5 text-white/80">
-                  <li>所持筋肉ポイントと設備の所持数</li>
-                  <li>通常アップグレードと一時バフ</li>
-                  <li>手動クリック数と現在の連打コンボ</li>
-                  <li>開始時ポイントは遺産で増やせます</li>
-                </ul>
+                <div className="text-sm font-black text-rose-200">最初からになるもの</div>
+                <p className="mt-3 text-sm font-bold leading-6 text-white/80">
+                  所持筋肉ポイント、設備、通常アップグレード、クリック数がリセットされます。
+                </p>
               </div>
             </div>
             <div className="flex flex-col-reverse gap-3 border-t border-white/10 bg-black/20 p-5 sm:flex-row sm:items-center sm:justify-between sm:px-7">
@@ -3972,17 +3968,17 @@ export function MachoClickerPage() {
         </div>
       ) : null}
 
-      <main className="relative z-10 px-0 pb-0 pt-0">
-        <div className="flex w-full max-w-none flex-col gap-0">
-          <section className="macho-game-topbar macho-game-panel overflow-hidden border-b-4 border-[#7C2D12] bg-[#7C2D12] text-white shadow-2xl md:border-x-0 md:border-t-0">
+      <main className="relative z-10 flex min-h-0 flex-1 px-0 pb-0 pt-0">
+        <div className="flex min-h-0 w-full max-w-none flex-1 flex-col gap-0">
+          <section className="macho-game-topbar macho-game-panel shrink-0 overflow-hidden border-b-4 border-[#7C2D12] bg-[#7C2D12] text-white shadow-2xl md:border-x-0 md:border-t-0">
             <div className="grid gap-px bg-[#FED7AA] sm:grid-cols-[minmax(0,0.8fr)_minmax(18rem,1.2fr)] lg:grid-cols-[320px_minmax(0,1fr)_280px]">
-              <div className="bg-[#9A3412] px-5 py-4">
+              <div className="hidden bg-[#9A3412] px-5 py-4 sm:block">
                 <h1 className="text-3xl font-black tracking-tight text-[#FFE7C2]">マチョクリッカー</h1>
                 <div className="mt-1 text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">
                   {bodyStage.label}
                 </div>
               </div>
-              <div className="bg-[#9A3412] px-5 py-4">
+              <div className="bg-[#9A3412] px-5 py-2 sm:py-4">
                 <div className="grid grid-cols-2 gap-3 text-center">
                   <div>
                     <div className="macho-ui-label">筋肉ポイント</div>
@@ -4041,7 +4037,7 @@ export function MachoClickerPage() {
           </section>
 
           <nav
-            className="macho-mobile-tabs sticky top-14 z-40 grid grid-cols-3 gap-2 border-b-4 border-[#7C2D12] bg-[#2A140B] p-2 shadow-2xl md:hidden"
+            className="macho-mobile-tabs relative z-40 grid shrink-0 grid-cols-3 gap-2 border-b-4 border-[#7C2D12] bg-[#2A140B] p-2 shadow-2xl md:hidden"
             aria-label="マチョクリッカー画面切り替え"
           >
             {mobilePanels.map((panel) => (
@@ -4060,9 +4056,9 @@ export function MachoClickerPage() {
             ))}
           </nav>
 
-          <section className="macho-game-panel macho-main-grid grid min-h-[calc(100dvh-15rem)] overflow-hidden border-b-4 border-[#7C2D12] bg-[#7C2D12] shadow-2xl md:h-[calc(100dvh-12.75rem)] md:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)] md:border-b-0 xl:grid-cols-[minmax(620px,1.3fr)_minmax(260px,0.7fr)_360px] 2xl:grid-cols-[minmax(780px,1040px)_minmax(320px,1fr)_400px]">
+          <section className="macho-game-panel macho-main-grid grid min-h-0 flex-1 overflow-hidden bg-[#7C2D12] shadow-2xl md:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)] xl:grid-cols-[minmax(620px,1.3fr)_minmax(260px,0.7fr)_360px] 2xl:grid-cols-[minmax(780px,1040px)_minmax(320px,1fr)_400px]">
             <aside
-              className={`macho-click-stage relative min-h-[calc(100dvh-15rem)] flex-col items-center justify-between overflow-hidden border-b-4 border-[#7C2D12] bg-[#451A03] p-4 text-center sm:p-5 md:col-start-1 md:row-span-2 md:flex md:min-h-0 md:border-b-0 md:border-r-4 xl:col-auto xl:row-auto xl:flex xl:min-h-0 xl:border-b-0 xl:border-r-4 ${
+              className={`macho-click-stage relative h-full min-h-0 flex-col items-center justify-between overflow-hidden bg-[#451A03] p-4 text-center sm:p-5 md:col-start-1 md:row-span-2 md:flex md:border-r-4 xl:col-auto xl:row-auto xl:flex xl:border-r-4 ${
                 mobilePanel === "click" ? "flex" : "hidden"
               }`}
             >
@@ -4122,7 +4118,7 @@ export function MachoClickerPage() {
               </div>
               ) : null}
               <div
-                className={`macho-paper-card relative z-10 w-full rounded-2xl px-4 py-4 text-[#7C2D12] ${
+                className={`macho-paper-card relative z-10 hidden w-full rounded-2xl px-4 py-4 text-[#7C2D12] md:block ${
                   purchasePulse ? "macho-counter-purchase" : ""
                 }`}
               >
@@ -4352,7 +4348,7 @@ export function MachoClickerPage() {
             </aside>
 
             <section
-              className={`relative min-h-[calc(100dvh-15rem)] overflow-hidden border-b-4 border-[#7C2D12] bg-[linear-gradient(180deg,#FFF0D5_0%,#FDBA74_48%,#C2410C_100%)] md:col-start-2 md:row-start-1 md:block md:min-h-0 xl:col-auto xl:row-auto xl:block xl:min-h-0 xl:border-b-0 xl:border-r-4 ${
+              className={`relative h-full min-h-0 overflow-hidden bg-[linear-gradient(180deg,#FFF0D5_0%,#FDBA74_48%,#C2410C_100%)] md:col-start-2 md:row-start-1 md:block xl:col-auto xl:row-auto xl:block xl:border-r-4 ${
                 mobilePanel === "gym" ? "block" : "hidden"
               }`}
             >
@@ -4488,8 +4484,8 @@ export function MachoClickerPage() {
               ) : null}
             </section>
 
-            <aside className={`${mobilePanel === "shop" ? "block" : "hidden"} macho-shop-shelf text-[#7C2D12] md:col-start-2 md:row-start-2 md:block xl:col-auto xl:row-auto xl:block xl:min-h-0`}>
-              <div className="max-h-none overflow-y-visible p-4 md:max-h-full md:overflow-y-auto xl:sticky xl:top-0 xl:max-h-[calc(100dvh-12.75rem)]">
+            <aside className={`${mobilePanel === "shop" ? "block" : "hidden"} macho-shop-shelf h-full min-h-0 overflow-hidden text-[#7C2D12] md:col-start-2 md:row-start-2 md:block xl:col-auto xl:row-auto xl:block`}>
+              <div className="h-full overflow-y-auto p-4">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <h2 className="text-2xl font-black text-[#7C2D12]">ショップ</h2>
                   <button

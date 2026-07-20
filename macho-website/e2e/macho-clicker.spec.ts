@@ -21,6 +21,23 @@ const expectNoPageOverflow = async (page: Page) => {
   expect(dimensions.document).toBeLessThanOrEqual(dimensions.viewport + 1);
 };
 
+const expectGameFillsViewport = async (page: Page) => {
+  const dimensions = await page.evaluate(() => {
+    const shell = document.querySelector<HTMLElement>(".macho-game-shell");
+    const mainGrid = document.querySelector<HTMLElement>(".macho-main-grid");
+    return {
+      viewportHeight: window.innerHeight,
+      documentHeight: document.documentElement.scrollHeight,
+      shellBottom: shell?.getBoundingClientRect().bottom ?? 0,
+      mainGridBottom: mainGrid?.getBoundingClientRect().bottom ?? 0,
+    };
+  });
+
+  expect(dimensions.documentHeight).toBeLessThanOrEqual(dimensions.viewportHeight + 1);
+  expect(Math.abs(dimensions.shellBottom - dimensions.viewportHeight)).toBeLessThanOrEqual(1);
+  expect(Math.abs(dimensions.mainGridBottom - dimensions.viewportHeight)).toBeLessThanOrEqual(1);
+};
+
 for (const viewport of [
   { name: "desktop-1440", width: 1440, height: 900 },
   { name: "desktop-1920", width: 1920, height: 1080 },
@@ -30,9 +47,41 @@ for (const viewport of [
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await openFreshGame(page);
     await expectNoPageOverflow(page);
+    await expectGameFillsViewport(page);
+    if (viewport.name === "mobile-390") {
+      const characterBox = await page.getByRole("button", { name: "マチョ田をクリック" }).boundingBox();
+      expect(characterBox).not.toBeNull();
+      expect((characterBox?.y ?? 0) + (characterBox?.height ?? 0)).toBeLessThanOrEqual(viewport.height + 1);
+    }
     await page.screenshot({ path: `test-results/visual/${viewport.name}.png`, fullPage: true });
   });
 }
+
+test("late-game save keeps the simple core screen", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openFreshGame(page);
+  await expect
+    .poll(async () => page.evaluate(() => Boolean(localStorage.getItem("machoda:macho-clicker:v3"))))
+    .toBe(true);
+  await page.evaluate(() => {
+    const key = "machoda:macho-clicker:v3";
+    const saved = JSON.parse(localStorage.getItem(key) ?? "{}");
+    localStorage.setItem(key, JSON.stringify({
+      ...saved,
+      muscle: 1_000_000_000_000,
+      totalMuscle: 1_000_000_000_000,
+      prestigeLevel: 0,
+    }));
+  });
+  await page.reload({ waitUntil: "domcontentloaded" });
+
+  await expect(page.getByRole("button", { name: /仕上げ直し/ })).toBeVisible();
+  await expect(page.getByText("概要", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("日課", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("結晶研究", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("設備Lv", { exact: true })).toHaveCount(0);
+  await expectGameFillsViewport(page);
+});
 
 test("desktop: click, purchase, settings and save", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
