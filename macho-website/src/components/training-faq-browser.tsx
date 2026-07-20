@@ -15,7 +15,6 @@ type FaqSection = {
 };
 
 const ALL_CATEGORIES = "すべて";
-const QUICK_SEARCHES = ["初心者", "プロテイン", "クレアチン", "ダイエット", "腰が痛い"];
 
 const normalizeText = (value: string) =>
   value
@@ -172,25 +171,6 @@ export function TrainingFaqBrowser({ sections }: { sections: FaqSection[] }) {
             </button>
           ) : null}
         </div>
-
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-          <span className="mr-1 text-slate-500">よく検索される質問</span>
-          {QUICK_SEARCHES.map((keyword) => (
-            <button
-              key={keyword}
-              type="button"
-              onClick={() => {
-                setQuery(keyword);
-                setSelectedCategory(ALL_CATEGORIES);
-              }}
-              className="rounded-full border border-[#F6C982] bg-white px-3 py-1.5 font-semibold text-[#9A3412] transition hover:border-[#FF8A23] hover:bg-[#FFF7ED]"
-            >
-              {keyword}
-            </button>
-          ))}
-        </div>
-
-        <p className="mt-2 text-xs text-slate-500">ひらがな・カタカナのどちらでも検索できます。</p>
 
         <div className="mt-4 flex flex-wrap gap-2" aria-label="カテゴリで絞り込む">
           {[ALL_CATEGORIES, ...sections.map((section) => section.title)].map((category) => {
