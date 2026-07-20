@@ -7,6 +7,8 @@ import { Lightbulb } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { buildUrl, toJsonLd } from "@/lib/seo";
 
+import styles from "./blog-detail.module.css";
+
 const DEFAULT_BASE_URL = "https://macho.microcms.io/api/v1";
 const baseUrl = process.env.MICROCMS_BASE_URL ?? DEFAULT_BASE_URL;
 const MICROCMS_API_KEY = process.env.MICROCMS_API_KEY ?? "";
@@ -353,7 +355,7 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ id:
 
           <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: articleStructuredData }} />
           <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbStructuredData }} />
-          <article className={hasConversationBlocks ? "space-y-8" : "blog-content"}>
+          <article className={`${hasConversationBlocks ? "space-y-8" : "blog-content"} ${styles.blogBody}`}>
             {hasConversationBlocks ? (
               blog.bodyBlocks.map((block, index) => {
                 if (!hasText(block.text)) return null;

@@ -1,0 +1,42 @@
+.blogBody :global(.today-insight) {
+  position: relative;
+  display: block;
+  margin: 1.5rem 0;
+  padding: 4.25rem 1.25rem 1.25rem;
+  overflow: hidden;
+  color: #374151;
+  line-height: 1.85;
+  border: 1px solid #f6b863;
+  border-radius: 1.5rem;
+  background: linear-gradient(135deg, #fff9ed 0%, #fff4da 55%, #ffebc7 100%);
+  box-shadow: 0 14px 32px rgb(154 52 18 / 10%);
+}
+
+.blogBody :global(.today-insight)::before {
+  content: "今日の気づき";
+  position: absolute;
+  inset: 0 0 auto;
+  display: flex;
+  min-height: 3.25rem;
+  align-items: center;
+  padding: 0.75rem 1.25rem 0.75rem 3.75rem;
+  color: #7c2d12;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid #f6c982;
+  background:
+    radial-gradient(circle at 2rem 50%, #ff8a23 0 0.95rem, transparent 1rem),
+    linear-gradient(rgb(255 255 255 / 62%), rgb(255 255 255 / 62%));
+}
+
+@media (min-width: 640px) {
+  .blogBody :global(.today-insight) {
+    padding: 4.5rem 1.5rem 1.5rem;
+  }
+
+  .blogBody :global(.today-insight)::before {
+    padding-inline: 4rem 1.5rem;
+    font-size: 1.15rem;
+  }
+}
