@@ -4,9 +4,12 @@ import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties, MouseEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { usePressActivation } from "@/hooks/use-press-activation";
 
 const finalCharacterImageSrc = "/picture/man.png";
 const STORAGE_KEY = "machoda:macho-clicker:v3";
+const PREFERENCES_KEY = "machoda:macho-clicker:preferences:v1";
+const ONBOARDING_KEY = "machoda:macho-clicker:onboarding:v1";
 const SAVE_INTERVAL_MS = 1000;
 const GAME_TICK_MS = 50;
 const NUMBER_ANIMATION_MS = 420;
@@ -38,6 +41,8 @@ const FOCUS_MAX_CHARGES = 3;
 const FOCUS_RECHARGE_MS = 30 * 60 * 1000;
 const FOCUS_DURATION_MS = 5 * 60 * 1000;
 const FOCUS_PRODUCTION_MULTIPLIER = 1.5;
+const FLOATING_GAIN_LIMIT = 28;
+const SPARK_LIMIT = 96;
 
 type UpgradeKey =
   | "pushUp"
@@ -132,24 +137,14 @@ type RankingEntry = {
   createdAt: string;
 };
 
-type FloatingGain = {
-  id: number;
-  x: number;
-  y: number;
-  value: number;
-};
-
 type TooltipPosition = {
   x: number;
   y: number;
 };
 
-type Spark = {
-  id: number;
-  x: number;
-  y: number;
-  size: number;
-  rotate: number;
+type GamePreferences = {
+  soundEnabled: boolean;
+  reducedEffects: boolean;
 };
 
 type PurchaseFlight = {
@@ -163,6 +158,7 @@ type PurchaseFlight = {
 
 type MobilePanel = "click" | "gym" | "shop" | "stats";
 type DesktopDetailPanel = "overview" | "daily" | "achievements" | "legacy" | "levels" | "stats" | "save";
+type GameOverlay = "menu" | "achievements" | "community" | null;
 
 type SoundType = "click" | "buy" | "blocked" | "achievement" | "goldenSpawn" | "goldenCollect";
 
@@ -258,18 +254,6 @@ type BodyPartKey = "chest" | "back" | "legs" | "shoulders" | "arms" | "abs";
 type TrainingPlanId = "chest" | "back" | "legs" | "shoulders" | "arms" | "abs" | "off";
 type SupplementId = "protein" | "creatine" | "preworkout";
 type DailyConditionId = "normal" | "drunk" | "hangover";
-
-type BodyPartDefinition = {
-  key: BodyPartKey;
-  label: string;
-  mainUpgrades: UpgradeKey[];
-  accent: string;
-};
-
-type BodyPartProgress = BodyPartDefinition & {
-  level: number;
-  progress: number;
-};
 
 type TrainingPlan = {
   id: TrainingPlanId;
@@ -567,45 +551,6 @@ const upgrades: Upgrade[] = [
 ];
 
 const visualUpgrades = upgrades.filter((upgrade) => upgrade.key !== "pushUp");
-
-const bodyPartDefinitions: BodyPartDefinition[] = [
-  {
-    key: "chest",
-    label: "胸",
-    mainUpgrades: ["benchPress", "trainer", "finalMacho"],
-    accent: "from-rose-300 to-red-600",
-  },
-  {
-    key: "back",
-    label: "背中",
-    mainUpgrades: ["dumbbell", "gym", "machoPortal"],
-    accent: "from-sky-300 to-blue-700",
-  },
-  {
-    key: "legs",
-    label: "脚",
-    mainUpgrades: ["chicken", "antiGravityGym", "timeGym"],
-    accent: "from-emerald-300 to-green-700",
-  },
-  {
-    key: "shoulders",
-    label: "肩",
-    mainUpgrades: ["proteinPrism", "chanceMachine", "fractalMuscle"],
-    accent: "from-violet-300 to-purple-700",
-  },
-  {
-    key: "arms",
-    label: "腕",
-    mainUpgrades: ["pushUp", "dumbbell", "muscleConsole"],
-    accent: "from-amber-300 to-orange-700",
-  },
-  {
-    key: "abs",
-    label: "腹筋",
-    mainUpgrades: ["abRoller", "mealPrepLab", "cortexTrainer"],
-    accent: "from-cyan-200 to-teal-700",
-  },
-];
 
 const trainingPlans: TrainingPlan[] = [
   {
@@ -1042,6 +987,8 @@ const buildingPowerUpgrades: PowerUpgrade[] = upgrades.flatMap((upgrade, upgrade
 );
 
 const powerUpgrades: PowerUpgrade[] = [...manualPowerUpgrades, ...buildingPowerUpgrades];
+const isV2CorePowerUpgrade = (powerUp: PowerUpgrade) =>
+  !powerUp.achievementSupportRate && !powerUp.id.startsWith("season-");
 
 const achievementCategories = ["累計", "クリック", "設備数", "建物別", "ゴールデン", "仕上げ直し", "隠し"] as const;
 
@@ -1703,9 +1650,6 @@ const getCrystalGrowMs = (state: GameState) => {
   return state.crystalResearch.includes("crystal-incubator") ? legacyMs * 0.9 : legacyMs;
 };
 
-const getCrystalResearchProductionMultiplier = (state: GameState) =>
-  state.crystalResearch.includes("crystal-training-log") ? 1.05 : 1;
-
 const getGoldenSpawnMinMs = (state: GameState) => GOLDEN_SPAWN_MIN_MS * getGoldenSpawnMultiplier(state);
 
 const getGoldenSpawnMaxMs = (state: GameState) => GOLDEN_SPAWN_MAX_MS * getGoldenSpawnMultiplier(state);
@@ -1769,7 +1713,9 @@ const getPrestigeMultiplier = (state: GameState) => Math.min(MAX_PRESTIGE_MULTIP
 
 const getFrenzyMultiplier = (state: GameState) =>
   getActiveBuffs(state).reduce(
-    (total, buff) => (buff.type === "frenzy" || buff.type === "focus" ? total * buff.multiplier : total),
+    // V2 keeps only golden-event frenzy in the core economy. The old focus
+    // minigame remains in save data but no longer changes production.
+    (total, buff) => (buff.type === "frenzy" ? total * buff.multiplier : total),
     1
   );
 
@@ -1927,10 +1873,9 @@ const getSeasonalTheme = (event: SeasonalEvent): SeasonalTheme => {
 };
 
 const mobilePanels: { key: MobilePanel; label: string }[] = [
-  { key: "click", label: "クリック" },
+  { key: "click", label: "鍛える" },
+  { key: "gym", label: "設備" },
   { key: "shop", label: "ショップ" },
-  { key: "gym", label: "ジム" },
-  { key: "stats", label: "統計" },
 ];
 
 const desktopDetailPanels: { key: DesktopDetailPanel; label: string; icon: string }[] = [
@@ -2012,37 +1957,28 @@ const getDumbbellOrbitItems = (count: number) => {
 
 const getClickPower = (state: GameState, pendingPowerUp?: PowerUpgrade) => {
   const baseClick = powerUpgrades.reduce((total, powerUp) => {
-    if (!state.purchasedPowerUps.includes(powerUp.id)) return total;
+    if (!isV2CorePowerUpgrade(powerUp) || !state.purchasedPowerUps.includes(powerUp.id)) return total;
     return total + (powerUp.clickBonus ?? 0);
   }, 1);
   const clickMultiplier = powerUpgrades.reduce((total, powerUp) => {
-    if (!state.purchasedPowerUps.includes(powerUp.id)) return total;
+    if (!isV2CorePowerUpgrade(powerUp) || !state.purchasedPowerUps.includes(powerUp.id)) return total;
     return total * (powerUp.clickMultiplier ?? 1);
   }, 1);
   const cpsClickBonus = powerUpgrades.reduce((total, powerUp) => {
-    if (!state.purchasedPowerUps.includes(powerUp.id)) return total;
+    if (!isV2CorePowerUpgrade(powerUp) || !state.purchasedPowerUps.includes(powerUp.id)) return total;
     return total + getPerSecond(state) * (powerUp.clickCpsPercent ?? 0);
   }, 0);
 
-  const currentClick =
-    (baseClick * clickMultiplier + cpsClickBonus) *
-    getSupplementClickMultiplier(state) *
-    getDailyConditionClickMultiplier(state) *
-    (getLimitedEvent()?.clickMultiplier ?? 1) *
-    getClickFrenzyMultiplier(state);
+  // Daily condition, supplements and limited events are paused in V2 until
+  // their choices and costs are redesigned around the core loop.
+  const currentClick = (baseClick * clickMultiplier + cpsClickBonus) * getClickFrenzyMultiplier(state);
   if (!pendingPowerUp || state.purchasedPowerUps.includes(pendingPowerUp.id)) return currentClick;
 
   const pendingBase = baseClick + (pendingPowerUp.clickBonus ?? 0);
   const pendingMultiplier = clickMultiplier * (pendingPowerUp.clickMultiplier ?? 1);
   const pendingCpsBonus = cpsClickBonus + getPerSecond(state) * (pendingPowerUp.clickCpsPercent ?? 0);
 
-  return (
-    (pendingBase * pendingMultiplier + pendingCpsBonus) *
-    getSupplementClickMultiplier(state) *
-    getDailyConditionClickMultiplier(state) *
-    (getLimitedEvent()?.clickMultiplier ?? 1) *
-    getClickFrenzyMultiplier(state)
-  );
+  return (pendingBase * pendingMultiplier + pendingCpsBonus) * getClickFrenzyMultiplier(state);
 };
 
 const getBuildingMultiplier = (state: GameState, key: UpgradeKey) =>
@@ -2063,7 +1999,6 @@ const getBuildingMultiplierWithPendingPowerUp = (state: GameState, key: UpgradeK
 const getBuildingUnitProduction = (state: GameState, upgrade: Upgrade, pendingPowerUp?: PowerUpgrade) =>
   (upgrade.perSecondBonus ?? 0) *
   getBuildingMultiplierWithPendingPowerUp(state, upgrade.key, pendingPowerUp) *
-  getBuildingLevelMultiplier(state, upgrade.key) *
   getBuildingFrenzyMultiplier(state, upgrade.key);
 
 const getBuildingTotalProduction = (state: GameState, upgrade: Upgrade, pendingPowerUp?: PowerUpgrade) =>
@@ -2097,7 +2032,7 @@ const getAchievementSupportMultiplier = (state: GameState) => {
 
 const getPowerUpgradeProductionMultiplier = (state: GameState) =>
   powerUpgrades.reduce((total, powerUp) => {
-    if (!state.purchasedPowerUps.includes(powerUp.id)) return total;
+    if (!isV2CorePowerUpgrade(powerUp) || !state.purchasedPowerUps.includes(powerUp.id)) return total;
     return total * (powerUp.productionMultiplier ?? 1);
   }, 1);
 
@@ -2107,8 +2042,6 @@ const getActiveTrainingPlan = (state: GameState) => {
   if (!state.dailyTrainingPlanId || state.dailyTrainingDate !== getTodayKey()) return null;
   return trainingPlans.find((plan) => plan.id === state.dailyTrainingPlanId) ?? null;
 };
-
-const getDailyTrainingMultiplier = (state: GameState) => getActiveTrainingPlan(state)?.multiplier ?? 1;
 
 const getActiveSupplements = (state: GameState) => {
   if (state.dailySupplementDate !== getTodayKey()) return [];
@@ -2120,16 +2053,6 @@ const getActiveDailyCondition = (state: GameState) => {
   return dailyConditionDefinitions.find((condition) => condition.id === state.dailyConditionId) ?? null;
 };
 
-const getSupplementProductionMultiplier = (state: GameState) =>
-  getActiveSupplements(state).reduce((total, supplement) => total * supplement.productionMultiplier, 1);
-
-const getSupplementClickMultiplier = (state: GameState) =>
-  getActiveSupplements(state).reduce((total, supplement) => total * supplement.clickMultiplier, 1);
-
-const getDailyConditionProductionMultiplier = (state: GameState) => getActiveDailyCondition(state)?.productionMultiplier ?? 1;
-
-const getDailyConditionClickMultiplier = (state: GameState) => getActiveDailyCondition(state)?.clickMultiplier ?? 1;
-
 const getBasePerSecond = (state: GameState) =>
   upgrades.reduce((total, upgrade) => total + getBuildingUnitProduction(state, upgrade) * state.upgrades[upgrade.key], 0);
 
@@ -2138,14 +2061,7 @@ const getPerSecond = (state: GameState) =>
   getPrestigeMultiplier(state) *
   getLegacyProductionMultiplier(state) *
   getFrenzyMultiplier(state) *
-  getAchievementSupportMultiplier(state) *
-  getPowerUpgradeProductionMultiplier(state) *
-  getCrystalResearchProductionMultiplier(state) *
-  getDailyTrainingMultiplier(state) *
-  getSupplementProductionMultiplier(state) *
-  getDailyConditionProductionMultiplier(state) *
-  getSeasonalEvent().multiplier *
-  (getLimitedEvent()?.productionMultiplier ?? 1);
+  getPowerUpgradeProductionMultiplier(state);
 
 const getOwnedUpgradeCount = (upgradeCounts: Record<UpgradeKey, number>) =>
   Object.values(upgradeCounts).reduce((total, level) => total + level, 0);
@@ -2180,60 +2096,43 @@ const getNextTitleGoal = (totalMuscle: number) => {
   return goals.find((goal) => totalMuscle < goal.value) ?? goals[goals.length - 1];
 };
 
-const getBodyPartProgress = (state: GameState): BodyPartProgress[] =>
-  bodyPartDefinitions.map((part) => {
-    const activeTrainingPlan = getActiveTrainingPlan(state);
-    const trainingBonus = activeTrainingPlan?.targetParts.includes(part.key) ? 8 : 0;
-    const rawScore = part.mainUpgrades.reduce((total, key, index) => {
-      const countScore = state.upgrades[key] * (index === 0 ? 1 : 1.35);
-      const levelScore = (state.buildingLevels[key] ?? 0) * 3;
-      return total + countScore + levelScore;
-    }, 0);
-    const titleScore = Math.log10(Math.max(1, state.totalMuscle)) * 2;
-    const score = rawScore + titleScore + trainingBonus;
-    const level = Math.max(1, Math.min(10, Math.floor(score / 18) + 1));
-    const progress = Math.min(100, Math.max(0, ((score % 18) / 18) * 100));
-
-    return {
-      ...part,
-      level,
-      progress,
-    };
-  });
-
 const bodyEvolutionStages = [
   {
     stage: 0,
-    label: "だらしないメタボ期",
+    label: "生活崩壊期",
     requirement: 0,
-    imageSrc: "/picture/macho-evolution/stage-0-metabo.png",
+    imageSrc: "/picture/macho-evolution/v2/stage-00-life-collapse.png",
+    change: "ここからトレーニング生活が始まる",
     ring: "border-white/60 bg-[#FFE7C2]",
     scale: 0.94,
     aura: "opacity-10",
   },
   {
     stage: 1,
-    label: "動き始めたメタボ",
+    label: "入会決意",
     requirement: 500,
-    imageSrc: "/picture/macho-evolution/stage-0-metabo.png",
+    imageSrc: "/picture/macho-evolution/v2/stage-01-gym-decision.png",
+    change: "ジムバッグを持ち、入会を決意する",
     ring: "border-white/70 bg-[#FFD89A]",
     scale: 0.96,
     aura: "opacity-25",
   },
   {
     stage: 2,
-    label: "メタボ脱出中",
+    label: "初トレーニング",
     requirement: 5_000,
-    imageSrc: "/picture/macho-evolution/stage-1-training.png",
+    imageSrc: "/picture/macho-evolution/v2/stage-02-first-training.png",
+    change: "トレーニングウェアへ着替える",
     ring: "border-white/70 bg-[#FFC46F]",
     scale: 0.98,
     aura: "opacity-40",
   },
   {
     stage: 3,
-    label: "筋肉が見えてきた",
+    label: "三日坊主突破",
     requirement: 25_000,
-    imageSrc: "/picture/macho-evolution/stage-1-training.png",
+    imageSrc: "/picture/macho-evolution/v2/stage-03-habit-formed.png",
+    change: "姿勢と清潔感が少し改善する",
     ring: "border-white/80 bg-[#FFB45D]",
     scale: 1,
     aura: "opacity-48",
@@ -2243,6 +2142,7 @@ const bodyEvolutionStages = [
     label: "細マッチョ期",
     requirement: 50_000,
     imageSrc: "/picture/macho-evolution/stage-2-athletic.png",
+    change: "腹部が締まり、胸と腕に輪郭が出る",
     ring: "border-white/80 bg-[#FFB45D]",
     scale: 1.01,
     aura: "opacity-55",
@@ -2252,6 +2152,7 @@ const bodyEvolutionStages = [
     label: "筋トレ中級マッチョ",
     requirement: 100_000,
     imageSrc: "/picture/macho-evolution/stage-2-athletic.png",
+    change: "肩幅と全身の厚みが増える",
     ring: "border-orange-100 bg-[#FFA33D]",
     scale: 1.03,
     aura: "opacity-66",
@@ -2261,6 +2162,7 @@ const bodyEvolutionStages = [
     label: "ゴリマッチョ目前",
     requirement: 250_000,
     imageSrc: "/picture/macho-evolution/stage-3-muscular.png",
+    change: "胸・肩・脚が大きく発達する",
     ring: "border-orange-100 bg-[#FF9D2E]",
     scale: 1.05,
     aura: "opacity-75",
@@ -2270,6 +2172,7 @@ const bodyEvolutionStages = [
     label: "マチョ田級",
     requirement: 1_000_000,
     imageSrc: finalCharacterImageSrc,
+    change: "専用ウェアと伝説の風格を得る",
     ring: "border-red-100 bg-[#FF8A23]",
     scale: 1.08,
     aura: "opacity-84",
@@ -2279,6 +2182,7 @@ const bodyEvolutionStages = [
     label: "完成形マチョ",
     requirement: 10_000_000,
     imageSrc: finalCharacterImageSrc,
+    change: "マチョ田の最終形態へ到達する",
     ring: "border-red-100 bg-[#FF6A1A]",
     scale: 1.12,
     aura: "opacity-95",
@@ -2388,6 +2292,9 @@ const getPowerUpgradeSummary = (powerUp: PowerUpgrade, state: GameState) => {
 
 const getNextShopGoal = (state: GameState) =>
   upgrades
+    .filter(
+      (upgrade, index) => index === 0 || state.upgrades[upgrade.key] > 0 || state.totalMuscle >= upgrade.baseCost
+    )
     .map((upgrade) => ({
       upgrade,
       cost: getUpgradeCost(upgrade, state.upgrades[upgrade.key]),
@@ -2646,11 +2553,7 @@ export function MachoClickerPage() {
   const [nickname, setNickname] = useState("");
   const [rankings, setRankings] = useState<RankingEntry[]>([]);
   const [rankingMessage, setRankingMessage] = useState("");
-  const [floatingGains, setFloatingGains] = useState<FloatingGain[]>([]);
-  const [sparks, setSparks] = useState<Spark[]>([]);
   const [combo, setCombo] = useState(0);
-  const [lastClickAt, setLastClickAt] = useState(0);
-  const [clickBurst, setClickBurst] = useState(false);
   const [purchaseFlash, setPurchaseFlash] = useState<string | null>(null);
   const [purchasePulse, setPurchasePulse] = useState(false);
   const [purchaseFlights, setPurchaseFlights] = useState<PurchaseFlight[]>([]);
@@ -2667,7 +2570,9 @@ export function MachoClickerPage() {
   const [recentlyPurchasedKey, setRecentlyPurchasedKey] = useState<UpgradeKey | null>(null);
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("click");
   const [desktopDetailPanel, setDesktopDetailPanel] = useState<DesktopDetailPanel>("overview");
-  const [soundEnabled, setSoundEnabled] = useState(false);
+  const [gameOverlay, setGameOverlay] = useState<GameOverlay>(null);
+  const [onboardingComplete, setOnboardingComplete] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const [bgmVolume, setBgmVolume] = useState(0.35);
   const [soundVolume, setSoundVolume] = useState(0.46);
   const [notificationVolume, setNotificationVolume] = useState(0.52);
@@ -2685,10 +2590,25 @@ export function MachoClickerPage() {
   const stateRef = useRef<GameState>(initialState);
   const lastTickAtRef = useRef(Date.now());
   const soundRefs = useRef<Partial<Record<SoundType, HTMLAudioElement>>>({});
+  const clickSoundPoolRef = useRef<HTMLAudioElement[]>([]);
+  const clickSoundPoolIndexRef = useRef(0);
   const lastSoundAtRef = useRef<Partial<Record<SoundType, number>>>({});
+  const characterButtonRef = useRef<HTMLButtonElement>(null);
+  const clickRippleRef = useRef<HTMLSpanElement>(null);
+  const comboRef = useRef(0);
+  const lastClickAtRef = useRef(0);
+  const hasPlayerInteractedRef = useRef(false);
+  const pendingManualClicksRef = useRef({ gain: 0, count: 0 });
+  const clickAnimationFrameRef = useRef<number | null>(null);
+  const touchGainSideRef = useRef(0);
+  const floatingGainPoolRef = useRef<Array<HTMLDivElement | null>>([]);
+  const sparkPoolRef = useRef<Array<HTMLDivElement | null>>([]);
+  const nextFloatingGainSlotRef = useRef(0);
+  const nextSparkSlotRef = useRef(0);
   const clickPower = useMemo(() => getClickPower(state), [state]);
+  const clickPowerRef = useRef(clickPower);
+  clickPowerRef.current = clickPower;
   const perSecond = useMemo(() => getPerSecond(state), [state]);
-  const basePerSecond = useMemo(() => getBasePerSecond(state), [state]);
   const activeBuffs = getActiveBuffs(state);
   const activeBuildingFrenzyTargets = activeBuffs.flatMap((buff) =>
     buff.type === "buildingFrenzy" && buff.target ? [buff.target] : []
@@ -2709,18 +2629,19 @@ export function MachoClickerPage() {
   const nextGoal = getNextTitleGoal(state.totalMuscle);
   const unlockedBodyEvolutionStage = getUnlockedBodyEvolutionStage(state.totalMuscle);
   const canBodyEvolve = state.bodyEvolutionStage < unlockedBodyEvolutionStage;
-  const nextBodyStage = canBodyEvolve ? getBodyStage(state.bodyEvolutionStage + 1) : null;
-  const bodyPartProgress = useMemo(() => getBodyPartProgress(state), [state]);
-  const bodyPartAverageLevel = Math.round(
-    bodyPartProgress.reduce((total, part) => total + part.level, 0) / Math.max(1, bodyPartProgress.length)
-  );
+  const upcomingBodyStage =
+    state.bodyEvolutionStage < bodyEvolutionStages.length - 1 ? getBodyStage(state.bodyEvolutionStage + 1) : null;
+  const nextBodyStage = canBodyEvolve ? upcomingBodyStage : null;
   const titleProgress = Math.min(100, Math.max(0, (state.totalMuscle / nextGoal.value) * 100));
   const ownedUpgradeCount = Object.values(state.upgrades).reduce((total, level) => total + level, 0);
   const totalBuildingLevel = Object.values(state.buildingLevels).reduce((total, level) => total + level, 0);
+  const advancedSystemsUnlocked = state.prestigeLevel > 0 || state.totalMuscle >= 1_000_000_000_000;
+  const legacyPanelsVisible = state.totalMuscle < 0;
   const focusGymAvailable = totalBuildingLevel >= 1;
   const focusGymUnlocked = state.crystalResearch.includes("crystal-focus-room");
   const activeFocusBuff = activeBuffs.find((buff) => buff.type === "focus") ?? null;
   const visualOwnedUpgradeCount = visualUpgrades.reduce((total, upgrade) => total + state.upgrades[upgrade.key], 0);
+  const visibleGymUpgrades = visualUpgrades.filter((upgrade) => state.upgrades[upgrade.key] > 0);
   const newsLines = getNewsLines(state, title, perSecond);
   const news = newsLines[newsIndex % newsLines.length];
   const bodyStage = getBodyStage(state.bodyEvolutionStage);
@@ -2747,9 +2668,11 @@ export function MachoClickerPage() {
     : null;
   const hoveredMystery = hoveredMysteryId ? mysteryShopItems.find((item) => item.id === hoveredMysteryId) ?? null : null;
   const unlockedPowerUps = powerUpgrades.filter(
-    (powerUp) => powerUp.unlock(state) && !state.purchasedPowerUps.includes(powerUp.id)
+    (powerUp) => isV2CorePowerUpgrade(powerUp) && powerUp.unlock(state) && !state.purchasedPowerUps.includes(powerUp.id)
   );
-  const purchasedPowerUps = powerUpgrades.filter((powerUp) => state.purchasedPowerUps.includes(powerUp.id));
+  const purchasedPowerUps = powerUpgrades.filter(
+    (powerUp) => isV2CorePowerUpgrade(powerUp) && state.purchasedPowerUps.includes(powerUp.id)
+  );
   const recentPurchasedPowerUps = purchasedPowerUps.slice(-6).reverse();
   const hiddenPurchasedPowerUpCount = Math.max(0, purchasedPowerUps.length - recentPurchasedPowerUps.length);
   const displayNumber = (value: number) => formatDisplayNumber(value, numberNotation);
@@ -2758,6 +2681,16 @@ export function MachoClickerPage() {
   const animatedPerSecond = useAnimatedNumber(perSecond);
   const animatedClickPower = useAnimatedNumber(clickPower);
   const nextShopGoal = getNextShopGoal(state);
+  const firstLockedUpgradeIndex = upgrades.findIndex(
+    (upgrade, index) => index > 0 && state.upgrades[upgrade.key] === 0 && state.totalMuscle < upgrade.baseCost
+  );
+  const visibleShopUpgrades = upgrades.filter(
+    (upgrade, index) =>
+      index === 0 ||
+      state.upgrades[upgrade.key] > 0 ||
+      state.totalMuscle >= upgrade.baseCost ||
+      (firstLockedUpgradeIndex >= 0 && index <= firstLockedUpgradeIndex + 1)
+  );
   const canHarvestMuscleCrystal = state.nextMuscleCrystalAt <= Date.now();
   const availableLegacyPoints = getAvailableLegacyPoints(state);
   const goldenSpawnMinMs = getGoldenSpawnMinMs(state);
@@ -2787,12 +2720,43 @@ export function MachoClickerPage() {
     left: Math.max(16, tooltipPosition.x - 360),
     top: Math.max(96, tooltipPosition.y - 28),
   };
+  const onboardingStep = !isLoaded || onboardingComplete
+    ? null
+    : state.upgrades.pushUp > 0
+      ? 2
+      : state.clickCount > 0
+        ? 1
+        : 0;
 
   useEffect(() => {
-    setState(readSavedState());
+    const savedState = readSavedState();
+    setState(savedState);
+    const onboardingWasCompleted = window.localStorage.getItem(ONBOARDING_KEY) === "complete";
+    const isEstablishedSave = savedState.totalMuscle >= 100 || getOwnedUpgradeCount(savedState.upgrades) >= 2;
+    setOnboardingComplete(onboardingWasCompleted || isEstablishedSave);
+    try {
+      const rawPreferences = window.localStorage.getItem(PREFERENCES_KEY);
+      if (rawPreferences) {
+        const preferences = JSON.parse(rawPreferences) as Partial<GamePreferences>;
+        setSoundEnabled(preferences.soundEnabled ?? true);
+        setReducedEffects(preferences.reducedEffects ?? false);
+      }
+    } catch {
+      setSoundEnabled(true);
+    }
     lastTickAtRef.current = Date.now();
     setIsLoaded(true);
   }, []);
+
+  useEffect(() => {
+    if (!isLoaded || onboardingComplete || onboardingStep !== 1 || state.muscle < upgrades[0].baseCost) return;
+    setMobilePanel("shop");
+  }, [isLoaded, onboardingComplete, onboardingStep, state.muscle]);
+
+  useEffect(() => {
+    if (!isLoaded || onboardingComplete || onboardingStep !== 2) return;
+    setMobilePanel("click");
+  }, [isLoaded, onboardingComplete, onboardingStep]);
 
   useEffect(() => {
     stateRef.current = state;
@@ -2809,7 +2773,27 @@ export function MachoClickerPage() {
     ) as Record<SoundType, HTMLAudioElement>;
 
     soundRefs.current = sounds;
+    clickSoundPoolRef.current = Array.from({ length: 8 }, () => {
+      const audio = new Audio(soundFiles.click);
+      audio.preload = "auto";
+      audio.volume = soundVolume;
+      return audio;
+    });
+    clickSoundPoolIndexRef.current = 0;
   }, [notificationVolume, soundVolume]);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    const preferences: GamePreferences = { soundEnabled, reducedEffects };
+    window.localStorage.setItem(PREFERENCES_KEY, JSON.stringify(preferences));
+  }, [isLoaded, reducedEffects, soundEnabled]);
+
+  useEffect(
+    () => () => {
+      if (clickAnimationFrameRef.current !== null) window.cancelAnimationFrame(clickAnimationFrameRef.current);
+    },
+    []
+  );
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -2915,8 +2899,10 @@ export function MachoClickerPage() {
           .map((achievement) => achievement.key),
       ],
     }));
-    setAchievementToast(newlyUnlocked[0]);
-    if (soundEnabled) {
+    if (hasPlayerInteractedRef.current) {
+      setAchievementToast(newlyUnlocked[0]);
+    }
+    if (hasPlayerInteractedRef.current && soundEnabled) {
       const audio = soundRefs.current.achievement;
       if (audio) {
         const sound = audio.cloneNode(true) as HTMLAudioElement;
@@ -2924,34 +2910,78 @@ export function MachoClickerPage() {
         void sound.play();
       }
     }
-    window.setTimeout(() => setAchievementToast(null), 3200);
+    if (hasPlayerInteractedRef.current) {
+      window.setTimeout(() => setAchievementToast(null), 3200);
+    }
   }, [state, soundEnabled]);
 
-  const spawnClickEffects = (value: number) => {
+  const spawnClickEffects = (value: number, pointerType = "system") => {
     const sparkCount = reducedEffects ? 0 : effectDensity === "low" ? 3 : effectDensity === "high" ? 12 : 7;
-    const baseId = effectIdRef.current;
-    effectIdRef.current += Math.max(1, sparkCount + 1);
-    setFloatingGains((current) => [
-      ...current,
-      {
-        id: baseId,
-        x: 36 + Math.random() * 28,
-        y: 26 + Math.random() * 30,
-        value,
-      },
-    ]);
-    setSparks((current) => [
-      ...current,
-      ...Array.from({ length: sparkCount }, (_, index) => ({
-        id: baseId + index + 1,
-        x: 20 + Math.random() * 60,
-        y: 18 + Math.random() * 62,
-        size: 6 + Math.random() * 10,
-        rotate: Math.random() * 360,
-      })),
-    ]);
-    window.setTimeout(() => setFloatingGains((current) => current.filter((item) => item.id !== baseId)), 950);
-    window.setTimeout(() => setSparks((current) => current.filter((item) => item.id < baseId || item.id > baseId + sparkCount)), 760);
+    const gainX = pointerType === "touch"
+      ? touchGainSideRef.current++ % 2 === 0
+        ? 18 + Math.random() * 10
+        : 72 + Math.random() * 10
+      : 36 + Math.random() * 28;
+    const gainSlot = nextFloatingGainSlotRef.current++ % FLOATING_GAIN_LIMIT;
+    const gainElement = floatingGainPoolRef.current[gainSlot];
+    if (gainElement) {
+      gainElement.getAnimations().forEach((animation) => animation.cancel());
+      gainElement.textContent = `+${displayNumber(value)}`;
+      gainElement.style.left = `${gainX}%`;
+      gainElement.style.top = `${26 + Math.random() * 30}%`;
+      gainElement.animate(
+        [
+          { opacity: 0, transform: "translate(-50%, 0) scale(0.85)" },
+          { opacity: 1, offset: 0.15 },
+          { opacity: 0, transform: "translate(-50%, -5rem) scale(1.18)" },
+        ],
+        { duration: reducedEffects ? 420 : 950, easing: "ease-out", fill: "forwards" }
+      );
+    }
+
+    for (let index = 0; index < sparkCount; index += 1) {
+      const sparkSlot = nextSparkSlotRef.current++ % SPARK_LIMIT;
+      const sparkElement = sparkPoolRef.current[sparkSlot];
+      if (!sparkElement) continue;
+      const rotate = Math.random() * 360;
+      const size = 6 + Math.random() * 10;
+      sparkElement.getAnimations().forEach((animation) => animation.cancel());
+      sparkElement.style.left = `${20 + Math.random() * 60}%`;
+      sparkElement.style.top = `${18 + Math.random() * 62}%`;
+      sparkElement.style.width = `${size}px`;
+      sparkElement.style.height = `${size}px`;
+      sparkElement.animate(
+        [
+          { opacity: 1, transform: `translate(-50%, -50%) rotate(${rotate}deg) scale(0.25)` },
+          { opacity: 0, transform: `translate(-50%, -50%) rotate(${rotate + 90}deg) scale(1.9)` },
+        ],
+        { duration: 760, easing: "ease-out", fill: "forwards" }
+      );
+    }
+
+    scheduleClickFrame();
+  };
+
+  const scheduleClickFrame = () => {
+    if (clickAnimationFrameRef.current !== null) return;
+    clickAnimationFrameRef.current = window.requestAnimationFrame(() => {
+      clickAnimationFrameRef.current = null;
+
+      const pendingClicks = pendingManualClicksRef.current;
+      pendingManualClicksRef.current = { gain: 0, count: 0 };
+      if (pendingClicks.count > 0) {
+        setState((current) => ({
+          ...current,
+          muscle: clampScore(current.muscle + pendingClicks.gain),
+          totalMuscle: clampScore(current.totalMuscle + pendingClicks.gain),
+          handMadeMuscle: clampScore(current.handMadeMuscle + pendingClicks.gain),
+          clickCount: current.clickCount + pendingClicks.count,
+          lastSavedAt: Date.now(),
+        }));
+        setCombo(comboRef.current);
+      }
+
+    });
   };
 
   const spawnPurchaseEffects = (upgrade: Upgrade, event?: MouseEvent<HTMLElement>) => {
@@ -3010,9 +3040,7 @@ export function MachoClickerPage() {
 
   const unlockAudio = () => {
     if (!soundEnabled) return;
-    const clickSound = soundRefs.current.click;
-    if (!clickSound) return;
-    clickSound.load();
+    clickSoundPoolRef.current.forEach((audio) => audio.load());
   };
 
   const playSound = (type: SoundType) => {
@@ -3024,45 +3052,62 @@ export function MachoClickerPage() {
       if (now - (lastSoundAtRef.current[type] ?? 0) < cooldown) return;
       lastSoundAtRef.current[type] = now;
 
-      const audio = soundRefs.current[type];
-      if (!audio) return;
+      const baseAudio = soundRefs.current[type];
+      if (!baseAudio) return;
 
-      const sound = audio.cloneNode(true) as HTMLAudioElement;
-      sound.volume = audio.volume;
+      const pool = type === "click" ? clickSoundPoolRef.current : [];
+      const sound =
+        pool.length > 0
+          ? pool[clickSoundPoolIndexRef.current++ % pool.length]
+          : (baseAudio.cloneNode(true) as HTMLAudioElement);
+      sound.volume = baseAudio.volume;
       sound.currentTime = 0;
-      void sound.play();
+      void sound.play().catch(() => {
+        // Browsers can reject playback before the first trusted interaction.
+      });
     } catch (error) {
       console.error("Failed to play macho clicker sound", error);
     }
   };
 
-  const handleClick = () => {
-    const now = Date.now();
-    const nextCombo = now - lastClickAt < 800 ? Math.min(99, combo + 1) : 1;
-    const gain = clickPower;
-
-    setCombo(nextCombo);
-    setLastClickAt(now);
-    setClickBurst(true);
-    window.setTimeout(() => setClickBurst(false), 140);
-    spawnClickEffects(gain);
-    playSound("click");
-
-    setState((current) => ({
-      ...current,
-      muscle: clampScore(current.muscle + gain),
-      totalMuscle: clampScore(current.totalMuscle + gain),
-      handMadeMuscle: clampScore(current.handMadeMuscle + gain),
-      clickCount: current.clickCount + 1,
-      lastSavedAt: Date.now(),
-    }));
+  const animateCharacterClick = () => {
+    clickRippleRef.current?.getAnimations().forEach((animation) => animation.cancel());
+    clickRippleRef.current?.animate(
+      [
+        { opacity: 0.72, transform: "translate(-50%, -50%) scale(0.5)" },
+        { opacity: 0, transform: "translate(-50%, -50%) scale(2.4)" },
+      ],
+      { duration: reducedEffects ? 220 : 450, easing: "ease-out" }
+    );
   };
+
+  const handleClick = (pointerType: string) => {
+    hasPlayerInteractedRef.current = true;
+    const now = Date.now();
+    comboRef.current = now - lastClickAtRef.current < 800 ? Math.min(99, comboRef.current + 1) : 1;
+    lastClickAtRef.current = now;
+    const gain = clickPowerRef.current;
+    pendingManualClicksRef.current.gain = clampScore(pendingManualClicksRef.current.gain + gain);
+    pendingManualClicksRef.current.count += 1;
+    spawnClickEffects(gain, pointerType);
+    animateCharacterClick();
+  };
+
+  const characterPressHandlers = usePressActivation({
+    targetRef: characterButtonRef,
+    onPressStart: () => {
+      unlockAudio();
+      playSound("click");
+    },
+    onActivate: handleClick,
+  });
 
   const updateTooltipPosition = (event: MouseEvent<HTMLElement>) => {
     setTooltipPosition({ x: event.clientX, y: event.clientY });
   };
 
   const buyUpgrade = (upgrade: Upgrade, event?: MouseEvent<HTMLElement>) => {
+    hasPlayerInteractedRef.current = true;
     setState((current) => {
       const level = current.upgrades[upgrade.key];
       const cost = getUpgradeCost(upgrade, level);
@@ -3090,6 +3135,7 @@ export function MachoClickerPage() {
   };
 
   const buyPowerUpgrade = (powerUp: PowerUpgrade, event?: MouseEvent<HTMLElement>) => {
+    hasPlayerInteractedRef.current = true;
     setState((current) => {
       if (current.purchasedPowerUps.includes(powerUp.id) || current.muscle < powerUp.cost || !powerUp.unlock(current)) {
         playSound("blocked");
@@ -3606,6 +3652,11 @@ export function MachoClickerPage() {
     }
   };
 
+  const completeOnboarding = () => {
+    window.localStorage.setItem(ONBOARDING_KEY, "complete");
+    setOnboardingComplete(true);
+  };
+
   return (
     <div
       className={`macho-game-shell macho-achievement-aura-${achievementAuraTier} ${seasonalTheme.shellClass} min-h-dvh overflow-hidden bg-[#160D08] text-slate-900 ${
@@ -3619,7 +3670,7 @@ export function MachoClickerPage() {
           type="button"
           onPointerDown={(event) => event.stopPropagation()}
           onClick={() => window.location.assign("/")}
-          className="macho-game-button rounded-full border-2 border-[#FFB45D]/60 bg-[#7C2D12] px-4 py-2 text-xs font-black text-[#FFE7C2] transition hover:bg-[#9A3412] sm:text-sm"
+          className="macho-game-button min-h-11 rounded-full border-2 border-[#FFB45D]/60 bg-[#7C2D12] px-4 py-2 text-xs font-black text-[#FFE7C2] transition hover:bg-[#9A3412] sm:text-sm"
         >
           ← トップへ戻る
         </button>
@@ -3627,15 +3678,191 @@ export function MachoClickerPage() {
           <div className="truncate text-base font-black tracking-tight sm:text-xl">マチョクリッカー</div>
           <div className="hidden text-[10px] font-black uppercase tracking-[0.18em] text-[#FFB45D] sm:block">Full Screen Gym Game</div>
         </div>
-        <button
-          type="button"
-          onClick={() => setReducedEffects((current) => !current)}
-          className="macho-game-button rounded-full border-2 border-[#FFB45D]/50 bg-[#2A140B] px-3 py-2 text-[11px] font-black text-[#FFE7C2] transition hover:bg-[#451A03] sm:px-4 sm:text-xs"
-          aria-pressed={reducedEffects}
-        >
-          軽量 {reducedEffects ? "ON" : "OFF"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setGameOverlay("achievements")}
+            className="macho-game-button flex h-11 min-w-11 items-center justify-center rounded-full border-2 border-[#FFB45D]/50 bg-[#2A140B] px-3 text-sm font-black text-[#FFE7C2] transition hover:bg-[#451A03]"
+            aria-label="実績を開く"
+          >
+            ★<span className="ml-1 hidden sm:inline">実績</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setGameOverlay("menu")}
+            className="macho-game-button flex h-11 min-w-11 items-center justify-center rounded-full border-2 border-[#FFB45D]/50 bg-[#2A140B] px-3 text-sm font-black text-[#FFE7C2] transition hover:bg-[#451A03]"
+            aria-label="ゲームメニューを開く"
+          >
+            ☰<span className="ml-1 hidden sm:inline">メニュー</span>
+          </button>
+        </div>
       </header>
+
+      {gameOverlay ? (
+        <div
+          className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-[#080604]/80 p-3 pt-20 backdrop-blur-sm sm:p-6 sm:pt-24"
+          role="dialog"
+          aria-modal="true"
+          aria-label={gameOverlay === "menu" ? "ゲームメニュー" : gameOverlay === "achievements" ? "実績" : "ランキング"}
+          onPointerDown={(event) => {
+            if (event.target === event.currentTarget) setGameOverlay(null);
+          }}
+        >
+          <section className="w-full max-w-3xl overflow-hidden rounded-[28px] border-2 border-[#FCD27B]/70 bg-[#20120B] text-[#FFF7EB] shadow-[0_32px_100px_rgba(0,0,0,0.72)]">
+            <div className="flex items-center justify-between gap-4 border-b border-white/10 bg-[#2A140B] px-5 py-4 sm:px-6">
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[#FFB45D]">
+                  {gameOverlay === "menu" ? "Game Menu" : gameOverlay === "achievements" ? "Achievements" : "Community"}
+                </div>
+                <h2 className="mt-1 text-2xl font-black">
+                  {gameOverlay === "menu" ? "メニュー" : gameOverlay === "achievements" ? "実績" : "全国マッチョランキング"}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setGameOverlay(null)}
+                className="macho-game-button flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10 text-lg font-black text-white transition hover:bg-white/20"
+                aria-label="閉じる"
+              >
+                ×
+              </button>
+            </div>
+
+            {gameOverlay === "menu" ? (
+              <div className="grid gap-5 p-5 sm:p-6">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {[
+                    ["現在", displayNumber(state.muscle)],
+                    ["毎秒", `+${displayNumber(perSecond)}`],
+                    ["累計", displayNumber(state.totalMuscle)],
+                    ["クリック", formatFullNumber(state.clickCount)],
+                  ].map(([label, value]) => (
+                    <div key={label} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                      <div className="text-[10px] font-black uppercase tracking-[0.14em] text-[#FFB45D]">{label}</div>
+                      <div className="mt-1 break-words text-xl font-black text-white">{value}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => setSoundEnabled((current) => !current)}
+                    className="macho-game-button flex min-h-12 items-center justify-between rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-left font-black text-white transition hover:bg-white/10"
+                    aria-pressed={soundEnabled}
+                  >
+                    <span>効果音</span><span className="text-[#FFB45D]">{soundEnabled ? "ON" : "OFF"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReducedEffects((current) => !current)}
+                    className="macho-game-button flex min-h-12 items-center justify-between rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-left font-black text-white transition hover:bg-white/10"
+                    aria-pressed={reducedEffects}
+                  >
+                    <span>軽量モード</span><span className="text-[#FFB45D]">{reducedEffects ? "ON" : "OFF"}</span>
+                  </button>
+                </div>
+
+                <div>
+                  <div className="mb-2 text-xs font-black text-white/65">数字の表示</div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {([
+                      ["short", "英語単位"],
+                      ["japanese", "日本語単位"],
+                      ["full", "全桁"],
+                    ] as const).map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setNumberNotation(value)}
+                        className={`macho-game-button min-h-11 rounded-xl border px-3 py-2 text-xs font-black transition ${
+                          numberNotation === value
+                            ? "border-[#FFB45D] bg-[#FF8A23] text-white"
+                            : "border-white/15 bg-white/5 text-white/75 hover:bg-white/10"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <button type="button" onClick={manualSave} className="macho-game-button min-h-11 rounded-xl bg-[#7C2D12] px-3 py-2 text-xs font-black text-white">保存</button>
+                  <button type="button" onClick={exportSave} className="macho-game-button min-h-11 rounded-xl bg-[#C2410C] px-3 py-2 text-xs font-black text-white">書き出し</button>
+                  <button type="button" onClick={importSave} className="macho-game-button min-h-11 rounded-xl bg-[#9A3412] px-3 py-2 text-xs font-black text-white">読み込み</button>
+                </div>
+                {saveMessage ? <p className="text-sm font-bold text-[#FFD58A]">{saveMessage}</p> : null}
+
+                <div className="grid gap-2 border-t border-white/10 pt-4 sm:grid-cols-2">
+                  <button type="button" onClick={() => setGameOverlay("achievements")} className="macho-game-button min-h-12 rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-left font-black text-white hover:bg-white/10">
+                    実績を見る <span className="ml-2 text-[#FFB45D]">{state.unlockedAchievements.length}/{achievements.length}</span>
+                  </button>
+                  <button type="button" onClick={() => setGameOverlay("community")} className="macho-game-button min-h-12 rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-left font-black text-white hover:bg-white/10">
+                    ランキングを見る
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {gameOverlay === "achievements" ? (
+              <div className="p-5 sm:p-6">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <p className="text-sm font-bold text-white/70">遊んだ記録として獲得した実績です。</p>
+                  <span className="rounded-full bg-[#FF8A23] px-3 py-1 text-xs font-black text-white">
+                    {state.unlockedAchievements.length}/{achievements.length}
+                  </span>
+                </div>
+                <div className="grid max-h-[60dvh] gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
+                  {achievements.map((achievement) => {
+                    const unlocked = state.unlockedAchievements.includes(achievement.key);
+                    return (
+                      <div key={`overlay-${achievement.key}`} className={`rounded-2xl border px-4 py-3 ${unlocked ? "border-[#FFB45D]/60 bg-[#FF8A23]/15" : "border-white/10 bg-white/[0.03] opacity-45"}`}>
+                        <div className="text-sm font-black text-white">{unlocked ? achievement.title : "???"}</div>
+                        <div className="mt-1 text-xs font-bold leading-5 text-white/60">{unlocked ? achievement.description : "ゲームを進めると解放されます。"}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+
+            {gameOverlay === "community" ? (
+              <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-[16rem_1fr]">
+                <div>
+                  <p className="text-sm font-bold leading-6 text-white/65">累計筋肉ポイントを登録できます。</p>
+                  <div className="mt-4 grid gap-3">
+                    <input
+                      value={nickname}
+                      onChange={(event) => setNickname(event.target.value)}
+                      maxLength={12}
+                      placeholder="ニックネーム"
+                      className="min-h-12 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-[#FFB45D]"
+                    />
+                    <button type="button" onClick={submitRanking} disabled={state.totalMuscle <= 0} className="macho-game-button min-h-12 rounded-2xl bg-[#FF8A23] px-4 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-40">
+                      ランキングに登録
+                    </button>
+                    {rankingMessage ? <p className="text-sm font-bold text-[#FFD58A]">{rankingMessage}</p> : null}
+                  </div>
+                </div>
+                <ol className="max-h-[60dvh] divide-y divide-white/10 overflow-y-auto rounded-2xl border border-white/10 bg-white/[0.03]">
+                  {rankings.length === 0 ? (
+                    <li className="p-5 text-sm font-bold text-white/55">まだランキングがありません。</li>
+                  ) : rankings.slice(0, 10).map((entry, index) => (
+                    <li key={`overlay-ranking-${entry.id}`} className="flex items-center justify-between gap-4 px-4 py-3">
+                      <span className="flex min-w-0 items-center gap-3">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FF8A23] text-sm font-black text-white">{index + 1}</span>
+                        <span className="truncate font-bold text-white/85">{entry.nickname}</span>
+                      </span>
+                      <span className="shrink-0 text-sm font-black text-[#FFD58A]">{displayNumber(entry.score)}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ) : null}
+          </section>
+        </div>
+      ) : null}
 
       {achievementToast ? (
         <div className="macho-toast macho-achievement-flash relative z-50 mx-3 my-3 rounded-3xl border-2 border-[#FCD27B] bg-[#FFF7EB] px-4 py-3 text-[#7C2D12] shadow-2xl sm:fixed sm:right-4 sm:top-24 sm:mx-0 sm:my-0 sm:max-w-xs sm:px-5 sm:py-4">
@@ -3748,65 +3975,44 @@ export function MachoClickerPage() {
       <main className="relative z-10 px-0 pb-0 pt-0">
         <div className="flex w-full max-w-none flex-col gap-0">
           <section className="macho-game-topbar macho-game-panel overflow-hidden border-b-4 border-[#7C2D12] bg-[#7C2D12] text-white shadow-2xl md:border-x-0 md:border-t-0">
-            <div className="grid gap-px bg-[#FED7AA] lg:grid-cols-[420px_minmax(0,1fr)_390px]">
+            <div className="grid gap-px bg-[#FED7AA] sm:grid-cols-[minmax(0,0.8fr)_minmax(18rem,1.2fr)] lg:grid-cols-[320px_minmax(0,1fr)_280px]">
               <div className="bg-[#9A3412] px-5 py-4">
                 <h1 className="text-3xl font-black tracking-tight text-[#FFE7C2]">マチョクリッカー</h1>
                 <div className="mt-1 text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">
-                  {bodyStage.label} / 肉体Lv {bodyPartAverageLevel}
+                  {bodyStage.label}
                 </div>
               </div>
               <div className="bg-[#9A3412] px-5 py-4">
-                <div className="grid grid-cols-2 gap-x-3 gap-y-4 text-center sm:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 text-center">
                   <div>
-                    <div className="macho-ui-label">Current</div>
+                    <div className="macho-ui-label">筋肉ポイント</div>
                     <div className="macho-counter macho-ui-number mt-1 text-2xl" title={formatFullNumber(state.muscle)}>
                       {displayNumber(state.muscle)}
                     </div>
                   </div>
                   <div>
-                    <div className="macho-ui-label">Per Second</div>
+                    <div className="macho-ui-label">毎秒</div>
                     <div className="macho-counter macho-ui-number mt-1 text-2xl">+{displayNumber(perSecond)}</div>
-                  </div>
-                  <div>
-                    <div className="macho-ui-label">Total</div>
-                    <div className="macho-counter macho-ui-number mt-1 text-2xl" title={formatFullNumber(state.totalMuscle)}>
-                      {displayNumber(state.totalMuscle)}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="macho-ui-label">Crystal</div>
-                    <div className="macho-counter macho-ui-number mt-1 text-2xl">{formatFullNumber(state.muscleCrystals)}</div>
                   </div>
                 </div>
               </div>
-              <div className="bg-[#9A3412] px-5 py-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="text-xs font-black text-[#FFB45D]">
-                    次の称号: {nextGoal.title} / 永久倍率 +{state.prestigeLevel}%
+              <div className="hidden bg-[#9A3412] px-5 py-4 lg:flex lg:flex-col lg:justify-center">
+                <div className="text-xs font-black text-[#FFB45D]">次の目標</div>
+                <div className="mt-1 truncate text-sm font-black text-[#FFE7C2]">{nextShopGoal?.upgrade.name ?? nextGoal.title}</div>
+                {nextShopGoal ? (
+                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/15">
+                    <div className="h-full rounded-full bg-[#FFB45D]" style={{ width: `${getPurchaseProgress(state.muscle, nextShopGoal.cost)}%` }} />
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setSoundEnabled((current) => !current)}
-                    className="macho-game-button rounded-full bg-[#7C2D12] px-3 py-1 text-[11px] font-black text-[#FFE7C2] transition"
-                    aria-pressed={soundEnabled}
-                  >
-                    効果音 {soundEnabled ? "ON" : "OFF"}
-                  </button>
-                </div>
-                <div className="mt-2 h-3 overflow-hidden rounded-full bg-white/15">
-                  <div className="h-full rounded-full bg-gradient-to-r from-[#FFB45D] to-[#FF5A1F]" style={{ width: `${titleProgress}%` }} />
-                </div>
-                <div className="mt-2 flex items-center justify-between gap-2 text-[11px] font-black text-[#FFE7C2]">
-                  <span>基礎CPS +{displayNumber(basePerSecond)}</span>
+                ) : null}
+                {pendingPrestige > 0 ? (
                   <button
                     type="button"
                     onClick={openAscensionModal}
-                    disabled={pendingPrestige <= 0}
-                    className="macho-game-button rounded-full bg-[#FF8A23] px-3 py-1 text-white transition disabled:bg-white/20 disabled:text-white/45"
+                    className="macho-game-button mt-2 rounded-full bg-[#FF8A23] px-3 py-1 text-xs font-black text-white transition"
                   >
                     仕上げ直し +{pendingPrestige}%
                   </button>
-                </div>
+                ) : null}
               </div>
             </div>
             {activeBuffs.length > 0 ? (
@@ -3835,7 +4041,7 @@ export function MachoClickerPage() {
           </section>
 
           <nav
-            className="macho-mobile-tabs sticky top-14 z-40 grid grid-cols-4 gap-2 border-b-4 border-[#7C2D12] bg-[#2A140B] p-2 shadow-2xl md:hidden"
+            className="macho-mobile-tabs sticky top-14 z-40 grid grid-cols-3 gap-2 border-b-4 border-[#7C2D12] bg-[#2A140B] p-2 shadow-2xl md:hidden"
             aria-label="マチョクリッカー画面切り替え"
           >
             {mobilePanels.map((panel) => (
@@ -3847,7 +4053,7 @@ export function MachoClickerPage() {
                   mobilePanel === panel.key
                     ? "macho-mobile-tab-active border-[#FFE7C2] bg-[#FF8A23] text-white shadow-[0_0_0_3px_rgba(255,138,35,0.28)]"
                     : "border-[#9A3412] bg-[#7C2D12] text-[#FFE7C2]"
-                }`}
+                } ${onboardingStep === 1 && state.muscle >= upgrades[0].baseCost && panel.key === "shop" ? "macho-guide-target" : ""}`}
               >
                 {panel.label}
               </button>
@@ -3875,7 +4081,7 @@ export function MachoClickerPage() {
               <div
                 className={`macho-click-foreground pointer-events-none absolute inset-0 z-[4] ${
                   backgroundAnimationEnabled && !reducedEffects ? "" : "hidden"
-                } ${clickBurst ? "macho-click-foreground-hit" : ""}`}
+                }`}
               >
                 <span className="macho-stage-floor-glow" />
                 <span className="macho-stage-light-sweep" />
@@ -3932,53 +4138,100 @@ export function MachoClickerPage() {
               </div>
               <div className="relative z-20 mt-3 w-full">
                 <div className={`macho-evolution-card ${canBodyEvolve ? "macho-evolution-ready" : ""}`}>
-                  <div className="min-w-0">
+                  {upcomingBodyStage ? (
+                    <div className="macho-evolution-preview" aria-hidden="true">
+                      <Image
+                        src={upcomingBodyStage.imageSrc}
+                        alt=""
+                        width={56}
+                        height={84}
+                        className={`h-16 w-11 object-contain transition duration-300 ${
+                          canBodyEvolve ? "drop-shadow-lg" : "brightness-0 opacity-45"
+                        }`}
+                      />
+                    </div>
+                  ) : null}
+                  <div className="min-w-0 flex-1 text-left">
                     <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[#C2410C]">Body Evolution</div>
-                    <div className="mt-1 truncate text-sm font-black text-[#7C2D12]">
+                    <div className="mt-1 text-sm font-black text-[#7C2D12]">
                       現在: {bodyStage.label}
                     </div>
                     <div className="mt-1 text-xs font-bold text-[#9A3412]">
-                      {nextBodyStage
-                        ? `次: ${nextBodyStage.label}`
-                        : state.bodyEvolutionStage >= bodyEvolutionStages.length - 1
-                          ? "最終進化済み"
-                          : `次の進化まで ${displayNumber(Math.max(0, bodyEvolutionStages[state.bodyEvolutionStage + 1].requirement - state.totalMuscle))}`}
+                      {upcomingBodyStage ? `次: ${upcomingBodyStage.label}` : "最終進化済み"}
                     </div>
+                    {upcomingBodyStage ? (
+                      <>
+                        <div className="mt-1 text-[11px] font-semibold leading-4 text-[#9A3412]/85">{upcomingBodyStage.change}</div>
+                        <div className="mt-1 text-[11px] font-black text-[#C2410C]">
+                          {canBodyEvolve
+                            ? "進化できます"
+                            : `あと ${displayNumber(Math.max(0, upcomingBodyStage.requirement - state.totalMuscle))} 筋肉`}
+                        </div>
+                      </>
+                    ) : null}
                   </div>
-                  <button
-                    type="button"
-                    onClick={evolveBody}
-                    disabled={!canBodyEvolve}
-                    className="macho-evolution-button"
-                  >
-                    {canBodyEvolve ? "進化" : "待機"}
-                  </button>
+                  {upcomingBodyStage ? (
+                    <button
+                      type="button"
+                      onClick={evolveBody}
+                      disabled={!canBodyEvolve}
+                      className="macho-evolution-button"
+                    >
+                      {canBodyEvolve ? "進化する" : "待機"}
+                    </button>
+                  ) : null}
                 </div>
               </div>
 
-              {floatingGains.map((item) => (
-                <div
-                  key={item.id}
-                  className="macho-float pointer-events-none absolute z-40 text-4xl font-black text-white drop-shadow-[0_4px_0_rgba(124,45,18,0.85)]"
-                  style={{ left: `${item.x}%`, top: `${item.y}%` }}
-                >
-                  +{displayNumber(item.value)}
+              {onboardingStep !== null ? (
+                <div data-testid="macho-onboarding-card" className="macho-onboarding-card relative z-30 mt-3 w-full max-w-md rounded-2xl border-2 border-[#FFB45D] bg-[#20120B]/95 px-4 py-3 text-left text-white shadow-2xl">
+                  <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[#FFB45D]">はじめの3ステップ {onboardingStep + 1}/3</div>
+                  <div className="mt-1 text-sm font-black leading-6">
+                    {onboardingStep === 0
+                      ? "マチョ田を押して、筋肉ポイントを増やす。"
+                      : onboardingStep === 1
+                        ? state.muscle < upgrades[0].baseCost
+                          ? `${displayNumber(upgrades[0].baseCost)}ポイントまでマチョ田を押す。`
+                          : "ショップでダンベルを1個買う。"
+                        : `毎秒 +${formatRate(perSecond)}。これで放置中も筋肉が増えます。`}
+                  </div>
+                  {onboardingStep === 2 ? (
+                    <button
+                      type="button"
+                      onClick={completeOnboarding}
+                      className="macho-game-button mt-3 min-h-11 w-full rounded-xl bg-[#FF8A23] px-4 py-2 text-sm font-black text-white transition hover:bg-[#FF9C41]"
+                    >
+                      トレーニング開始
+                    </button>
+                  ) : null}
                 </div>
-              ))}
+              ) : null}
 
-              {sparks.map((spark) => (
+              <div data-testid="macho-floating-gain-pool" aria-hidden="true">
+                {Array.from({ length: FLOATING_GAIN_LIMIT }, (_, slot) => (
+                  <div
+                    key={slot}
+                    ref={(element) => {
+                      floatingGainPoolRef.current[slot] = element;
+                    }}
+                    data-effect-slot="gain"
+                    className="macho-float pointer-events-none absolute z-40 text-4xl font-black text-white drop-shadow-[0_4px_0_rgba(124,45,18,0.85)]"
+                  />
+                ))}
+              </div>
+
+              <div data-testid="macho-spark-pool" aria-hidden="true">
+                {Array.from({ length: SPARK_LIMIT }, (_, slot) => (
                 <div
-                  key={spark.id}
-                  className="macho-spark pointer-events-none absolute z-30 rounded-full bg-white/90 shadow-[0_0_18px_rgba(255,255,255,0.85)]"
-                  style={{
-                    left: `${spark.x}%`,
-                    top: `${spark.y}%`,
-                    width: spark.size,
-                    height: spark.size,
-                    transform: `rotate(${spark.rotate}deg)`,
+                  key={slot}
+                  ref={(element) => {
+                    sparkPoolRef.current[slot] = element;
                   }}
+                  data-effect-slot="spark"
+                  className="macho-spark pointer-events-none absolute z-30 rounded-full bg-white/90 shadow-[0_0_18px_rgba(255,255,255,0.85)]"
                 />
-              ))}
+                ))}
+              </div>
 
               {purchaseFlights.map((flight) => (
                 <span
@@ -4040,7 +4293,10 @@ export function MachoClickerPage() {
               <div className={`relative z-20 my-4 flex aspect-square w-full max-w-[860px] items-center justify-center overflow-visible sm:my-5 ${
                 evolutionFlash ? "macho-evolution-flash" : ""
               }`}>
-                {clickBurst ? <span className="macho-click-ripple pointer-events-none absolute left-1/2 top-1/2 z-20" /> : null}
+                <span
+                  ref={clickRippleRef}
+                  className="macho-click-ripple pointer-events-none absolute left-1/2 top-1/2 z-20 opacity-0"
+                />
                 {dumbbellOrbitItems.map((item) => (
                   <span
                     key={`dumbbell-orbit-${item.index}`}
@@ -4066,10 +4322,14 @@ export function MachoClickerPage() {
                 ))}
 
                 <button
+                  ref={characterButtonRef}
                   type="button"
-                  onClick={handleClick}
-                  className={`macho-character-button macho-breathe group relative z-30 flex w-[min(66vw,24rem)] items-end justify-center bg-transparent p-0 transition hover:scale-[1.05] active:scale-95 ${
-                    clickBurst ? "macho-pop" : ""
+                  {...characterPressHandlers}
+                  data-testid="macho-character-button"
+                  className={`macho-character-button macho-breathe group relative z-30 flex w-[min(66vw,24rem)] touch-manipulation items-end justify-center bg-transparent p-0 transition hover:scale-[1.05] ${
+                    onboardingStep === 0 || (onboardingStep === 1 && state.muscle < upgrades[0].baseCost)
+                      ? "macho-guide-target"
+                      : ""
                   }`}
                   aria-label="マチョ田をクリック"
                 >
@@ -4079,43 +4339,15 @@ export function MachoClickerPage() {
                     width={280}
                     height={280}
                     priority
+                    draggable={false}
                     className="relative z-10 h-auto w-[min(60vw,24rem)] drop-shadow-[0_28px_30px_rgba(0,0,0,0.65)] transition duration-300 group-hover:scale-105"
                     style={{ transform: `scale(${bodyStage.scale})` }}
                   />
                 </button>
               </div>
 
-              <div className="relative z-10 grid w-full grid-cols-2 gap-3 text-left">
-                <div className="macho-paper-card rounded-2xl px-4 py-3 text-[#7C2D12]">
-                  <div className="text-xs font-black text-[#C2410C]">称号</div>
-                  <div className="mt-1 text-xl font-black">{title}</div>
-                </div>
-                <div className="macho-paper-card rounded-2xl px-4 py-3 text-[#7C2D12]">
-                  <div className="text-xs font-black text-[#C2410C]">クリック数</div>
-                  <div className="mt-1 text-xl font-black">{formatFullNumber(state.clickCount)}</div>
-                </div>
-              </div>
-              <div className="macho-paper-card relative z-10 mt-3 w-full rounded-2xl px-4 py-3 text-left text-[#7C2D12]">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="text-xs font-black text-[#C2410C]">部位成長</div>
-                    <div className="mt-1 text-sm font-black text-[#7C2D12]">設備に連動して胸・背中・脚・肩・腕・腹筋が育ちます。</div>
-                  </div>
-                  <div className="rounded-full bg-[#7C2D12] px-3 py-1 text-xs font-black text-[#FFE7C2]">平均Lv {bodyPartAverageLevel}</div>
-                </div>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  {bodyPartProgress.map((part) => (
-                    <div key={part.key} className="rounded-2xl border border-[#FCD27B] bg-white/70 px-3 py-2">
-                      <div className="flex items-center justify-between gap-2 text-xs font-black">
-                        <span>{part.label}</span>
-                        <span>Lv {part.level}</span>
-                      </div>
-                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#FED7AA]">
-                        <div className={`h-full rounded-full bg-gradient-to-r ${part.accent}`} style={{ width: `${part.progress}%` }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              <div className="macho-paper-card relative z-10 rounded-full px-4 py-2 text-sm font-black text-[#7C2D12]">
+                クリック数 <span data-testid="macho-click-count">{formatFullNumber(state.clickCount)}</span>
               </div>
             </aside>
 
@@ -4132,15 +4364,27 @@ export function MachoClickerPage() {
                   </div>
                   <div className="flex flex-wrap items-center justify-end gap-2">
                     <div className="rounded-full bg-[#FF8A23] px-4 py-2 text-sm font-black text-white">設備合計 {visualOwnedUpgradeCount}</div>
-                    <div className="rounded-full bg-[#7C2D12] px-4 py-2 text-sm font-black text-white">設備Lv {totalBuildingLevel}</div>
+                    {advancedSystemsUnlocked ? (
+                      <div className="rounded-full bg-[#7C2D12] px-4 py-2 text-sm font-black text-white">設備Lv {totalBuildingLevel}</div>
+                    ) : null}
                   </div>
                 </div>
               </div>
 
               <div className="absolute inset-x-0 bottom-0 h-40 bg-[linear-gradient(180deg,transparent_0%,rgba(124,45,18,0.7)_90%)]" />
               <div className="absolute inset-x-4 bottom-5 top-24 overflow-y-auto rounded-[28px] border-4 border-[#7C2D12] bg-[#2A140B] shadow-inner">
+                {visibleGymUpgrades.length === 0 ? (
+                  <Image
+                    src="/game/macho-clicker/scenes/generated-v5/huge-gym-hall.png"
+                    alt=""
+                    fill
+                    quality={68}
+                    sizes="(min-width: 1280px) 28vw, (min-width: 768px) 40vw, 100vw"
+                    className="object-cover opacity-75"
+                  />
+                ) : null}
                 <div className="grid auto-rows-[10.5rem] divide-y-2 divide-[#2A140B]">
-                  {visualUpgrades.map((upgrade) => {
+                  {visibleGymUpgrades.map((upgrade) => {
                     const level = state.upgrades[upgrade.key];
                     const buildingLevel = state.buildingLevels[upgrade.key];
                     const canLevelUp = state.muscleCrystals > 0 && level > 0;
@@ -4182,14 +4426,16 @@ export function MachoClickerPage() {
                             <span className="rounded-full bg-[#FF8A23] px-2 py-1 text-xs font-black text-white">所持 {level}</span>
                             <Image src={upgrade.spriteSrc} alt="" width={42} height={42} className="macho-building-icon h-8 w-8 object-contain drop-shadow-lg" />
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => levelUpBuilding(upgrade)}
-                            disabled={!canLevelUp}
-                            className="mt-2 rounded-xl border border-[#FFB45D]/50 bg-[#FFE7C2] px-2 py-1 text-xs font-black text-[#7C2D12] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-45"
-                          >
-                            設備Lv.{buildingLevel} +1
-                          </button>
+                          {advancedSystemsUnlocked ? (
+                            <button
+                              type="button"
+                              onClick={() => levelUpBuilding(upgrade)}
+                              disabled={!canLevelUp}
+                              className="mt-2 rounded-xl border border-[#FFB45D]/50 bg-[#FFE7C2] px-2 py-1 text-xs font-black text-[#7C2D12] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-45"
+                            >
+                              設備Lv.{buildingLevel} +1
+                            </button>
+                          ) : null}
                         </div>
                         <div className="macho-unit-field relative z-10 grid max-w-full grid-flow-col grid-rows-3 content-center gap-x-2 gap-y-2 overflow-hidden px-4 py-4 [grid-auto-columns:2rem] sm:[grid-auto-columns:2.25rem] 2xl:[grid-auto-columns:2.5rem]">
                           {Array.from({ length: visibleCount }, (_, index) => (
@@ -4372,15 +4618,42 @@ export function MachoClickerPage() {
                   </div>
                 ) : null}
                 <div className="grid gap-3">
-                  {upgrades.map((upgrade) => {
+                  {onboardingStep === 1 && state.muscle >= upgrades[0].baseCost ? (
+                    <div data-testid="macho-onboarding-shop-card" className="macho-onboarding-card rounded-2xl border-2 border-[#FFB45D] bg-[#20120B] px-4 py-3 text-white shadow-xl">
+                      <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[#FFB45D]">はじめの3ステップ 2/3</div>
+                      <div className="mt-1 text-sm font-black">ダンベルを1個買う。</div>
+                    </div>
+                  ) : null}
+                  {visibleShopUpgrades.map((upgrade) => {
                     const level = state.upgrades[upgrade.key];
                     const buildingLevel = state.buildingLevels[upgrade.key];
+                    const isUnlocked = upgrade.key === upgrades[0].key || level > 0 || state.totalMuscle >= upgrade.baseCost;
                     const cost = getUpgradeCost(upgrade, level);
                     const canBuy = state.muscle >= cost;
                     const shortage = getShortage(state.muscle, cost);
                     const purchaseProgress = getPurchaseProgress(state.muscle, cost);
                     const unitProduction = getBuildingUnitProduction(state, upgrade);
                     const isBuildingFrenzyTarget = activeBuildingFrenzyTargets.includes(upgrade.key);
+
+                    if (!isUnlocked) {
+                      return (
+                        <div
+                          key={`locked-${upgrade.key}`}
+                          className="macho-shop-card relative overflow-hidden rounded-2xl border-2 border-[#67422E] bg-[#241812] p-3 text-left text-white/45"
+                          aria-label="未解放の設備"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="macho-locked-slot flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border-2 border-white/10 bg-black/30 text-3xl font-black shadow-inner">
+                              ?
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block text-lg font-black tracking-[0.18em]">???</span>
+                              <span className="mt-2 block text-xs font-bold leading-5 text-white/45">筋肉ポイントを増やすと正体が分かります。</span>
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    }
 
                     return (
                       <button
@@ -4400,7 +4673,7 @@ export function MachoClickerPage() {
                           canBuy
                             ? "macho-shop-ready border-[#C2410C] bg-white text-[#7C2D12] shadow-[0_0_0_3px_rgba(255,138,35,0.18),0_10px_24px_rgba(194,65,12,0.16)] hover:-translate-y-0.5 hover:shadow-[0_0_0_4px_rgba(255,138,35,0.32),0_16px_32px_rgba(194,65,12,0.26)]"
                             : "border-[#FED7AA] bg-[#FFF4E7] text-[#9A3412]/62"
-                        }`}
+                        } ${onboardingStep === 1 && canBuy && upgrade.key === upgrades[0].key ? "macho-guide-target" : ""}`}
                       >
                         <span className="absolute inset-x-0 bottom-0 h-1.5 bg-[#E7B374]">
                           <span
@@ -4430,7 +4703,7 @@ export function MachoClickerPage() {
                               <span className="rounded-full bg-[#7C2D12] px-2 py-1 text-xs font-black text-white">Lv.{level}</span>
                             </span>
                             <span className="mt-1 block text-xs font-bold text-[#9A3412]">
-                              1個 +{formatRate(unitProduction)}/秒 / 設備Lv.{buildingLevel}
+                              1個 +{formatRate(unitProduction)}/秒{advancedSystemsUnlocked ? ` / 設備Lv.${buildingLevel}` : ""}
                             </span>
                             <span
                               className={`mt-3 block rounded-xl px-3 py-2 text-sm font-black ${
@@ -4444,7 +4717,7 @@ export function MachoClickerPage() {
                       </button>
                     );
                   })}
-                  {mysteryShopItems.map((item) => (
+                  {advancedSystemsUnlocked ? mysteryShopItems.map((item) => (
                     <button
                       key={item.id}
                       type="button"
@@ -4472,7 +4745,7 @@ export function MachoClickerPage() {
                         </span>
                       </div>
                     </button>
-                  ))}
+                  )) : null}
                 </div>
                 {hoveredShopUpgrade ? (
                   <div
@@ -4531,7 +4804,8 @@ export function MachoClickerPage() {
               </div>
             </aside>
 
-            <section className={`${mobilePanel === "stats" ? "block" : "hidden"} bg-[#FFF7EB] p-4 text-[#7C2D12] md:hidden`}>
+            {mobilePanel === "stats" ? (
+            <section className="bg-[#FFF7EB] p-4 text-[#7C2D12] md:hidden">
               <div className="rounded-3xl border-2 border-[#FDBA74] bg-white p-4 shadow-xl">
                 <h2 className="text-2xl font-black">統計・セーブ</h2>
                 <div className="mt-4 grid gap-3">
@@ -4693,8 +4967,11 @@ export function MachoClickerPage() {
                 {saveMessage ? <p className="mt-3 text-sm font-bold text-[#C2410C]">{saveMessage}</p> : null}
               </div>
             </section>
+            ) : null}
           </section>
 
+          {legacyPanelsVisible ? (
+            <>
           <section className="macho-stats-panel hidden gap-4 rounded-[28px] border border-[#FCD27B]/60 bg-[#2A140B]/90 p-4 text-white shadow-2xl md:mx-2 md:grid md:grid-cols-4 xl:mx-3 xl:grid-cols-7">
             <div className="macho-panel-dock md:col-span-4 xl:col-span-7">
               {desktopDetailPanels.map((panel) => (
@@ -5507,6 +5784,8 @@ export function MachoClickerPage() {
               </div>
             </div>
           </section>
+            </>
+          ) : null}
         </div>
       </main>
     </div>

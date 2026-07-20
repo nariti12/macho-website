@@ -10,6 +10,7 @@
     "lint": "eslint",
     "generate:macho-clicker-sounds": "node scripts/generate-macho-clicker-sounds.mjs",
     "check:macho-clicker-balance": "node scripts/check-macho-clicker-balance.mjs",
+    "check:macho-evolution-assets": "node scripts/check-macho-evolution-assets.mjs",
     "test:macho-clicker": "playwright test e2e/macho-clicker.spec.ts"
   },
   "dependencies": {

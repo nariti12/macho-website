@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 
 const source = await readFile(new URL("../src/components/macho-clicker-page.tsx", import.meta.url), "utf8");
 const equipmentSource = source.slice(source.indexOf("const upgrades: Upgrade[]"), source.indexOf("const visualUpgrades"));
@@ -26,7 +26,13 @@ const canonicalBuildings = [
   ["finalMacho", 540_000_000_000_000_000_000_000_000, 510_000_000_000_000],
 ];
 
-const checkpointSeconds = new Set([10 * 60, 30 * 60, 60 * 60]);
+const checkpointSeconds = new Set([1 * 60, 5 * 60, 10 * 60, 30 * 60, 60 * 60]);
+const inputProfiles = [
+  { id: "idle", label: "放置", clicksPerSecond: 0 },
+  { id: "2-cps", label: "毎秒2クリック", clicksPerSecond: 2 },
+  { id: "5-cps", label: "毎秒5クリック", clicksPerSecond: 5 },
+  { id: "8-cps", label: "毎秒8クリック", clicksPerSecond: 8 },
+];
 
 const clicksPerSecondAt = (elapsedSeconds) => {
   if (elapsedSeconds <= 60) return 5;
@@ -50,12 +56,13 @@ const readBuilding = (key) => {
   };
 };
 
-const simulateProgression = (definitions) => {
+const simulateProgression = (definitions, clicksPerSecondAt) => {
   const buildings = definitions.map(([key, baseCost, cps]) => ({ key, baseCost, cps, owned: 0 }));
   let bank = 0;
   let produced = 0;
   let cps = 0;
   const checkpoints = [];
+  const unlocks = [];
 
   for (let second = 1; second <= 60 * 60; second += 1) {
     const earned = cps + clicksPerSecondAt(second);
@@ -77,6 +84,9 @@ const simulateProgression = (definitions) => {
       bank -= selected.cost;
       selected.building.owned += 1;
       cps += selected.building.cps;
+      if (selected.building.owned === 1) {
+        unlocks.push({ key: selected.building.key, second, cost: selected.cost });
+      }
     }
 
     if (checkpointSeconds.has(second)) {
@@ -92,7 +102,7 @@ const simulateProgression = (definitions) => {
     }
   }
 
-  return checkpoints;
+  return { checkpoints, unlocks };
 };
 
 const failures = [];
@@ -105,15 +115,25 @@ for (const [key, expectedCost, expectedCps] of canonicalBuildings) {
   }
 }
 
-const cookieProgression = simulateProgression(canonicalBuildings);
-const machoProgression = simulateProgression(actualDefinitions);
-for (let index = 0; index < cookieProgression.length; index += 1) {
-  const cookie = cookieProgression[index];
-  const macho = machoProgression[index];
+const cookieProgression = simulateProgression(canonicalBuildings, clicksPerSecondAt);
+const machoProgression = simulateProgression(actualDefinitions, clicksPerSecondAt);
+for (let index = 0; index < cookieProgression.checkpoints.length; index += 1) {
+  const cookie = cookieProgression.checkpoints[index];
+  const macho = machoProgression.checkpoints[index];
   if (JSON.stringify(cookie) !== JSON.stringify(macho)) {
     failures.push(`${cookie.minutes} minute progression differs: Cookie=${JSON.stringify(cookie)}, Macho=${JSON.stringify(macho)}`);
   }
 }
+
+const profileReports = inputProfiles.map((profile) => {
+  const clickRate = () => profile.clicksPerSecond;
+  const cookie = simulateProgression(canonicalBuildings, clickRate);
+  const macho = simulateProgression(actualDefinitions, clickRate);
+  if (JSON.stringify(cookie) !== JSON.stringify(macho)) {
+    failures.push(`${profile.label} progression differs between the base economies.`);
+  }
+  return { ...profile, cookie, macho };
+});
 
 const offlineScenarios = [
   { label: "base", limitSeconds: 30 * 60 },
@@ -128,6 +148,23 @@ const offlineRows = offlineScenarios.flatMap((scenario) =>
   }))
 );
 
+const reportDirectory = new URL("../test-results/", import.meta.url);
+const reportUrl = new URL("../test-results/macho-clicker-balance-report.json", import.meta.url);
+await mkdir(reportDirectory, { recursive: true });
+await writeFile(
+  reportUrl,
+  `${JSON.stringify(
+    {
+      generatedAt: new Date().toISOString(),
+      scope: "base equipment only; power upgrades and random events excluded",
+      profiles: profileReports,
+      offlineRows,
+    },
+    null,
+    2
+  )}\n`
+);
+
 if (offlineRows[0].creditedSeconds !== 1_800 || offlineRows[1].creditedSeconds !== 1_800) {
   failures.push("Base offline credit must remain capped at 30 minutes.");
 }
@@ -140,17 +177,33 @@ if (failures.length > 0) {
   failures.forEach((failure) => console.error(`- ${failure}`));
   process.exitCode = 1;
 } else {
-  console.log(`Verified ${canonicalBuildings.length} Cookie-style equipment definitions (cost rate 1.15).`);
-  console.log("Controlled progression (same input and ROI purchase strategy):");
+  console.log(`Verified ${canonicalBuildings.length} base equipment definitions (cost rate 1.15).`);
+  console.log("Base-economy comparison only: custom Macho Clicker multipliers are intentionally excluded.");
+  console.log("Controlled base progression (same input and ROI purchase strategy):");
   console.table(
-    cookieProgression.map((row, index) => ({
+    cookieProgression.checkpoints.map((row, index) => ({
       time: `${row.minutes} min`,
       cookieCps: row.cps,
-      machoCps: machoProgression[index].cps,
+      machoCps: machoProgression.checkpoints[index].cps,
       cookieBuildings: row.buildings,
-      machoBuildings: machoProgression[index].buildings,
+      machoBuildings: machoProgression.checkpoints[index].buildings,
       highest: row.highest,
     }))
   );
+  console.log("Input profile checkpoints:");
+  for (const profile of profileReports) {
+    console.log(profile.label);
+    console.table(
+      profile.macho.checkpoints.map((row) => ({
+        time: `${row.minutes} min`,
+        produced: row.produced,
+        bank: row.bank,
+        cps: row.cps,
+        buildings: row.buildings,
+        highest: row.highest,
+      }))
+    );
+  }
   console.table(offlineRows);
+  console.log("Wrote test-results/macho-clicker-balance-report.json");
 }

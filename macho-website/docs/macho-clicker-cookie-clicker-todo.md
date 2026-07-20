@@ -1,5 +1,8 @@
 # マチョクリッカー Cookie Clicker 超え TODO
 
+> [!IMPORTANT]
+> このTODOは2026-07-18時点の実装履歴として保存しています。チェック済みでも、実際のプレイ体験が完成したことは意味しません。今後の再設計と完成判定は [`macho-clicker-v2-redesign-todo.md`](./macho-clicker-v2-redesign-todo.md) を正とします。
+
 ## 目的
 
 マチョクリッカーを「ただのクリック画面」ではなく、Cookie Clicker のように長く触りたくなる放置・増殖ゲームへ引き上げる。
