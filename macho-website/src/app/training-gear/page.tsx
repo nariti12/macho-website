@@ -27,6 +27,7 @@ type GearItem = {
   imageUrl: string;
   fallbackPriceYen: number;
   searchUrl?: string;
+  priceSearchUrl?: string;
   amazonUrl?: string;
 };
 
@@ -70,10 +71,11 @@ const gearSections: GearSection[] = [
         comment: "迷ったらこれ。王道ベルト。コスパ・品質ともに良し。",
         searchUrl:
           "https://search.rakuten.co.jp/search/mall/%E3%82%B4%E3%83%BC%E3%83%AB%E3%83%89%E3%82%B8%E3%83%A0+%E3%83%AC%E3%82%B6%E3%83%BC+%E3%83%91%E3%83%AF%E3%83%BC%E3%83%99%E3%83%AB%E3%83%88/",
+        priceSearchUrl: "https://search.rakuten.co.jp/search/mall/G3368/",
         amazonUrl:
           "https://www.amazon.co.jp/s?k=%E3%82%B4%E3%83%BC%E3%83%AB%E3%83%89%E3%82%B8%E3%83%A0+%E3%83%88%E3%83%AC%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E3%83%99%E3%83%AB%E3%83%88",
         imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/powerpit/cabinet/04825845/imgrc0092518792.jpg",
-        fallbackPriceYen: 7920,
+        fallbackPriceYen: 7150,
       },
       {
         rank: 5,
@@ -144,8 +146,8 @@ const getSections = async () =>
       ...item,
       affiliateUrl: item.searchUrl ? buildRakutenAffiliateUrl(item.searchUrl) : null,
       amazonAffiliateUrl: item.amazonUrl ? buildAmazonAffiliateUrl(item.amazonUrl) : null,
-      priceLabel: item.searchUrl
-        ? await fetchRakutenPriceLabel(item.searchUrl, item.fallbackPriceYen)
+      priceLabel: item.priceSearchUrl || item.searchUrl
+        ? await fetchRakutenPriceLabel(item.priceSearchUrl ?? item.searchUrl, item.fallbackPriceYen)
         : formatYen(item.fallbackPriceYen),
     }))),
   })));
