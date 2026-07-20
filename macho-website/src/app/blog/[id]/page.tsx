@@ -478,15 +478,12 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ id:
 
                   if (block.fieldId === "todayInsight") {
                     return withTableOfContents(
-                      <aside
-                        aria-label="気づき"
-                        className="overflow-hidden rounded-[24px] border-[3px] border-[#FF8A23] bg-white shadow-sm"
-                      >
-                        <div className="flex items-center gap-2.5 border-b-2 border-[#FFB56F] px-5 py-3.5 sm:px-6">
-                          <MessageCircle aria-hidden="true" className="text-[#E85D04]" size={24} strokeWidth={2.4} />
-                          <p className="text-lg font-bold tracking-[0.04em] text-[#7C2D12] sm:text-xl">気づき</p>
+                      <aside aria-label="気づき" className={styles.insightBlock}>
+                        <div className={styles.insightLabel}>
+                          <MessageCircle aria-hidden="true" size={16} strokeWidth={2.8} />
+                          <span>気づき</span>
                         </div>
-                        <div className="px-5 py-5 sm:px-6 sm:py-6">
+                        <div className={styles.insightContent}>
                           <div className="blog-content" dangerouslySetInnerHTML={{ __html: block.text }} />
                         </div>
                       </aside>,
