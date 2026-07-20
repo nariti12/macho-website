@@ -6,14 +6,14 @@
   overflow: hidden;
   color: #374151;
   line-height: 1.85;
-  border: 1px solid #f6b863;
+  border: 3px solid #ff8a23;
   border-radius: 1.5rem;
-  background: linear-gradient(135deg, #fff9ed 0%, #fff4da 55%, #ffebc7 100%);
-  box-shadow: 0 14px 32px rgb(154 52 18 / 10%);
+  background: #fff;
+  box-shadow: 0 4px 12px rgb(124 45 18 / 8%);
 }
 
 .blogBody :global(.today-insight)::before {
-  content: "今日の気づき";
+  content: "気づき";
   position: absolute;
   inset: 0 0 auto;
   display: flex;
@@ -24,10 +24,12 @@
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: 0.04em;
-  border-bottom: 1px solid #f6c982;
-  background:
-    radial-gradient(circle at 2rem 50%, #ff8a23 0 0.95rem, transparent 1rem),
-    linear-gradient(rgb(255 255 255 / 62%), rgb(255 255 255 / 62%));
+  border-bottom: 2px solid #ffb56f;
+  background-color: #fff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23E85D04' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 1.25rem center;
+  background-size: 1.5rem 1.5rem;
 }
 
 @media (min-width: 640px) {
