@@ -1,7 +1,7 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 
 import { SiteHeader } from "@/components/site-header";
+import { TrainingFaqBrowser } from "@/components/training-faq-browser";
 import { buildUrl, toJsonLd } from "@/lib/seo";
 
 const profileImageSrc = "/picture/ore.png";
@@ -239,30 +239,6 @@ export const metadata: Metadata = {
   },
 };
 
-const renderAnswer = (answer: string) => {
-  const parts = answer.split(/(https:\/\/www\.machoda\.com\/[^\s]+)/g);
-
-  return parts.map((part) => {
-    if (part === "https://www.machoda.com/intake-calculator") {
-      return (
-        <Link key={part} href="/intake-calculator" className="font-semibold text-[#C2410C] underline underline-offset-4">
-          {part}
-        </Link>
-      );
-    }
-
-    if (part === "https://www.machoda.com/training-wear") {
-      return (
-        <Link key={part} href="/training-wear" className="font-semibold text-[#C2410C] underline underline-offset-4">
-          {part}
-        </Link>
-      );
-    }
-
-    return part;
-  });
-};
-
 export default function TrainingFaqPage() {
   const faqJsonLd = toJsonLd({
     "@context": "https://schema.org",
@@ -297,45 +273,7 @@ export default function TrainingFaqPage() {
             </div>
           </section>
 
-          <nav className="rounded-[28px] bg-white/90 p-5 shadow-xl">
-            <div className="flex flex-wrap gap-3">
-              {faqSections.map((section) => (
-                <a
-                  key={section.title}
-                  href={`#${section.title}`}
-                  className="rounded-full bg-[#FFF4E7] px-4 py-2 text-sm font-semibold text-[#9A3412] transition hover:bg-[#FFE7C2]"
-                >
-                  {section.title}
-                </a>
-              ))}
-            </div>
-          </nav>
-
-          {faqSections.map((section, sectionIndex) => (
-            <section key={section.title} id={section.title} className="scroll-mt-24 rounded-[32px] bg-white/95 p-6 shadow-2xl sm:p-8">
-              <div className="mb-6 flex items-center gap-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#FF8A23] text-sm font-bold text-white shadow-lg">
-                  {sectionIndex + 1}
-                </span>
-                <h2 className="text-2xl font-bold text-[#7C2D12] sm:text-3xl">{section.title}</h2>
-              </div>
-
-              <div className="grid gap-4">
-                {section.items.map((item, index) => (
-                  <article key={`${section.title}-${index}`} className="rounded-3xl border border-[#FCD27B] bg-[#FFFDF8] p-5 shadow-sm">
-                    <h3 className="flex gap-3 text-base font-bold leading-7 text-[#7C2D12] sm:text-lg">
-                      <span className="text-[#FF8A23]">Q.</span>
-                      <span>{item.question}</span>
-                    </h3>
-                    <div className="mt-3 grid grid-cols-[auto_1fr] gap-x-2 pl-0 text-sm leading-7 text-slate-700 sm:pl-8 sm:text-base">
-                      <span className="font-bold text-[#C2410C]">A.</span>
-                      <p className="whitespace-pre-line">{renderAnswer(item.answer)}</p>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </section>
-          ))}
+          <TrainingFaqBrowser sections={faqSections} />
         </div>
       </main>
     </div>

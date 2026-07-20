@@ -29,6 +29,7 @@
 | `/supplements-top3` | 旧URLから `/supplements-ranking` へリダイレクト | `src/app/supplements-top3/page.tsx` |
 | `/training-wear` | おすすめトレーニングシューズ | `src/app/training-wear/page.tsx` |
 | `/training-gear` | おすすめトレーニングギア | `src/app/training-gear/page.tsx` |
+| `/training-faq` | 筋トレFAQ。全文検索とカテゴリ絞り込みに対応 | `src/app/training-faq/page.tsx` |
 | `/profile` | プロフィール | `src/app/profile/page.tsx` |
 | `/contact` | お問合せフォーム | `src/app/contact/page.tsx` |
 | `/privacy` | プライバシーポリシー | `src/app/privacy/page.tsx` |
