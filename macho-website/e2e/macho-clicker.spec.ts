@@ -41,17 +41,26 @@ const expectGameFillsViewport = async (page: Page) => {
 for (const viewport of [
   { name: "desktop-1440", width: 1440, height: 900 },
   { name: "desktop-1920", width: 1920, height: 1080 },
+  { name: "mobile-360-browser-ui", width: 360, height: 500 },
+  { name: "mobile-360-short", width: 360, height: 640 },
   { name: "mobile-390", width: 390, height: 844 },
+  { name: "mobile-430", width: 430, height: 932 },
+  { name: "mobile-landscape-667", width: 667, height: 375 },
 ]) {
   test(`${viewport.name}: layout and screenshot`, async ({ page }) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await openFreshGame(page);
     await expectNoPageOverflow(page);
     await expectGameFillsViewport(page);
-    if (viewport.name === "mobile-390") {
+    if (viewport.name.startsWith("mobile-")) {
       const characterBox = await page.getByRole("button", { name: "マチョ田をクリック" }).boundingBox();
+      const characterImageBox = await page.locator(".macho-character-image").boundingBox();
       expect(characterBox).not.toBeNull();
+      expect(characterImageBox).not.toBeNull();
       expect((characterBox?.y ?? 0) + (characterBox?.height ?? 0)).toBeLessThanOrEqual(viewport.height + 1);
+      expect((characterImageBox?.y ?? 0) + (characterImageBox?.height ?? 0)).toBeLessThanOrEqual(viewport.height + 1);
+      const minimumCharacterHeight = viewport.height <= 520 ? 120 : viewport.height <= 700 ? 180 : 220;
+      expect(characterImageBox?.height ?? 0).toBeGreaterThanOrEqual(minimumCharacterHeight);
     }
     await page.screenshot({ path: `test-results/visual/${viewport.name}.png`, fullPage: true });
   });
@@ -124,17 +133,67 @@ test("desktop: click, purchase, settings and save", async ({ page }) => {
   await expectNoPageOverflow(page);
 });
 
+test("desktop: bulk purchase buys the selected quantity at the exact cumulative price", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openFreshGame(page);
+  await expect
+    .poll(async () => page.evaluate(() => Boolean(localStorage.getItem("machoda:macho-clicker:v3"))))
+    .toBe(true);
+
+  await page.evaluate(() => {
+    const key = "machoda:macho-clicker:v3";
+    const saved = JSON.parse(localStorage.getItem(key) ?? "{}");
+    localStorage.setItem(
+      key,
+      JSON.stringify({
+        ...saved,
+        muscle: 1_000,
+        totalMuscle: 1_000,
+      })
+    );
+  });
+  await page.reload({ waitUntil: "domcontentloaded" });
+
+  await page.getByRole("button", { name: "×10", exact: true }).click();
+  await page.getByRole("button", { name: "ダンベル、10個購入可能" }).click();
+
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        const saved = JSON.parse(localStorage.getItem("machoda:macho-clicker:v3") ?? "{}");
+        return {
+          owned: saved.upgrades?.pushUp,
+          saveVersion: saved.saveVersion,
+        };
+      })
+    )
+    .toEqual({
+      owned: 10,
+      saveVersion: 2,
+    });
+  const savedMuscle = await page.evaluate(
+    () => JSON.parse(localStorage.getItem("machoda:macho-clicker:v3") ?? "{}").muscle
+  );
+  // The exact 308-point cumulative cost is covered by the pure economy test.
+  // Passive production starts immediately after purchase, so the browser value
+  // is expected to be at or just above the remaining 692 points.
+  expect(savedMuscle).toBeGreaterThanOrEqual(692);
+  expect(savedMuscle).toBeLessThan(710);
+});
+
 test("mobile: tabs remain usable and shop scrolls", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize({ width: 360, height: 640 });
   await openFreshGame(page);
 
   await page.getByRole("button", { name: "ショップ", exact: true }).click();
   await expect(page.getByText("ショップ", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("アップグレード", { exact: true })).toBeVisible();
+  await page.screenshot({ path: "test-results/visual/mobile-360-short-shop.png" });
   await page.mouse.wheel(0, 1_400);
 
   await page.getByRole("button", { name: "設備", exact: true }).click();
   await expect(page.getByText("ジム設備", { exact: true })).toBeVisible();
+  await page.screenshot({ path: "test-results/visual/mobile-360-short-equipment.png" });
 
   await page.getByRole("button", { name: "ゲームメニューを開く" }).click();
   await expect(page.getByRole("heading", { name: "メニュー" })).toBeVisible();
@@ -144,7 +203,7 @@ test("mobile: tabs remain usable and shop scrolls", async ({ page }) => {
 });
 
 test("mobile: three-step guide teaches click, purchase and passive production", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize({ width: 360, height: 640 });
   await openFreshGame(page);
 
   const character = page.getByTestId("macho-character-button");
@@ -154,10 +213,13 @@ test("mobile: three-step guide teaches click, purchase and passive production", 
 
   for (let count = 0; count < 14; count += 1) await character.click({ force: true });
   await expect(page.getByTestId("macho-onboarding-shop-card")).toContainText("ダンベルを1個買う");
-  await page.getByRole("button", { name: /ダンベル/ }).last().click();
+  await page.getByRole("button", { name: "ダンベル、1個購入可能" }).click();
 
   await expect(page.getByTestId("macho-onboarding-card")).toContainText("3/3");
   await expect(page.getByTestId("macho-onboarding-card")).toContainText("毎秒 +0.1");
+  const characterImageBox = await page.locator(".macho-character-image").boundingBox();
+  expect(characterImageBox).not.toBeNull();
+  expect((characterImageBox?.y ?? 0) + (characterImageBox?.height ?? 0)).toBeLessThanOrEqual(641);
   await page.getByRole("button", { name: "トレーニング開始" }).click();
   await expect(page.getByTestId("macho-onboarding-card")).toHaveCount(0);
 });
@@ -167,6 +229,7 @@ test("mobile: primary controls meet the 44px touch target", async ({ page }) => 
   await openFreshGame(page);
 
   const controls = [
+    page.getByRole("button", { name: "効果音をオフにする" }),
     page.getByRole("button", { name: "実績を開く" }),
     page.getByRole("button", { name: "ゲームメニューを開く" }),
     page.getByRole("button", { name: "鍛える", exact: true }),
@@ -180,6 +243,16 @@ test("mobile: primary controls meet the 44px touch target", async ({ page }) => 
   }
 });
 
+test("sound preference is available from the game header and persists", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openFreshGame(page);
+
+  await page.getByRole("button", { name: "効果音をオフにする" }).click();
+  await expect(page.getByRole("button", { name: "効果音をオンにする" })).toBeVisible();
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("button", { name: "効果音をオンにする" })).toBeVisible();
+});
+
 test("fresh game: shop reveals only the first equipment and two mysteries", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openFreshGame(page);
@@ -188,6 +261,43 @@ test("fresh game: shop reveals only the first equipment and two mysteries", asyn
   await expect(shop.getByRole("button", { name: /ダンベル/ })).toBeVisible();
   await expect(shop.getByLabel("未解放の設備")).toHaveCount(2);
   await expect(shop.getByText("腹筋ローラー職人", { exact: true })).toHaveCount(0);
+});
+
+test("mobile: equipment details open in a bottom sheet", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openFreshGame(page);
+  await page.getByRole("button", { name: "ショップ", exact: true }).click();
+
+  await page.getByRole("button", { name: "ダンベルの詳細を開く" }).click();
+  const details = page.getByRole("dialog", { name: "ダンベルの生産詳細" });
+  await expect(details).toBeVisible();
+  await expect(details.getByText("所有数 0")).toBeVisible();
+  await expect(details.getByText("1個あたり")).toBeVisible();
+  await expect(details.getByText("合計生産")).toBeVisible();
+  await expect(details.getByText("価格")).toBeVisible();
+  await page.getByRole("button", { name: "生産詳細を閉じる" }).click();
+  await expect(details).toHaveCount(0);
+});
+
+test("equipment unlock announces itself and animates the revealed row", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openFreshGame(page);
+  const saved = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("machoda:macho-clicker:v3") ?? "{}")
+  );
+  await page.addInitScript((seeded) => {
+    localStorage.setItem("machoda:macho-clicker:v3", JSON.stringify(seeded));
+  }, {
+    ...saved,
+    muscle: 99,
+    totalMuscle: 99,
+    lastSavedAt: Date.now(),
+  });
+  await page.reload({ waitUntil: "domcontentloaded" });
+
+  await page.getByRole("button", { name: "マチョ田をクリック" }).click({ force: true });
+  await expect(page.getByText("新設備「腹筋ローラー職人」がショップに解放されました！")).toBeVisible();
+  await expect(page.getByRole("button", { name: /腹筋ローラー職人/ })).toHaveClass(/macho-shop-unlocked/);
 });
 
 test("mobile: rapid touch input stays responsive and counts each tap once", async ({ page }) => {
@@ -430,7 +540,17 @@ for (const viewport of [
 }
 
 test("all gameplay sounds are delivered", async ({ request }) => {
-  for (const sound of ["click", "buy", "blocked", "achievement", "golden-spawn", "golden-collect"]) {
+  for (const sound of [
+    "click",
+    "buy",
+    "blocked",
+    "unlock",
+    "upgrade",
+    "evolution",
+    "achievement",
+    "golden-spawn",
+    "golden-collect",
+  ]) {
     const response = await request.get(`/sounds/macho-clicker/${sound}.wav`);
     expect(response.ok(), `${sound}.wav should be available`).toBeTruthy();
     expect(response.headers()["content-type"]).toContain("audio");

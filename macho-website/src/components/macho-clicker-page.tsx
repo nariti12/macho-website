@@ -5,8 +5,28 @@ import Link from "next/link";
 import type { CSSProperties, MouseEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePressActivation } from "@/hooks/use-press-activation";
+import {
+  calculateProduction,
+  getBuildingCost,
+  getBulkPurchase,
+  type PurchaseAmount,
+} from "@/lib/macho-clicker/economy";
+import {
+  migrateMachoClickerSave,
+  serializeMachoClickerSave,
+  type PreviousVersionSnapshot,
+} from "@/lib/macho-clicker/save";
+import {
+  BODY_EVOLUTION_STAGES,
+  getBodyStage,
+  getUnlockedBodyEvolutionStage,
+} from "@/lib/macho-clicker/progression";
+import {
+  MACHO_BUILDINGS,
+  type Upgrade,
+  type UpgradeKey,
+} from "@/lib/macho-clicker/buildings";
 
-const finalCharacterImageSrc = "/picture/man.png";
 const STORAGE_KEY = "machoda:macho-clicker:v3";
 const PREFERENCES_KEY = "machoda:macho-clicker:preferences:v1";
 const ONBOARDING_KEY = "machoda:macho-clicker:onboarding:v1";
@@ -31,8 +51,6 @@ const GOLDEN_SPAWN_MIN_MS = 5 * 60 * 1000;
 const GOLDEN_SPAWN_MAX_MS = 15 * 60 * 1000;
 const GOLDEN_LIFETIME_MS = 13_000;
 const MUSCLE_CRYSTAL_GROW_MS = 24 * 60 * 60 * 1000;
-const BUILDING_LEVEL_BONUS_RATE = 0.01;
-const MAX_BUILDING_LEVEL_MULTIPLIER = 4;
 const MAX_PRESTIGE_MULTIPLIER = 25;
 const MAX_ACHIEVEMENT_SUPPORT_MULTIPLIER = 3;
 const GOLDEN_HISTORY_LIMIT = 12;
@@ -43,41 +61,6 @@ const FOCUS_DURATION_MS = 5 * 60 * 1000;
 const FOCUS_PRODUCTION_MULTIPLIER = 1.5;
 const FLOATING_GAIN_LIMIT = 28;
 const SPARK_LIMIT = 96;
-
-type UpgradeKey =
-  | "pushUp"
-  | "abRoller"
-  | "dumbbell"
-  | "protein"
-  | "chicken"
-  | "benchPress"
-  | "trainer"
-  | "gym"
-  | "supplementStore"
-  | "mealPrepLab"
-  | "machoPortal"
-  | "timeGym"
-  | "antiGravityGym"
-  | "proteinPrism"
-  | "chanceMachine"
-  | "fractalMuscle"
-  | "muscleConsole"
-  | "idleverseGym"
-  | "cortexTrainer"
-  | "finalMacho";
-
-type Upgrade = {
-  key: UpgradeKey;
-  name: string;
-  label: string;
-  icon: string;
-  spriteSrc: string;
-  description: string;
-  baseCost: number;
-  costRate: number;
-  perSecondBonus?: number;
-  accent: string;
-};
 
 type PowerUpgrade = {
   id: string;
@@ -100,6 +83,7 @@ type PowerUpgrade = {
 };
 
 type GameState = {
+  previousVersionSnapshot?: PreviousVersionSnapshot;
   muscle: number;
   totalMuscle: number;
   handMadeMuscle: number;
@@ -160,7 +144,16 @@ type MobilePanel = "click" | "gym" | "shop" | "stats";
 type DesktopDetailPanel = "overview" | "daily" | "achievements" | "legacy" | "levels" | "stats" | "save";
 type GameOverlay = "menu" | "achievements" | "community" | null;
 
-type SoundType = "click" | "buy" | "blocked" | "achievement" | "goldenSpawn" | "goldenCollect";
+type SoundType =
+  | "click"
+  | "buy"
+  | "blocked"
+  | "unlock"
+  | "upgrade"
+  | "evolution"
+  | "achievement"
+  | "goldenSpawn"
+  | "goldenCollect";
 
 type NumberNotation = "short" | "japanese" | "full";
 type EffectDensity = "low" | "normal" | "high";
@@ -307,248 +300,7 @@ type CrystalResearch = {
   unlock: (state: GameState) => boolean;
 };
 
-const upgrades: Upgrade[] = [
-  {
-    key: "pushUp",
-    name: "ダンベル",
-    label: "DB",
-    icon: "➤",
-    spriteSrc: "/game/macho-clicker/icons/generated-v3/dumbbell.png",
-    description: "10秒に1回、ダンベルが筋肉ポイントを生みます。",
-    baseCost: 15,
-    costRate: 1.15,
-    perSecondBonus: 0.1,
-    accent: "from-[#FFE7C2] to-[#F97316]",
-  },
-  {
-    key: "abRoller",
-    name: "腹筋ローラー職人",
-    label: "ABS",
-    icon: "◎",
-    spriteSrc: "/game/macho-clicker/icons/generated-v3/ab-roller.png",
-    description: "腹筋ローラーを転がし続ける職人です。",
-    baseCost: 100,
-    costRate: 1.15,
-    perSecondBonus: 1,
-    accent: "from-[#FED7AA] to-[#EA580C]",
-  },
-  {
-    key: "dumbbell",
-    name: "バーベル部隊",
-    label: "BAR",
-    icon: "B",
-    spriteSrc: "/game/macho-clicker/icons/generated-v3/barbell-rack.png",
-    description: "黙々とバーベルを上げ続ける部隊です。",
-    baseCost: 1100,
-    costRate: 1.15,
-    perSecondBonus: 8,
-    accent: "from-[#FDBA74] to-[#C2410C]",
-  },
-  {
-    key: "protein",
-    name: "プロテイン工房",
-    label: "PRO",
-    icon: "P",
-    spriteSrc: "/game/macho-clicker/icons/generated-v3/protein-workshop.png",
-    description: "筋肉の材料を大量に作る工房です。",
-    baseCost: 12000,
-    costRate: 1.15,
-    perSecondBonus: 47,
-    accent: "from-[#FFEDD5] to-[#FB923C]",
-  },
-  {
-    key: "chicken",
-    name: "高たんぱく食堂",
-    label: "MEAL",
-    icon: "肉",
-    spriteSrc: "/game/macho-clicker/icons/generated-v3/high-protein-meal.png",
-    description: "鶏むね肉を大量提供する食堂です。",
-    baseCost: 130000,
-    costRate: 1.15,
-    perSecondBonus: 260,
-    accent: "from-[#FED7AA] to-[#D97706]",
-  },
-  {
-    key: "benchPress",
-    name: "ベンチプレス軍団",
-    label: "BENCH",
-    icon: "B",
-    spriteSrc: "/game/macho-clicker/icons/generated-v3/bench-press.png",
-    description: "胸トレで筋肉ポイントを量産します。",
-    baseCost: 1400000,
-    costRate: 1.15,
-    perSecondBonus: 1400,
-    accent: "from-[#FDE68A] to-[#EA580C]",
-  },
-  {
-    key: "trainer",
-    name: "専属トレーナー",
-    label: "COACH",
-    icon: "T",
-    spriteSrc: "/game/macho-clicker/icons/macho-cat.svg",
-    description: "フォーム改善で筋肉生産を加速します。",
-    baseCost: 20000000,
-    costRate: 1.15,
-    perSecondBonus: 7800,
-    accent: "from-[#FDBA74] to-[#9A3412]",
-  },
-  {
-    key: "gym",
-    name: "巨大ジム",
-    label: "GYM",
-    icon: "G",
-    spriteSrc: "/game/macho-clicker/icons/generated-v3/gym.png",
-    description: "街ごと筋トレ空間に変える巨大施設です。",
-    baseCost: 330000000,
-    costRate: 1.15,
-    perSecondBonus: 44000,
-    accent: "from-[#FFB45D] to-[#7C2D12]",
-  },
-  {
-    key: "supplementStore",
-    name: "サプリ宇宙便",
-    label: "SHIP",
-    icon: "S",
-    spriteSrc: "/game/macho-clicker/icons/generated-v3/supplement-ship.png",
-    description: "宇宙規模でサプリを届け、筋肉ポイントを増やします。",
-    baseCost: 5_100_000_000,
-    costRate: 1.15,
-    perSecondBonus: 260_000,
-    accent: "from-[#FFE7C2] to-[#B45309]",
-  },
-  {
-    key: "mealPrepLab",
-    name: "栄養錬金ラボ",
-    label: "LAB",
-    icon: "L",
-    spriteSrc: "/game/macho-clicker/icons/generated-v3/nutrition-lab.png",
-    description: "食事管理を錬金術レベルまで高める研究所です。",
-    baseCost: 75_000_000_000,
-    costRate: 1.15,
-    perSecondBonus: 1_600_000,
-    accent: "from-[#FED7AA] to-[#92400E]",
-  },
-  {
-    key: "machoPortal",
-    name: "マッチョポータル",
-    label: "PORT",
-    icon: "P",
-    spriteSrc: "/game/macho-clicker/icons/generated-v3/macho-portal.png",
-    description: "異世界の筋肉を呼び込むポータルです。",
-    baseCost: 1_000_000_000_000,
-    costRate: 1.15,
-    perSecondBonus: 10_000_000,
-    accent: "from-[#FDBA74] to-[#7C2D12]",
-  },
-  {
-    key: "timeGym",
-    name: "時空ジム",
-    label: "TIME",
-    icon: "T",
-    spriteSrc: "/game/macho-clicker/icons/generated-v3/time-gym.png",
-    description: "未来のトレーニング成果を前借りします。",
-    baseCost: 14_000_000_000_000,
-    costRate: 1.15,
-    perSecondBonus: 65_000_000,
-    accent: "from-[#FFEDD5] to-[#C2410C]",
-  },
-  {
-    key: "antiGravityGym",
-    name: "反重力ジム",
-    label: "ANTI",
-    icon: "A",
-    spriteSrc: "/game/macho-clicker/icons/generated-v3/anti-gravity-gym.png",
-    description: "重力を超えた負荷で筋肉ポイントを作ります。",
-    baseCost: 170_000_000_000_000,
-    costRate: 1.15,
-    perSecondBonus: 430_000_000,
-    accent: "from-[#FDE68A] to-[#9A3412]",
-  },
-  {
-    key: "proteinPrism",
-    name: "プロテインプリズム",
-    label: "PRISM",
-    icon: "R",
-    spriteSrc: "/game/macho-clicker/icons/generated-v3/protein-prism.png",
-    description: "光をプロテインに変換する最強装置です。",
-    baseCost: 2_100_000_000_000_000,
-    costRate: 1.15,
-    perSecondBonus: 2_900_000_000,
-    accent: "from-[#FEF3C7] to-[#EA580C]",
-  },
-  {
-    key: "chanceMachine",
-    name: "筋肉ガチャ装置",
-    label: "LUCK",
-    icon: "C",
-    spriteSrc: "/game/macho-clicker/icons/generated-v3/chance-machine.png",
-    description: "運の力で筋肉ポイントを引き当てます。",
-    baseCost: 26_000_000_000_000_000,
-    costRate: 1.15,
-    perSecondBonus: 21_000_000_000,
-    accent: "from-[#FDBA74] to-[#7C2D12]",
-  },
-  {
-    key: "fractalMuscle",
-    name: "フラクタル筋肉炉",
-    label: "FRAC",
-    icon: "F",
-    spriteSrc: "/game/macho-clicker/icons/generated-v3/fractal-muscle.png",
-    description: "筋肉が筋肉を生む、終盤用の増殖炉です。",
-    baseCost: 310_000_000_000_000_000,
-    costRate: 1.15,
-    perSecondBonus: 150_000_000_000,
-    accent: "from-[#FFB45D] to-[#451A03]",
-  },
-  {
-    key: "muscleConsole",
-    name: "筋肉コンソール",
-    label: "CODE",
-    icon: "JS",
-    spriteSrc: "/game/macho-clicker/icons/generated-v3/muscle-console.png",
-    description: "筋肉生産をコードで直接書き換える終盤用コンソールです。",
-    baseCost: 71_000_000_000_000_000_000,
-    costRate: 1.15,
-    perSecondBonus: 1_100_000_000_000,
-    accent: "from-[#FCE7F3] to-[#831843]",
-  },
-  {
-    key: "idleverseGym",
-    name: "アイドルバースジム",
-    label: "IDLE",
-    icon: "I",
-    spriteSrc: "/game/macho-clicker/icons/generated-v3/idleverse-gym.png",
-    description: "別次元の放置ゲームから筋肉ポイントを横取りします。",
-    baseCost: 12_000_000_000_000_000_000_000,
-    costRate: 1.15,
-    perSecondBonus: 8_300_000_000_000,
-    accent: "from-[#FED7AA] to-[#2A140B]",
-  },
-  {
-    key: "cortexTrainer",
-    name: "脳筋コルテックス",
-    label: "CORTEX",
-    icon: "C",
-    spriteSrc: "/game/macho-clicker/icons/generated-v3/cortex-trainer.png",
-    description: "脳まで筋肉化し、思考だけで筋肉ポイントを作ります。",
-    baseCost: 1_900_000_000_000_000_000_000_000,
-    costRate: 1.15,
-    perSecondBonus: 64_000_000_000_000,
-    accent: "from-[#FFE7C2] to-[#7C2D12]",
-  },
-  {
-    key: "finalMacho",
-    name: "マチョ田本人",
-    label: "YOU",
-    icon: "Y",
-    spriteSrc: "/game/macho-clicker/icons/generated-v3/final-macho.png",
-    description: "最終的にマチョ田自身が筋肉ポイントを量産します。",
-    baseCost: 540_000_000_000_000_000_000_000_000,
-    costRate: 1.15,
-    perSecondBonus: 510_000_000_000_000,
-    accent: "from-[#FF8A23] to-[#451A03]",
-  },
-];
+const upgrades = MACHO_BUILDINGS;
 
 const visualUpgrades = upgrades.filter((upgrade) => upgrade.key !== "pushUp");
 
@@ -1624,7 +1376,7 @@ const formatRate = (value: number) =>
     ? value.toLocaleString("ja-JP", { minimumFractionDigits: 1, maximumFractionDigits: 1 })
     : Math.floor(value).toLocaleString("ja-JP");
 
-const getUpgradeCost = (upgrade: Upgrade, level: number) => Math.ceil(upgrade.baseCost * upgrade.costRate ** level);
+const getUpgradeCost = (upgrade: Upgrade, level: number) => getBuildingCost(upgrade, level);
 
 const hasLegacyUpgrade = (state: GameState, id: string) => state.legacyUpgrades.includes(id);
 
@@ -1662,9 +1414,6 @@ const getGoldenDurationMultiplier = (state: GameState) =>
   );
 
 const getAscensionStartingMuscle = (state: GameState) => (hasLegacyUpgrade(state, "starter-dumbbell") ? LEGACY_STARTING_MUSCLE : 0);
-
-const getBuildingLevelMultiplier = (state: GameState, key: UpgradeKey) =>
-  Math.min(MAX_BUILDING_LEVEL_MULTIPLIER, 1 + (state.buildingLevels[key] ?? 0) * BUILDING_LEVEL_BONUS_RATE);
 
 const getNextMuscleCrystalText = (timestamp: number) => {
   const remainingMs = timestamp - Date.now();
@@ -1892,6 +1641,9 @@ const soundFiles: Record<SoundType, string> = {
   click: "/sounds/macho-clicker/click.wav",
   buy: "/sounds/macho-clicker/buy.wav",
   blocked: "/sounds/macho-clicker/blocked.wav",
+  unlock: "/sounds/macho-clicker/unlock.wav",
+  upgrade: "/sounds/macho-clicker/upgrade.wav",
+  evolution: "/sounds/macho-clicker/evolution.wav",
   achievement: "/sounds/macho-clicker/achievement.wav",
   goldenSpawn: "/sounds/macho-clicker/golden-spawn.wav",
   goldenCollect: "/sounds/macho-clicker/golden-collect.wav",
@@ -2057,11 +1809,12 @@ const getBasePerSecond = (state: GameState) =>
   upgrades.reduce((total, upgrade) => total + getBuildingUnitProduction(state, upgrade) * state.upgrades[upgrade.key], 0);
 
 const getPerSecond = (state: GameState) =>
-  getBasePerSecond(state) *
-  getPrestigeMultiplier(state) *
-  getLegacyProductionMultiplier(state) *
-  getFrenzyMultiplier(state) *
-  getPowerUpgradeProductionMultiplier(state);
+  calculateProduction(getBasePerSecond(state), {
+    prestige: getPrestigeMultiplier(state),
+    legacy: getLegacyProductionMultiplier(state),
+    frenzy: getFrenzyMultiplier(state),
+    powerUpgrades: getPowerUpgradeProductionMultiplier(state),
+  }).finalPerSecond;
 
 const getOwnedUpgradeCount = (upgradeCounts: Record<UpgradeKey, number>) =>
   Object.values(upgradeCounts).reduce((total, level) => total + level, 0);
@@ -2096,109 +1849,11 @@ const getNextTitleGoal = (totalMuscle: number) => {
   return goals.find((goal) => totalMuscle < goal.value) ?? goals[goals.length - 1];
 };
 
-const bodyEvolutionStages = [
-  {
-    stage: 0,
-    label: "生活崩壊期",
-    requirement: 0,
-    imageSrc: "/picture/macho-evolution/v2/stage-00-life-collapse.png",
-    change: "ここからトレーニング生活が始まる",
-    ring: "border-white/60 bg-[#FFE7C2]",
-    scale: 0.94,
-    aura: "opacity-10",
-  },
-  {
-    stage: 1,
-    label: "入会決意",
-    requirement: 500,
-    imageSrc: "/picture/macho-evolution/v2/stage-01-gym-decision.png",
-    change: "ジムバッグを持ち、入会を決意する",
-    ring: "border-white/70 bg-[#FFD89A]",
-    scale: 0.96,
-    aura: "opacity-25",
-  },
-  {
-    stage: 2,
-    label: "初トレーニング",
-    requirement: 5_000,
-    imageSrc: "/picture/macho-evolution/v2/stage-02-first-training.png",
-    change: "トレーニングウェアへ着替える",
-    ring: "border-white/70 bg-[#FFC46F]",
-    scale: 0.98,
-    aura: "opacity-40",
-  },
-  {
-    stage: 3,
-    label: "三日坊主突破",
-    requirement: 25_000,
-    imageSrc: "/picture/macho-evolution/v2/stage-03-habit-formed.png",
-    change: "姿勢と清潔感が少し改善する",
-    ring: "border-white/80 bg-[#FFB45D]",
-    scale: 1,
-    aura: "opacity-48",
-  },
-  {
-    stage: 4,
-    label: "細マッチョ期",
-    requirement: 50_000,
-    imageSrc: "/picture/macho-evolution/stage-2-athletic.png",
-    change: "腹部が締まり、胸と腕に輪郭が出る",
-    ring: "border-white/80 bg-[#FFB45D]",
-    scale: 1.01,
-    aura: "opacity-55",
-  },
-  {
-    stage: 5,
-    label: "筋トレ中級マッチョ",
-    requirement: 100_000,
-    imageSrc: "/picture/macho-evolution/stage-2-athletic.png",
-    change: "肩幅と全身の厚みが増える",
-    ring: "border-orange-100 bg-[#FFA33D]",
-    scale: 1.03,
-    aura: "opacity-66",
-  },
-  {
-    stage: 6,
-    label: "ゴリマッチョ目前",
-    requirement: 250_000,
-    imageSrc: "/picture/macho-evolution/stage-3-muscular.png",
-    change: "胸・肩・脚が大きく発達する",
-    ring: "border-orange-100 bg-[#FF9D2E]",
-    scale: 1.05,
-    aura: "opacity-75",
-  },
-  {
-    stage: 7,
-    label: "マチョ田級",
-    requirement: 1_000_000,
-    imageSrc: finalCharacterImageSrc,
-    change: "専用ウェアと伝説の風格を得る",
-    ring: "border-red-100 bg-[#FF8A23]",
-    scale: 1.08,
-    aura: "opacity-84",
-  },
-  {
-    stage: 8,
-    label: "完成形マチョ",
-    requirement: 10_000_000,
-    imageSrc: finalCharacterImageSrc,
-    change: "マチョ田の最終形態へ到達する",
-    ring: "border-red-100 bg-[#FF6A1A]",
-    scale: 1.12,
-    aura: "opacity-95",
-  },
-] as const;
-
-const getUnlockedBodyEvolutionStage = (totalMuscle: number) =>
-  bodyEvolutionStages.reduce((highest, stage) => (totalMuscle >= stage.requirement ? stage.stage : highest), 0);
-
-const getBodyStage = (stage: number) =>
-  bodyEvolutionStages.find((candidate) => candidate.stage === stage) ?? bodyEvolutionStages[0];
-
-const getNewsLines = (state: GameState, title: string, perSecond: number) => {
+const getNewsLines = (state: GameState, title: string, perSecond: number, unlockNews: string | null) => {
   const seasonalEvent = getSeasonalEvent();
   const limitedEvent = getLimitedEvent();
   const lines = [
+    ...(unlockNews ? [unlockNews] : []),
     "ジムの片隅で謎のクリック音が鳴り響いています。",
     "マチョ田、今日も腹筋ローラーを抱えて登場。",
     `${title} が街で少しずつ噂になっています。`,
@@ -2305,21 +1960,22 @@ const getNextShopGoal = (state: GameState) =>
 const BuildingProductionDetails = ({
   state,
   upgrade,
+  purchaseAmount,
 }: {
   state: GameState;
   upgrade: Upgrade;
+  purchaseAmount: PurchaseAmount;
 }) => {
   const owned = state.upgrades[upgrade.key];
-  const buildingLevel = state.buildingLevels[upgrade.key];
-  const levelMultiplier = getBuildingLevelMultiplier(state, upgrade.key);
   const unitProduction = getBuildingUnitProduction(state, upgrade);
   const totalProduction = getBuildingTotalProduction(state, upgrade);
-  const nextTotalProduction = totalProduction + unitProduction;
+  const purchase = getBulkPurchase(upgrade, owned, state.muscle, purchaseAmount);
+  const productionIncrease = unitProduction * purchase.quantity;
 
   return (
     <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-black">
       <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
-        次の価格<br />{formatNumber(getUpgradeCost(upgrade, owned))}
+        価格<br />{formatNumber(purchase.cost)}
       </div>
       <div className="rounded-xl bg-[#FFE7C2] px-3 py-2">
         1個あたり<br />+{formatRate(unitProduction)}/秒
@@ -2327,11 +1983,9 @@ const BuildingProductionDetails = ({
       <div className="col-span-2 rounded-xl bg-[#FFE7C2] px-3 py-2">
         合計生産<br />+{formatRate(totalProduction)}/秒
       </div>
-      <div className="col-span-2 rounded-xl bg-[#FFE7C2] px-3 py-2">
-        設備レベル<br />Lv.{buildingLevel} / x{levelMultiplier.toLocaleString("ja-JP", { maximumFractionDigits: 2 })}
-      </div>
       <div className="col-span-2 rounded-xl bg-[#7C2D12] px-3 py-2 text-white">
-        次に買うと +{formatRate(unitProduction)}/秒、合計 +{formatRate(nextTotalProduction)}/秒
+        {purchaseAmount === "max" ? `最大 ${purchase.quantity}個` : `${purchase.quantity}個`}買うと
+        +{formatRate(productionIncrease)}/秒
       </div>
     </div>
   );
@@ -2470,15 +2124,16 @@ const readSavedState = (): GameState => {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return { ...initialState, lastSavedAt: Date.now() };
 
-    const saved = JSON.parse(raw) as Partial<GameState>;
+    const saved = migrateMachoClickerSave(JSON.parse(raw)) as Partial<GameState>;
     const normalized: GameState = {
+      previousVersionSnapshot: saved.previousVersionSnapshot,
       muscle: typeof saved.muscle === "number" ? clampScore(saved.muscle) : 0,
       totalMuscle: typeof saved.totalMuscle === "number" ? clampScore(saved.totalMuscle) : 0,
       handMadeMuscle: typeof saved.handMadeMuscle === "number" ? clampScore(saved.handMadeMuscle) : 0,
       clickCount: typeof saved.clickCount === "number" ? Math.max(0, Math.floor(saved.clickCount)) : 0,
       bodyEvolutionStage:
         typeof saved.bodyEvolutionStage === "number"
-          ? Math.max(0, Math.min(bodyEvolutionStages.length - 1, Math.floor(saved.bodyEvolutionStage)))
+          ? Math.max(0, Math.min(BODY_EVOLUTION_STAGES.length - 1, Math.floor(saved.bodyEvolutionStage)))
           : getUnlockedBodyEvolutionStage(typeof saved.totalMuscle === "number" ? saved.totalMuscle : 0),
       upgrades: normalizeSavedUpgrades(saved.upgrades),
       buildingLevels: normalizeSavedBuildingLevels(saved.buildingLevels),
@@ -2563,11 +2218,15 @@ export function MachoClickerPage() {
   const [newsIndex, setNewsIndex] = useState(0);
   const [hoveredGymUpgradeKey, setHoveredGymUpgradeKey] = useState<UpgradeKey | null>(null);
   const [hoveredShopUpgradeKey, setHoveredShopUpgradeKey] = useState<UpgradeKey | null>(null);
+  const [mobileShopDetailKey, setMobileShopDetailKey] = useState<UpgradeKey | null>(null);
   const [hoveredPowerUpId, setHoveredPowerUpId] = useState<string | null>(null);
   const [selectedOwnedPowerUpId, setSelectedOwnedPowerUpId] = useState<string | null>(null);
   const [hoveredMysteryId, setHoveredMysteryId] = useState<string | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition>({ x: 0, y: 0 });
   const [recentlyPurchasedKey, setRecentlyPurchasedKey] = useState<UpgradeKey | null>(null);
+  const [recentlyUnlockedKey, setRecentlyUnlockedKey] = useState<UpgradeKey | null>(null);
+  const [unlockNews, setUnlockNews] = useState<string | null>(null);
+  const [purchaseAmount, setPurchaseAmount] = useState<PurchaseAmount>(1);
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("click");
   const [desktopDetailPanel, setDesktopDetailPanel] = useState<DesktopDetailPanel>("overview");
   const [gameOverlay, setGameOverlay] = useState<GameOverlay>(null);
@@ -2592,6 +2251,13 @@ export function MachoClickerPage() {
   const soundRefs = useRef<Partial<Record<SoundType, HTMLAudioElement>>>({});
   const clickSoundPoolRef = useRef<HTMLAudioElement[]>([]);
   const clickSoundPoolIndexRef = useRef(0);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const clickSoundBufferRef = useRef<AudioBuffer | null>(null);
+  const activeClickSourcesRef = useRef(new Set<AudioBufferSourceNode>());
+  const unlockedShopKeysRef = useRef<Set<UpgradeKey> | null>(null);
+  const playSoundRef = useRef<(type: SoundType) => void>(() => undefined);
+  const unlockAnimationTimerRef = useRef<number | null>(null);
+  const unlockNewsTimerRef = useRef<number | null>(null);
   const lastSoundAtRef = useRef<Partial<Record<SoundType, number>>>({});
   const characterButtonRef = useRef<HTMLButtonElement>(null);
   const clickRippleRef = useRef<HTMLSpanElement>(null);
@@ -2630,7 +2296,7 @@ export function MachoClickerPage() {
   const unlockedBodyEvolutionStage = getUnlockedBodyEvolutionStage(state.totalMuscle);
   const canBodyEvolve = state.bodyEvolutionStage < unlockedBodyEvolutionStage;
   const upcomingBodyStage =
-    state.bodyEvolutionStage < bodyEvolutionStages.length - 1 ? getBodyStage(state.bodyEvolutionStage + 1) : null;
+    state.bodyEvolutionStage < BODY_EVOLUTION_STAGES.length - 1 ? getBodyStage(state.bodyEvolutionStage + 1) : null;
   const nextBodyStage = canBodyEvolve ? upcomingBodyStage : null;
   const titleProgress = Math.min(100, Math.max(0, (state.totalMuscle / nextGoal.value) * 100));
   const ownedUpgradeCount = Object.values(state.upgrades).reduce((total, level) => total + level, 0);
@@ -2644,7 +2310,7 @@ export function MachoClickerPage() {
   const activeFocusBuff = activeBuffs.find((buff) => buff.type === "focus") ?? null;
   const visualOwnedUpgradeCount = visualUpgrades.reduce((total, upgrade) => total + state.upgrades[upgrade.key], 0);
   const visibleGymUpgrades = visualUpgrades.filter((upgrade) => state.upgrades[upgrade.key] > 0);
-  const newsLines = getNewsLines(state, title, perSecond);
+  const newsLines = getNewsLines(state, title, perSecond, unlockNews);
   const news = newsLines[newsIndex % newsLines.length];
   const bodyStage = getBodyStage(state.bodyEvolutionStage);
   const dumbbellOrbitItems = useMemo(() => getDumbbellOrbitItems(state.upgrades.pushUp), [state.upgrades.pushUp]);
@@ -2664,6 +2330,9 @@ export function MachoClickerPage() {
   }, [reducedEffects, state.totalMuscle]);
   const hoveredGymUpgrade = hoveredGymUpgradeKey ? upgrades.find((upgrade) => upgrade.key === hoveredGymUpgradeKey) ?? null : null;
   const hoveredShopUpgrade = hoveredShopUpgradeKey ? upgrades.find((upgrade) => upgrade.key === hoveredShopUpgradeKey) ?? null : null;
+  const mobileShopDetail = mobileShopDetailKey
+    ? upgrades.find((upgrade) => upgrade.key === mobileShopDetailKey) ?? null
+    : null;
   const hoveredPowerUp = hoveredPowerUpId ? powerUpgrades.find((powerUp) => powerUp.id === hoveredPowerUpId) ?? null : null;
   const selectedOwnedPowerUp = selectedOwnedPowerUpId
     ? powerUpgrades.find((powerUp) => powerUp.id === selectedOwnedPowerUpId) ?? null
@@ -2765,6 +2434,20 @@ export function MachoClickerPage() {
   }, [state]);
 
   useEffect(() => {
+    const activeSources = activeClickSourcesRef.current;
+    return () => {
+      activeSources.forEach((source) => source.stop());
+      activeSources.clear();
+      clickSoundBufferRef.current = null;
+      const context = audioContextRef.current;
+      audioContextRef.current = null;
+      if (context) void context.close();
+      if (unlockAnimationTimerRef.current !== null) window.clearTimeout(unlockAnimationTimerRef.current);
+      if (unlockNewsTimerRef.current !== null) window.clearTimeout(unlockNewsTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
     const sounds = Object.fromEntries(
       Object.entries(soundFiles).map(([type, src]) => {
         const audio = new Audio(src);
@@ -2801,13 +2484,19 @@ export function MachoClickerPage() {
     if (!isLoaded) return;
     const timer = window.setInterval(() => {
       const now = Date.now();
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...stateRef.current, lastSavedAt: now }));
+      window.localStorage.setItem(
+        STORAGE_KEY,
+        serializeMachoClickerSave({ ...stateRef.current, lastSavedAt: now })
+      );
       setLastAutoSaveAt(now);
     }, SAVE_INTERVAL_MS);
 
     return () => {
       window.clearInterval(timer);
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...stateRef.current, lastSavedAt: Date.now() }));
+      window.localStorage.setItem(
+        STORAGE_KEY,
+        serializeMachoClickerSave({ ...stateRef.current, lastSavedAt: Date.now() })
+      );
     };
   }, [isLoaded]);
 
@@ -3042,6 +2731,22 @@ export function MachoClickerPage() {
 
   const unlockAudio = () => {
     if (!soundEnabled) return;
+    let context = audioContextRef.current;
+    if (!context) {
+      const createdContext = new AudioContext();
+      context = createdContext;
+      audioContextRef.current = createdContext;
+      void fetch(soundFiles.click)
+        .then((response) => response.arrayBuffer())
+        .then((buffer) => createdContext.decodeAudioData(buffer))
+        .then((buffer) => {
+          if (audioContextRef.current === createdContext) clickSoundBufferRef.current = buffer;
+        })
+        .catch(() => {
+          // The reusable HTMLAudio pool below remains available as a fallback.
+        });
+    }
+    if (context?.state === "suspended") void context.resume();
     clickSoundPoolRef.current.forEach((audio) => audio.load());
   };
 
@@ -3053,6 +2758,21 @@ export function MachoClickerPage() {
       const cooldown = type === "click" ? 55 : 110;
       if (now - (lastSoundAtRef.current[type] ?? 0) < cooldown) return;
       lastSoundAtRef.current[type] = now;
+
+      const context = audioContextRef.current;
+      const clickBuffer = clickSoundBufferRef.current;
+      if (type === "click" && context && clickBuffer && activeClickSourcesRef.current.size < 6) {
+        const source = context.createBufferSource();
+        const gain = context.createGain();
+        source.buffer = clickBuffer;
+        source.playbackRate.value = 0.96 + Math.random() * 0.08;
+        gain.gain.value = soundVolume * (0.86 + Math.random() * 0.12);
+        source.connect(gain).connect(context.destination);
+        activeClickSourcesRef.current.add(source);
+        source.addEventListener("ended", () => activeClickSourcesRef.current.delete(source), { once: true });
+        source.start();
+        return;
+      }
 
       const baseAudio = soundRefs.current[type];
       if (!baseAudio) return;
@@ -3071,6 +2791,37 @@ export function MachoClickerPage() {
       console.error("Failed to play macho clicker sound", error);
     }
   };
+  playSoundRef.current = playSound;
+
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    const unlockedKeys = new Set(
+      upgrades
+        .filter((upgrade, index) => index === 0 || state.totalMuscle >= upgrade.baseCost)
+        .map((upgrade) => upgrade.key)
+    );
+    const previousKeys = unlockedShopKeysRef.current;
+    unlockedShopKeysRef.current = unlockedKeys;
+    if (!previousKeys) return;
+
+    const newlyUnlocked = upgrades.filter(
+      (upgrade) => unlockedKeys.has(upgrade.key) && !previousKeys.has(upgrade.key)
+    );
+    const latest = newlyUnlocked.at(-1);
+    if (!latest) return;
+
+    const newsLine = `新設備「${latest.name}」がショップに解放されました！`;
+    setRecentlyUnlockedKey(latest.key);
+    setUnlockNews(newsLine);
+    setNewsIndex(0);
+    if (hasPlayerInteractedRef.current) playSoundRef.current("unlock");
+
+    if (unlockAnimationTimerRef.current !== null) window.clearTimeout(unlockAnimationTimerRef.current);
+    if (unlockNewsTimerRef.current !== null) window.clearTimeout(unlockNewsTimerRef.current);
+    unlockAnimationTimerRef.current = window.setTimeout(() => setRecentlyUnlockedKey(null), 1_400);
+    unlockNewsTimerRef.current = window.setTimeout(() => setUnlockNews(null), 12_000);
+  }, [isLoaded, state.totalMuscle]);
 
   const animateCharacterClick = () => {
     clickRippleRef.current?.getAnimations().forEach((animation) => animation.cancel());
@@ -3112,24 +2863,24 @@ export function MachoClickerPage() {
     hasPlayerInteractedRef.current = true;
     setState((current) => {
       const level = current.upgrades[upgrade.key];
-      const cost = getUpgradeCost(upgrade, level);
-      if (current.muscle < cost) {
+      const purchase = getBulkPurchase(upgrade, level, current.muscle, purchaseAmount);
+      if (purchase.quantity === 0 || current.muscle < purchase.cost) {
         playSound("blocked");
         return current;
       }
 
-      const increase = getBuildingUnitProduction(current, upgrade);
-      setPurchaseFlash(`${upgrade.name} +${formatRate(increase)}/秒`);
+      const increase = getBuildingUnitProduction(current, upgrade) * purchase.quantity;
+      setPurchaseFlash(`${upgrade.name} ×${purchase.quantity} +${formatRate(increase)}/秒`);
       spawnPurchaseEffects(upgrade, event);
       window.setTimeout(() => setPurchaseFlash(null), 1100);
-      playSound("buy");
+      playSound(level === 0 ? "unlock" : "buy");
 
       return {
         ...current,
-        muscle: clampScore(current.muscle - cost),
+        muscle: clampScore(current.muscle - purchase.cost),
         upgrades: {
           ...current.upgrades,
-          [upgrade.key]: level + 1,
+          [upgrade.key]: level + purchase.quantity,
         },
         lastSavedAt: Date.now(),
       };
@@ -3148,7 +2899,7 @@ export function MachoClickerPage() {
       spawnPowerUpgradeEffects(powerUp, event);
       setSelectedOwnedPowerUpId(powerUp.id);
       window.setTimeout(() => setPurchaseFlash(null), 1100);
-      playSound("buy");
+      playSound("upgrade");
 
       return {
         ...current,
@@ -3440,7 +3191,7 @@ export function MachoClickerPage() {
 
     setEvolutionFlash(true);
     setPurchaseFlash(`進化: ${nextBodyStage.label}`);
-    playSound("buy");
+    playSound("evolution");
     setState((current) => ({
       ...current,
       bodyEvolutionStage: Math.min(getUnlockedBodyEvolutionStage(current.totalMuscle), current.bodyEvolutionStage + 1),
@@ -3493,19 +3244,28 @@ export function MachoClickerPage() {
     };
     setState(nextState);
     setCombo(0);
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
+    window.localStorage.setItem(STORAGE_KEY, serializeMachoClickerSave(nextState));
   };
 
   const manualSave = () => {
     const now = Date.now();
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...stateRef.current, lastSavedAt: now }));
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      serializeMachoClickerSave({ ...stateRef.current, lastSavedAt: now })
+    );
     setLastAutoSaveAt(now);
     setSaveMessage("保存しました。");
     window.setTimeout(() => setSaveMessage(""), 1800);
   };
 
   const exportSave = async () => {
-    const saveText = btoa(unescape(encodeURIComponent(JSON.stringify({ ...stateRef.current, lastSavedAt: Date.now() }))));
+    const saveText = btoa(
+      unescape(
+        encodeURIComponent(
+          serializeMachoClickerSave({ ...stateRef.current, lastSavedAt: Date.now() })
+        )
+      )
+    );
     setExportedSaveText(saveText);
     try {
       await navigator.clipboard.writeText(saveText);
@@ -3523,7 +3283,9 @@ export function MachoClickerPage() {
     if (!saveText) return;
 
     try {
-      const parsed = JSON.parse(decodeURIComponent(escape(atob(saveText)))) as Partial<GameState>;
+      const parsed = migrateMachoClickerSave(
+        JSON.parse(decodeURIComponent(escape(atob(saveText))))
+      ) as Partial<GameState>;
       const importedState: GameState = {
         ...initialState,
         ...parsed,
@@ -3533,7 +3295,7 @@ export function MachoClickerPage() {
         clickCount: typeof parsed.clickCount === "number" ? Math.max(0, Math.floor(parsed.clickCount)) : 0,
         bodyEvolutionStage:
           typeof parsed.bodyEvolutionStage === "number"
-            ? Math.max(0, Math.min(bodyEvolutionStages.length - 1, Math.floor(parsed.bodyEvolutionStage)))
+            ? Math.max(0, Math.min(BODY_EVOLUTION_STAGES.length - 1, Math.floor(parsed.bodyEvolutionStage)))
             : getUnlockedBodyEvolutionStage(typeof parsed.totalMuscle === "number" ? parsed.totalMuscle : 0),
         upgrades: normalizeSavedUpgrades(parsed.upgrades),
         buildingLevels: normalizeSavedBuildingLevels(parsed.buildingLevels),
@@ -3567,7 +3329,7 @@ export function MachoClickerPage() {
         dailyConditionDate: normalizeTrainingDate(parsed.dailyConditionDate),
       };
       setState(importedState);
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(importedState));
+      window.localStorage.setItem(STORAGE_KEY, serializeMachoClickerSave(importedState));
       setSaveMessage("インポートしました。");
     } catch {
       setSaveMessage("インポートに失敗しました。");
@@ -3616,6 +3378,7 @@ export function MachoClickerPage() {
       dailySupplementDate: state.dailySupplementDate,
       dailyConditionId: state.dailyConditionId,
       dailyConditionDate: state.dailyConditionDate,
+      previousVersionSnapshot: state.previousVersionSnapshot,
     };
 
     setState(nextState);
@@ -3623,7 +3386,7 @@ export function MachoClickerPage() {
     setAscensionModalOpen(false);
     setPurchaseFlash(`仕上げ直し完了: 永久倍率 +${pendingPrestige}%`);
     window.setTimeout(() => setPurchaseFlash(null), 1600);
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
+    window.localStorage.setItem(STORAGE_KEY, serializeMachoClickerSave(nextState));
   };
 
   const submitRanking = async () => {
@@ -3672,22 +3435,33 @@ export function MachoClickerPage() {
           type="button"
           onPointerDown={(event) => event.stopPropagation()}
           onClick={() => window.location.assign("/")}
-          className="macho-game-button min-h-11 rounded-full border-2 border-[#FFB45D]/60 bg-[#7C2D12] px-4 py-2 text-xs font-black text-[#FFE7C2] transition hover:bg-[#9A3412] sm:text-sm"
+          className="macho-game-back-button macho-game-button min-h-11 shrink-0 rounded-full border-2 border-[#FFB45D]/60 bg-[#7C2D12] px-4 py-2 text-xs font-black text-[#FFE7C2] transition hover:bg-[#9A3412] sm:text-sm"
         >
-          ← トップへ戻る
+          <span className="md:hidden">← 戻る</span>
+          <span className="hidden md:inline">← トップへ戻る</span>
         </button>
-        <div className="min-w-0 px-3 text-center">
+        <div className="macho-game-title min-w-0 px-3 text-center">
           <div className="truncate text-base font-black tracking-tight sm:text-xl">マチョクリッカー</div>
-          <div className="hidden text-[10px] font-black uppercase tracking-[0.18em] text-[#FFB45D] sm:block">Full Screen Gym Game</div>
+          <div className="hidden text-[10px] font-black uppercase tracking-[0.18em] text-[#FFB45D] md:block">Full Screen Gym Game</div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="macho-game-actions flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setSoundEnabled((current) => !current)}
+            className="macho-game-button flex h-11 min-w-11 items-center justify-center rounded-full border-2 border-[#FFB45D]/50 bg-[#2A140B] px-3 text-sm font-black text-[#FFE7C2] transition hover:bg-[#451A03]"
+            aria-label={soundEnabled ? "効果音をオフにする" : "効果音をオンにする"}
+            aria-pressed={soundEnabled}
+            title={soundEnabled ? "効果音 ON" : "効果音 OFF"}
+          >
+            <span aria-hidden="true">{soundEnabled ? "♪" : "×"}</span>
+          </button>
           <button
             type="button"
             onClick={() => setGameOverlay("achievements")}
             className="macho-game-button flex h-11 min-w-11 items-center justify-center rounded-full border-2 border-[#FFB45D]/50 bg-[#2A140B] px-3 text-sm font-black text-[#FFE7C2] transition hover:bg-[#451A03]"
             aria-label="実績を開く"
           >
-            ★<span className="ml-1 hidden sm:inline">実績</span>
+            ★<span className="ml-1 hidden md:inline">実績</span>
           </button>
           <button
             type="button"
@@ -3695,7 +3469,7 @@ export function MachoClickerPage() {
             className="macho-game-button flex h-11 min-w-11 items-center justify-center rounded-full border-2 border-[#FFB45D]/50 bg-[#2A140B] px-3 text-sm font-black text-[#FFE7C2] transition hover:bg-[#451A03]"
             aria-label="ゲームメニューを開く"
           >
-            ☰<span className="ml-1 hidden sm:inline">メニュー</span>
+            ☰<span className="ml-1 hidden md:inline">メニュー</span>
           </button>
         </div>
       </header>
@@ -3971,14 +3745,14 @@ export function MachoClickerPage() {
       <main className="relative z-10 flex min-h-0 flex-1 px-0 pb-0 pt-0">
         <div className="flex min-h-0 w-full max-w-none flex-1 flex-col gap-0">
           <section className="macho-game-topbar macho-game-panel shrink-0 overflow-hidden border-b-4 border-[#7C2D12] bg-[#7C2D12] text-white shadow-2xl md:border-x-0 md:border-t-0">
-            <div className="grid gap-px bg-[#FED7AA] sm:grid-cols-[minmax(0,0.8fr)_minmax(18rem,1.2fr)] lg:grid-cols-[320px_minmax(0,1fr)_280px]">
-              <div className="hidden bg-[#9A3412] px-5 py-4 sm:block">
+            <div className="grid gap-px bg-[#FED7AA] md:grid-cols-[minmax(0,0.8fr)_minmax(18rem,1.2fr)] lg:grid-cols-[320px_minmax(0,1fr)_280px]">
+              <div className="hidden bg-[#9A3412] px-5 py-4 md:block">
                 <h1 className="text-3xl font-black tracking-tight text-[#FFE7C2]">マチョクリッカー</h1>
                 <div className="mt-1 text-xs font-black uppercase tracking-[0.18em] text-[#FFB45D]">
                   {bodyStage.label}
                 </div>
               </div>
-              <div className="bg-[#9A3412] px-5 py-2 sm:py-4">
+              <div className="macho-mobile-scoreboard bg-[#9A3412] px-5 py-2 md:py-4">
                 <div className="grid grid-cols-2 gap-3 text-center">
                   <div>
                     <div className="macho-ui-label">筋肉ポイント</div>
@@ -4012,7 +3786,7 @@ export function MachoClickerPage() {
               </div>
             </div>
             {activeBuffs.length > 0 ? (
-              <div className="flex flex-wrap gap-2 border-t border-[#FED7AA] bg-[#2A140B] px-4 py-2">
+              <div className="macho-active-buffs flex flex-wrap gap-2 border-t border-[#FED7AA] bg-[#2A140B] px-4 py-2">
                 {activeBuffs.map((buff) => (
                   <span key={buff.id} className="rounded-full bg-[#FFE7C2] px-3 py-1 text-xs font-black text-[#7C2D12]">
                     {buff.name} x{buff.multiplier} 残り{Math.max(0, Math.ceil((buff.endAt - Date.now()) / 1000))}秒
@@ -4020,7 +3794,7 @@ export function MachoClickerPage() {
                 ))}
               </div>
             ) : null}
-            <div className="relative flex items-center gap-4 overflow-hidden border-t border-[#FED7AA] bg-[#7C2D12] px-4 py-2">
+            <div className="macho-news-row relative flex items-center gap-4 overflow-hidden border-t border-[#FED7AA] bg-[#7C2D12] px-4 py-2">
               <span className="relative z-10 shrink-0 rounded bg-[#FF8A23] px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] shadow-lg">
                 Macho News
               </span>
@@ -4058,7 +3832,7 @@ export function MachoClickerPage() {
 
           <section className="macho-game-panel macho-main-grid grid min-h-0 flex-1 overflow-hidden bg-[#7C2D12] shadow-2xl md:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)] xl:grid-cols-[minmax(620px,1.3fr)_minmax(260px,0.7fr)_360px] 2xl:grid-cols-[minmax(780px,1040px)_minmax(320px,1fr)_400px]">
             <aside
-              className={`macho-click-stage relative h-full min-h-0 flex-col items-center justify-between overflow-hidden bg-[#451A03] p-4 text-center sm:p-5 md:col-start-1 md:row-span-2 md:flex md:border-r-4 xl:col-auto xl:row-auto xl:flex xl:border-r-4 ${
+              className={`macho-click-stage relative h-full min-h-0 flex-col items-center justify-between overflow-hidden bg-[#451A03] p-2 text-center md:col-start-1 md:row-span-2 md:flex md:border-r-4 md:p-5 xl:col-auto xl:row-auto xl:flex xl:border-r-4 ${
                 mobilePanel === "click" ? "flex" : "hidden"
               }`}
             >
@@ -4132,7 +3906,7 @@ export function MachoClickerPage() {
                   <span>COMBO {combo}</span>
                 </div>
               </div>
-              <div className="relative z-20 mt-3 w-full">
+              <div className="macho-evolution-wrap relative z-20 mt-3 w-full">
                 <div className={`macho-evolution-card ${canBodyEvolve ? "macho-evolution-ready" : ""}`}>
                   {upcomingBodyStage ? (
                     <div className="macho-evolution-preview" aria-hidden="true">
@@ -4157,7 +3931,7 @@ export function MachoClickerPage() {
                     </div>
                     {upcomingBodyStage ? (
                       <>
-                        <div className="mt-1 text-[11px] font-semibold leading-4 text-[#9A3412]/85">{upcomingBodyStage.change}</div>
+                        <div className="macho-evolution-change mt-1 text-[11px] font-semibold leading-4 text-[#9A3412]/85">{upcomingBodyStage.change}</div>
                         <div className="mt-1 text-[11px] font-black text-[#C2410C]">
                           {canBodyEvolve
                             ? "進化できます"
@@ -4286,7 +4060,7 @@ export function MachoClickerPage() {
                 ))}
               </div>
 
-              <div className={`relative z-20 my-4 flex aspect-square w-full max-w-[860px] items-center justify-center overflow-visible sm:my-5 ${
+              <div className={`macho-character-zone relative z-20 my-4 flex aspect-square w-full max-w-[860px] items-center justify-center overflow-visible md:my-5 ${
                 evolutionFlash ? "macho-evolution-flash" : ""
               }`}>
                 <span
@@ -4336,13 +4110,13 @@ export function MachoClickerPage() {
                     height={280}
                     priority
                     draggable={false}
-                    className="relative z-10 h-auto w-[min(60vw,24rem)] drop-shadow-[0_28px_30px_rgba(0,0,0,0.65)] transition duration-300 group-hover:scale-105"
+                    className="macho-character-image relative z-10 h-auto w-[min(60vw,24rem)] drop-shadow-[0_28px_30px_rgba(0,0,0,0.65)] transition duration-300 group-hover:scale-105"
                     style={{ transform: `scale(${bodyStage.scale})` }}
                   />
                 </button>
               </div>
 
-              <div className="macho-paper-card relative z-10 rounded-full px-4 py-2 text-sm font-black text-[#7C2D12]">
+              <div className="macho-click-count-pill macho-paper-card relative z-10 rounded-full px-4 py-2 text-sm font-black text-[#7C2D12]">
                 クリック数 <span data-testid="macho-click-count">{formatFullNumber(state.clickCount)}</span>
               </div>
             </aside>
@@ -4478,15 +4252,14 @@ export function MachoClickerPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="mt-3 text-sm font-semibold leading-6">{hoveredGymUpgrade.description}</div>
-                  <BuildingProductionDetails state={state} upgrade={hoveredGymUpgrade} />
+                  <BuildingProductionDetails state={state} upgrade={hoveredGymUpgrade} purchaseAmount={1} />
                 </div>
               ) : null}
             </section>
 
             <aside className={`${mobilePanel === "shop" ? "block" : "hidden"} macho-shop-shelf h-full min-h-0 overflow-hidden text-[#7C2D12] md:col-start-2 md:row-start-2 md:block xl:col-auto xl:row-auto xl:block`}>
-              <div className="h-full overflow-y-auto p-4">
-                <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="macho-shop-scroll h-full overflow-y-auto p-4">
+                <div className="macho-shop-heading mb-4 flex items-center justify-between gap-3">
                   <h2 className="text-2xl font-black text-[#7C2D12]">ショップ</h2>
                   <button
                     type="button"
@@ -4496,7 +4269,7 @@ export function MachoClickerPage() {
                     リセット
                   </button>
                 </div>
-                <div className="macho-paper-card mb-5 rounded-2xl p-3">
+                <div className="macho-powerup-panel macho-paper-card mb-5 rounded-2xl p-3">
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <h3 className="text-base font-black text-[#7C2D12]">アップグレード</h3>
                     <span className="rounded-full bg-[#FFE7C2] px-2 py-1 text-xs font-black text-[#C2410C]">
@@ -4504,7 +4277,7 @@ export function MachoClickerPage() {
                     </span>
                   </div>
                   {unlockedPowerUps.length === 0 ? (
-                    <div className="rounded-xl bg-[#FFF4E7] px-3 py-3 text-xs font-bold text-[#9A3412]/70">
+                    <div className="macho-powerup-empty rounded-xl bg-[#FFF4E7] px-3 py-3 text-xs font-bold text-[#9A3412]/70">
                       条件達成でアップグレードが解放されます。
                     </div>
                   ) : (
@@ -4599,7 +4372,7 @@ export function MachoClickerPage() {
                   ) : null}
                 </div>
                 {nextShopGoal ? (
-                  <div className="macho-paper-card mb-4 rounded-2xl p-3">
+                  <div className="macho-shop-goal macho-paper-card mb-4 rounded-2xl p-3">
                     <div className="text-xs font-black uppercase tracking-[0.16em] text-[#C2410C]">次の目標</div>
                     <div className="mt-1 text-sm font-black">{nextShopGoal.upgrade.name}</div>
                     <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#E7B374]">
@@ -4613,6 +4386,27 @@ export function MachoClickerPage() {
                     </div>
                   </div>
                 ) : null}
+                <div
+                  className="macho-purchase-amount mb-3 grid grid-cols-4 gap-2"
+                  role="group"
+                  aria-label="設備の購入数"
+                >
+                  {([1, 10, 100, "max"] as const).map((amount) => (
+                    <button
+                      key={amount}
+                      type="button"
+                      aria-pressed={purchaseAmount === amount}
+                      onClick={() => setPurchaseAmount(amount)}
+                      className={`min-h-11 rounded-xl border-2 px-2 py-2 text-xs font-black transition ${
+                        purchaseAmount === amount
+                          ? "border-[#7C2D12] bg-[#7C2D12] text-white"
+                          : "border-[#FDBA74] bg-[#FFF7EB] text-[#9A3412] hover:border-[#C2410C]"
+                      }`}
+                    >
+                      {amount === "max" ? "最大" : `×${amount}`}
+                    </button>
+                  ))}
+                </div>
                 <div className="grid gap-3">
                   {onboardingStep === 1 && state.muscle >= upgrades[0].baseCost ? (
                     <div data-testid="macho-onboarding-shop-card" className="macho-onboarding-card rounded-2xl border-2 border-[#FFB45D] bg-[#20120B] px-4 py-3 text-white shadow-xl">
@@ -4624,11 +4418,13 @@ export function MachoClickerPage() {
                     const level = state.upgrades[upgrade.key];
                     const buildingLevel = state.buildingLevels[upgrade.key];
                     const isUnlocked = upgrade.key === upgrades[0].key || level > 0 || state.totalMuscle >= upgrade.baseCost;
-                    const cost = getUpgradeCost(upgrade, level);
-                    const canBuy = state.muscle >= cost;
+                    const purchase = getBulkPurchase(upgrade, level, state.muscle, purchaseAmount);
+                    const cost = purchase.cost;
+                    const canBuy = purchase.quantity > 0 && state.muscle >= cost;
                     const shortage = getShortage(state.muscle, cost);
                     const purchaseProgress = getPurchaseProgress(state.muscle, cost);
                     const unitProduction = getBuildingUnitProduction(state, upgrade);
+                    const productionIncrease = unitProduction * purchase.quantity;
                     const isBuildingFrenzyTarget = activeBuildingFrenzyTargets.includes(upgrade.key);
 
                     if (!isUnlocked) {
@@ -4652,25 +4448,30 @@ export function MachoClickerPage() {
                     }
 
                     return (
-                      <button
-                        key={upgrade.key}
-                        type="button"
-                        onClick={(event) => buyUpgrade(upgrade, event)}
-                        aria-disabled={!canBuy}
-                        data-shop-state={canBuy ? "purchasable" : "unavailable"}
-                        onMouseEnter={() => setHoveredShopUpgradeKey(upgrade.key)}
-                        onMouseMove={updateTooltipPosition}
-                        onMouseLeave={() => setHoveredShopUpgradeKey(null)}
-                        onFocus={() => setHoveredShopUpgradeKey(upgrade.key)}
-                        onBlur={() => setHoveredShopUpgradeKey(null)}
-                        className={`macho-shop-card group relative overflow-hidden rounded-2xl border-2 p-3 text-left transition ${
-                          isBuildingFrenzyTarget ? "macho-building-boost" : ""
-                        } ${recentlyPurchasedKey === upgrade.key ? "macho-shop-purchased" : ""} ${
-                          canBuy
-                            ? "macho-shop-ready border-[#C2410C] bg-white text-[#7C2D12] shadow-[0_0_0_3px_rgba(255,138,35,0.18),0_10px_24px_rgba(194,65,12,0.16)] hover:-translate-y-0.5 hover:shadow-[0_0_0_4px_rgba(255,138,35,0.32),0_16px_32px_rgba(194,65,12,0.26)]"
-                            : "border-[#FED7AA] bg-[#FFF4E7] text-[#9A3412]/62"
-                        } ${onboardingStep === 1 && canBuy && upgrade.key === upgrades[0].key ? "macho-guide-target" : ""}`}
-                      >
+                      <div key={upgrade.key} className="grid gap-1">
+                        <button
+                          type="button"
+                          onClick={(event) => buyUpgrade(upgrade, event)}
+                          aria-disabled={!canBuy}
+                          aria-label={`${upgrade.name}、${
+                            canBuy ? `${purchase.quantity}個購入可能` : `購入不可、あと${formatFullNumber(shortage)}筋肉`
+                          }`}
+                          data-shop-state={canBuy ? "purchasable" : "unavailable"}
+                          onMouseEnter={() => setHoveredShopUpgradeKey(upgrade.key)}
+                          onMouseMove={updateTooltipPosition}
+                          onMouseLeave={() => setHoveredShopUpgradeKey(null)}
+                          onFocus={() => setHoveredShopUpgradeKey(upgrade.key)}
+                          onBlur={() => setHoveredShopUpgradeKey(null)}
+                          className={`macho-shop-card group relative w-full overflow-hidden rounded-2xl border-2 p-3 text-left transition ${
+                            isBuildingFrenzyTarget ? "macho-building-boost" : ""
+                          } ${recentlyPurchasedKey === upgrade.key ? "macho-shop-purchased" : ""} ${
+                            recentlyUnlockedKey === upgrade.key ? "macho-shop-unlocked" : ""
+                          } ${
+                            canBuy
+                              ? "macho-shop-ready border-[#C2410C] bg-white text-[#7C2D12] shadow-[0_0_0_3px_rgba(255,138,35,0.18),0_10px_24px_rgba(194,65,12,0.16)] hover:-translate-y-0.5 hover:shadow-[0_0_0_4px_rgba(255,138,35,0.32),0_16px_32px_rgba(194,65,12,0.26)]"
+                              : "border-[#FED7AA] bg-[#FFF4E7] text-[#9A3412]/62"
+                          } ${onboardingStep === 1 && canBuy && upgrade.key === upgrades[0].key ? "macho-guide-target" : ""}`}
+                        >
                         <span className="absolute inset-x-0 bottom-0 h-1.5 bg-[#E7B374]">
                           <span
                             className={`block h-full ${canBuy ? "bg-[#22C55E]" : "bg-[#FF8A23]"}`}
@@ -4701,6 +4502,10 @@ export function MachoClickerPage() {
                             <span className="mt-1 block text-xs font-bold text-[#9A3412]">
                               1個 +{formatRate(unitProduction)}/秒{advancedSystemsUnlocked ? ` / 設備Lv.${buildingLevel}` : ""}
                             </span>
+                            <span className="mt-1 block text-xs font-black text-[#C2410C]">
+                              {purchaseAmount === "max" ? `最大 ×${purchase.quantity}` : `×${purchase.quantity}`}で
+                              +{formatRate(productionIncrease)}/秒
+                            </span>
                             <span
                               className={`mt-3 block rounded-xl px-3 py-2 text-sm font-black ${
                                 canBuy ? "bg-[#7C2D12] text-white" : "bg-[#D6A169] text-[#7C2D12]"
@@ -4710,7 +4515,16 @@ export function MachoClickerPage() {
                             </span>
                           </span>
                         </div>
-                      </button>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setMobileShopDetailKey(upgrade.key)}
+                          className="macho-game-button min-h-11 rounded-xl border border-[#FDBA74] bg-[#FFF7EB] px-3 py-2 text-xs font-black text-[#9A3412] md:hidden"
+                          aria-label={`${upgrade.name}の詳細を開く`}
+                        >
+                          生産の詳細
+                        </button>
+                      </div>
                     );
                   })}
                   {advancedSystemsUnlocked ? mysteryShopItems.map((item) => (
@@ -4757,8 +4571,11 @@ export function MachoClickerPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="mt-3 text-sm font-semibold leading-6">{hoveredShopUpgrade.description}</div>
-                    <BuildingProductionDetails state={state} upgrade={hoveredShopUpgrade} />
+                    <BuildingProductionDetails
+                      state={state}
+                      upgrade={hoveredShopUpgrade}
+                      purchaseAmount={purchaseAmount}
+                    />
                   </div>
                 ) : null}
                 {hoveredPowerUp ? (
@@ -4799,6 +4616,51 @@ export function MachoClickerPage() {
                 ) : null}
               </div>
             </aside>
+
+            {mobileShopDetail ? (
+              <div
+                className="fixed inset-0 z-[70] flex items-end bg-black/55 md:hidden"
+                role="dialog"
+                aria-modal="true"
+                aria-label={`${mobileShopDetail.name}の生産詳細`}
+                onPointerDown={(event) => {
+                  if (event.target === event.currentTarget) setMobileShopDetailKey(null);
+                }}
+              >
+                <section className="w-full rounded-t-[28px] border-2 border-b-0 border-[#7C2D12] bg-[#FFF7EB] p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] text-[#7C2D12] shadow-[0_-24px_70px_rgba(0,0,0,0.4)]">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Image
+                        src={mobileShopDetail.spriteSrc}
+                        alt=""
+                        width={52}
+                        height={52}
+                        className="h-13 w-13 shrink-0 object-contain"
+                      />
+                      <div className="min-w-0">
+                        <h2 className="truncate text-lg font-black">{mobileShopDetail.name}</h2>
+                        <div className="text-xs font-bold text-[#C2410C]">
+                          所有数 {formatFullNumber(state.upgrades[mobileShopDetail.key])}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setMobileShopDetailKey(null)}
+                      className="macho-game-button flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#FDBA74] bg-white text-lg font-black"
+                      aria-label="生産詳細を閉じる"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <BuildingProductionDetails
+                    state={state}
+                    upgrade={mobileShopDetail}
+                    purchaseAmount={purchaseAmount}
+                  />
+                </section>
+              </div>
+            ) : null}
 
             {mobilePanel === "stats" ? (
             <section className="bg-[#FFF7EB] p-4 text-[#7C2D12] md:hidden">
