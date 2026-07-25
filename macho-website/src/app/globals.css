@@ -347,6 +347,22 @@ main {
   }
 }
 
+@keyframes macho-shop-unlocked {
+  0% {
+    opacity: 0;
+    transform: translateY(1rem) scale(0.96);
+  }
+  55% {
+    opacity: 1;
+    transform: translateY(-0.18rem) scale(1.02);
+    box-shadow: 0 0 0 6px rgba(255, 180, 93, 0.42), 0 18px 38px rgba(194, 65, 12, 0.3);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @keyframes macho-ambient-fall {
   0% {
     transform: translate3d(0, -8rem, 0) rotate(0deg) scale(0.86);
@@ -1308,6 +1324,10 @@ main {
   animation: macho-shop-purchased 0.72s cubic-bezier(0.18, 0.96, 0.22, 1.12);
 }
 
+.macho-shop-unlocked {
+  animation: macho-shop-unlocked 1.2s cubic-bezier(0.18, 0.96, 0.22, 1.08);
+}
+
 .macho-building-purchased {
   animation: macho-building-purchased 0.9s ease-out;
 }
@@ -1648,6 +1668,277 @@ main {
     inset 0 1px 0 rgba(255, 247, 235, 0.34),
     0 3px 0 rgba(42, 20, 11, 0.42),
     0 0 22px rgba(255, 138, 35, 0.38);
+}
+
+@media (max-width: 767px) {
+  .macho-game-nav {
+    height: 3.25rem;
+    border-bottom-width: 2px;
+    padding-inline: 0.5rem;
+  }
+
+  .macho-game-back-button {
+    padding-inline: 0.65rem;
+  }
+
+  .macho-game-title {
+    padding-inline: 0.35rem;
+  }
+
+  .macho-game-actions {
+    gap: 0.25rem;
+  }
+
+  .macho-game-actions > button {
+    width: 2.75rem;
+    min-width: 2.75rem;
+    padding-inline: 0;
+  }
+
+  .macho-game-topbar {
+    border-bottom-width: 2px;
+  }
+
+  .macho-mobile-scoreboard {
+    padding: 0.25rem 0.75rem;
+  }
+
+  .macho-mobile-scoreboard .macho-ui-label {
+    font-size: 0.6rem;
+    line-height: 0.75rem;
+  }
+
+  .macho-mobile-scoreboard .macho-ui-number {
+    margin-top: 0;
+    font-size: 1.25rem;
+    line-height: 1.5rem;
+  }
+
+  .macho-active-buffs {
+    flex-wrap: nowrap;
+    gap: 0.35rem;
+    overflow-x: auto;
+    padding: 0.25rem 0.5rem;
+  }
+
+  .macho-active-buffs > span {
+    flex: 0 0 auto;
+  }
+
+  .macho-news-row {
+    min-height: 2rem;
+    gap: 0.5rem;
+    border-top-width: 1px;
+    padding: 0.2rem 0.5rem;
+  }
+
+  .macho-news-row > span {
+    padding: 0.15rem 0.5rem;
+    font-size: 0.58rem;
+  }
+
+  .macho-news-row .macho-news {
+    font-size: 0.72rem;
+  }
+
+  .macho-mobile-tabs {
+    gap: 0.25rem;
+    border-bottom-width: 2px;
+    padding: 0.25rem;
+  }
+
+  .macho-mobile-tab {
+    min-height: 2.75rem;
+    border-radius: 0.9rem;
+    padding: 0.35rem 0.5rem;
+    line-height: 1.1;
+  }
+
+  .macho-click-stage {
+    justify-content: flex-start;
+    padding: 0.5rem;
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+
+  .macho-evolution-wrap {
+    margin-top: 0.375rem;
+  }
+
+  .macho-evolution-card {
+    gap: 0.5rem;
+    border-radius: 1rem;
+    padding: 0.5rem;
+  }
+
+  .macho-evolution-preview {
+    width: 2.75rem;
+    height: 3.5rem;
+    border-radius: 0.7rem;
+  }
+
+  .macho-evolution-preview img {
+    width: 2.25rem;
+    height: 3rem;
+  }
+
+  .macho-evolution-button {
+    min-width: 4rem;
+    min-height: 2.75rem;
+    border-radius: 0.8rem;
+    padding: 0.55rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .macho-onboarding-card {
+    margin-top: 0.375rem;
+    border-radius: 1rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .macho-onboarding-card > div:nth-child(2) {
+    line-height: 1.25rem;
+  }
+
+  .macho-character-zone {
+    min-height: 6rem;
+    flex: 1 1 0;
+    aspect-ratio: auto;
+    margin-block: 0.25rem;
+  }
+
+  .macho-character-zone .macho-character-button {
+    width: min(72vw, 18rem);
+    height: 100%;
+    max-height: 100%;
+  }
+
+  .macho-character-zone .macho-character-image {
+    width: auto;
+    max-width: 100%;
+    height: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  .macho-click-count-pill {
+    flex: 0 0 auto;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  .macho-shop-scroll {
+    padding: 0.5rem;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+
+  .macho-shop-heading {
+    margin-bottom: 0.5rem;
+  }
+
+  .macho-shop-heading h2 {
+    font-size: 1.25rem;
+    line-height: 1.5rem;
+  }
+
+  .macho-powerup-panel {
+    margin-bottom: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .macho-powerup-panel > div:first-child {
+    margin-bottom: 0.5rem;
+  }
+
+  .macho-powerup-empty {
+    padding-block: 0.5rem;
+  }
+
+  .macho-shop-goal {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.25rem 0.5rem;
+    margin-bottom: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .macho-shop-goal > :nth-child(2) {
+    margin-top: 0;
+  }
+
+  .macho-shop-goal > :nth-child(3) {
+    grid-column: 1 / -1;
+    margin-top: 0.25rem;
+  }
+
+  .macho-shop-goal > :nth-child(4) {
+    grid-column: 3;
+    grid-row: 1;
+    margin-top: 0;
+    white-space: nowrap;
+  }
+
+  .macho-purchase-amount {
+    gap: 0.35rem;
+    margin-bottom: 0.5rem;
+  }
+}
+
+@media (max-width: 767px) and (max-height: 700px) {
+  .macho-news-row,
+  .macho-click-count-pill {
+    display: none;
+  }
+
+  .macho-evolution-change {
+    display: none;
+  }
+
+  .macho-evolution-card {
+    padding-block: 0.375rem;
+  }
+
+  .macho-evolution-preview {
+    width: 2.5rem;
+    height: 3rem;
+  }
+
+  .macho-evolution-preview img {
+    width: 2rem;
+    height: 2.6rem;
+  }
+
+  .macho-powerup-empty {
+    display: none;
+  }
+
+  .macho-powerup-panel > div:first-child {
+    margin-bottom: 0;
+  }
+}
+
+@media (max-width: 767px) and (max-height: 480px) {
+  .macho-game-title {
+    display: none;
+  }
+
+  .macho-evolution-wrap {
+    display: none;
+  }
+
+  .macho-onboarding-card {
+    margin-top: 0;
+  }
+
+  .macho-character-zone {
+    min-height: 4rem;
+  }
+}
+
+@media (max-width: 359px) {
+  .macho-game-title {
+    display: none;
+  }
 }
 
 .macho-stats-panel,
@@ -2423,6 +2714,7 @@ main {
 .macho-reduced-effects .macho-counter,
 .macho-reduced-effects .macho-counter-purchase,
 .macho-reduced-effects .macho-shop-purchased,
+.macho-reduced-effects .macho-shop-unlocked,
 .macho-reduced-effects .macho-building-purchased,
 .macho-reduced-effects .macho-building-purchased::after,
 .macho-reduced-effects .macho-purchase-flight,

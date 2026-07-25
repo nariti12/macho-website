@@ -20,6 +20,16 @@ npm run dev
 
 `http://localhost:3000` を開くとサイトを確認できます。
 
+## Project Structure
+
+- `src/app`: App RouterのページとAPI
+- `src/components`: 画面を構成するReactコンポーネント
+- `src/lib/macho-clicker`: マチョクリッカーの設備、進化、経済計算、セーブ移行
+- `scripts`: データ生成とバランスシミュレーション
+- `e2e`: Playwrightの画面テストとゲームロジックの回帰テスト
+- `docs`: 仕様、設計、実装TODO
+- `public`: 画像、音声などの静的アセット
+
 ## Environment Variables
 
 `.env.example` をもとに以下を設定してください。
@@ -106,6 +116,8 @@ curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/prot
 ```bash
 npm run lint
 npx tsc --noEmit
+npm run test:macho-clicker-unit
+npm run check:macho-clicker-balance
 ```
 
 ランキングDBを更新したい場合は、migration 適用後に手動更新APIを一度実行し、表示を確認してください。

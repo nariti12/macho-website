@@ -44,6 +44,31 @@ const makeWav = ({ duration, notes }) => {
 };
 
 const sounds = {
+  "unlock.wav": {
+    duration: 0.38,
+    notes: [
+      { frequency: 392, start: 0, end: 0.16, gain: 0.26 },
+      { frequency: 587.33, start: 0.09, end: 0.27, gain: 0.3 },
+      { frequency: 783.99, start: 0.18, end: 0.37, gain: 0.24 },
+    ],
+  },
+  "upgrade.wav": {
+    duration: 0.42,
+    notes: [
+      { frequency: 440, start: 0, end: 0.2, gain: 0.28 },
+      { frequency: 554.37, start: 0.06, end: 0.3, gain: 0.26 },
+      { frequency: 659.25, start: 0.14, end: 0.4, gain: 0.3 },
+    ],
+  },
+  "evolution.wav": {
+    duration: 0.82,
+    notes: [
+      { frequency: 261.63, start: 0, end: 0.36, gain: 0.24 },
+      { frequency: 392, start: 0.13, end: 0.5, gain: 0.26 },
+      { frequency: 523.25, start: 0.28, end: 0.66, gain: 0.3 },
+      { frequency: 783.99, start: 0.46, end: 0.8, gain: 0.3 },
+    ],
+  },
   "achievement.wav": {
     duration: 0.54,
     notes: [

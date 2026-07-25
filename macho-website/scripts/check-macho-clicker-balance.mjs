@@ -1,7 +1,9 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 
-const source = await readFile(new URL("../src/components/macho-clicker-page.tsx", import.meta.url), "utf8");
-const equipmentSource = source.slice(source.indexOf("const upgrades: Upgrade[]"), source.indexOf("const visualUpgrades"));
+const equipmentSource = await readFile(
+  new URL("../src/lib/macho-clicker/buildings.ts", import.meta.url),
+  "utf8"
+);
 
 const canonicalBuildings = [
   ["pushUp", 15, 0.1],
@@ -26,12 +28,26 @@ const canonicalBuildings = [
   ["finalMacho", 540_000_000_000_000_000_000_000_000, 510_000_000_000_000],
 ];
 
-const checkpointSeconds = new Set([1 * 60, 5 * 60, 10 * 60, 30 * 60, 60 * 60]);
+const checkpointSeconds = new Set([
+  1 * 60,
+  5 * 60,
+  10 * 60,
+  30 * 60,
+  60 * 60,
+  4 * 60 * 60,
+  24 * 60 * 60,
+]);
 const inputProfiles = [
   { id: "idle", label: "放置", clicksPerSecond: 0 },
   { id: "2-cps", label: "毎秒2クリック", clicksPerSecond: 2 },
   { id: "5-cps", label: "毎秒5クリック", clicksPerSecond: 5 },
   { id: "8-cps", label: "毎秒8クリック", clicksPerSecond: 8 },
+  { id: "15-cps", label: "毎秒15クリック", clicksPerSecond: 15 },
+];
+const purchaseStrategies = [
+  { id: "roi", label: "回収時間優先" },
+  { id: "cheapest", label: "最安優先" },
+  { id: "next-building", label: "次設備優先" },
 ];
 
 const clicksPerSecondAt = (elapsedSeconds) => {
@@ -56,7 +72,24 @@ const readBuilding = (key) => {
   };
 };
 
-const simulateProgression = (definitions, clicksPerSecondAt) => {
+const selectPurchase = (candidates, buildings, strategy) => {
+  if (strategy === "cheapest") {
+    return candidates.sort((left, right) => left.cost - right.cost)[0];
+  }
+
+  if (strategy === "next-building") {
+    const nextLocked = buildings.find((building) => building.owned === 0);
+    if (nextLocked) {
+      return candidates.find(({ building }) => building === nextLocked);
+    }
+  }
+
+  return candidates.sort(
+    (left, right) => right.building.cps / right.cost - left.building.cps / left.cost
+  )[0];
+};
+
+const simulateProgression = (definitions, clicksPerSecondAt, strategy = "roi") => {
   const buildings = definitions.map(([key, baseCost, cps]) => ({ key, baseCost, cps, owned: 0 }));
   let bank = 0;
   let produced = 0;
@@ -64,7 +97,7 @@ const simulateProgression = (definitions, clicksPerSecondAt) => {
   const checkpoints = [];
   const unlocks = [];
 
-  for (let second = 1; second <= 60 * 60; second += 1) {
+  for (let second = 1; second <= 24 * 60 * 60; second += 1) {
     const earned = cps + clicksPerSecondAt(second);
     bank += earned;
     produced += earned;
@@ -77,10 +110,10 @@ const simulateProgression = (definitions, clicksPerSecondAt) => {
           building,
           cost: Math.ceil(building.baseCost * 1.15 ** building.owned),
         }))
-        .filter(({ cost }) => cost <= bank)
-        .sort((left, right) => right.building.cps / right.cost - left.building.cps / left.cost);
+        .filter(({ cost }) => cost <= bank);
       if (affordable.length === 0) break;
-      const selected = affordable[0];
+      const selected = selectPurchase(affordable, buildings, strategy);
+      if (!selected) break;
       bank -= selected.cost;
       selected.building.owned += 1;
       cps += selected.building.cps;
@@ -135,6 +168,15 @@ const profileReports = inputProfiles.map((profile) => {
   return { ...profile, cookie, macho };
 });
 
+const strategyReports = purchaseStrategies.map((strategy) => ({
+  ...strategy,
+  profiles: inputProfiles.map((profile) => ({
+    id: profile.id,
+    label: profile.label,
+    macho: simulateProgression(actualDefinitions, () => profile.clicksPerSecond, strategy.id),
+  })),
+}));
+
 const offlineScenarios = [
   { label: "base", limitSeconds: 30 * 60 },
   { label: "offline-coach", limitSeconds: 30 * 60 + 8 * 60 * 60 },
@@ -158,6 +200,7 @@ await writeFile(
       generatedAt: new Date().toISOString(),
       scope: "base equipment only; power upgrades and random events excluded",
       profiles: profileReports,
+      strategies: strategyReports,
       offlineRows,
     },
     null,
@@ -204,6 +247,22 @@ if (failures.length > 0) {
       }))
     );
   }
+  console.log("Purchase strategy comparison (5 clicks/sec):");
+  console.table(
+    strategyReports.map((strategy) => {
+      const profile = strategy.profiles.find(({ id }) => id === "5-cps");
+      const last = profile.macho.checkpoints.at(-1);
+      return {
+        strategy: strategy.label,
+        time: `${last.minutes} min`,
+        produced: last.produced,
+        bank: last.bank,
+        cps: last.cps,
+        buildings: last.buildings,
+        highest: last.highest,
+      };
+    })
+  );
   console.table(offlineRows);
   console.log("Wrote test-results/macho-clicker-balance-report.json");
 }
