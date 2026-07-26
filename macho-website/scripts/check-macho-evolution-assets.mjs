@@ -1,11 +1,14 @@
 import { inflateSync } from "node:zlib";
+import { createHash } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 
 const ASSET_DIRECTORY = path.resolve("public/picture/macho-evolution");
+const V2_ASSET_DIRECTORY = path.join(ASSET_DIRECTORY, "v2");
 const EXPECTED_WIDTH = 720;
 const EXPECTED_HEIGHT = 1080;
 const MIN_ASSET_COUNT = 4;
+const MIN_V2_ASSET_COUNT = 8;
 const MIN_SUBJECT_COVERAGE = 0.18;
 const MAX_SUBJECT_COVERAGE = 0.72;
 const MAX_OPAQUE_EDGE_RATIO = 0.02;
@@ -127,6 +130,34 @@ const parsePng = (buffer, filename) => {
 
 const assetPaths = (await collectPngFiles(ASSET_DIRECTORY)).sort();
 if (assetPaths.length < MIN_ASSET_COUNT) throw new Error(`進化画像は最低${MIN_ASSET_COUNT}枚必要です。現在${assetPaths.length}枚です。`);
+
+const v2AssetPaths = assetPaths.filter((assetPath) => !path.relative(V2_ASSET_DIRECTORY, assetPath).startsWith(".."));
+if (v2AssetPaths.length < MIN_V2_ASSET_COUNT) {
+  throw new Error(`V2進化画像は最低${MIN_V2_ASSET_COUNT}枚必要です。現在${v2AssetPaths.length}枚です。`);
+}
+
+const v2StageNumbers = v2AssetPaths.map((assetPath) => {
+  const filename = path.basename(assetPath);
+  const match = filename.match(/^stage-(\d{2})-[a-z0-9-]+\.png$/);
+  if (!match) throw new Error(`${filename}: V2進化画像のファイル名形式が正しくありません。`);
+  return Number(match[1]);
+});
+const highestV2Stage = Math.max(...v2StageNumbers);
+for (let stage = 0; stage <= highestV2Stage; stage += 1) {
+  if (!v2StageNumbers.includes(stage)) throw new Error(`V2進化画像のStage ${stage}が欠けています。`);
+}
+
+const v2Hashes = new Map();
+for (const assetPath of v2AssetPaths) {
+  const hash = createHash("sha256").update(await readFile(assetPath)).digest("hex");
+  const duplicate = v2Hashes.get(hash);
+  if (duplicate) {
+    throw new Error(
+      `${path.basename(assetPath)}: ${duplicate}と同一画像です。各Stageには固有画像が必要です。`
+    );
+  }
+  v2Hashes.set(hash, path.basename(assetPath));
+}
 
 const results = [];
 for (const assetPath of assetPaths) {
