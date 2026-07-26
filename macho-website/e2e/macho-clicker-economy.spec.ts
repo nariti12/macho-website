@@ -14,6 +14,7 @@ import {
 } from "../src/lib/macho-clicker/save";
 import {
   BODY_EVOLUTION_STAGES,
+  FINAL_BODY_EVOLUTION_STAGE,
   getBodyStage,
   getUnlockedBodyEvolutionStage,
 } from "../src/lib/macho-clicker/progression";
@@ -109,6 +110,16 @@ test.describe("macho clicker economy", () => {
     expect(getBodyStage(5).label).toBe("脱メタボ開始");
     expect(getBodyStage(6).label).toBe("筋肉の芽");
     expect(getBodyStage(7).label).toBe("初心者卒業");
+    expect(getBodyStage(8).label).toBe("細マッチョ入口");
+    expect(getBodyStage(9).label).toBe("中級トレーニー");
+    expect(getBodyStage(10).label).toBe("胸板覚醒");
+    expect(getBodyStage(11).label).toBe("逆三角形");
+    expect(getUnlockedBodyEvolutionStage(1_999_999)).toBe(7);
+    expect(getUnlockedBodyEvolutionStage(2_000_000)).toBe(8);
+    expect(getUnlockedBodyEvolutionStage(4_000_000)).toBe(9);
+    expect(getUnlockedBodyEvolutionStage(7_000_000)).toBe(10);
+    expect(getUnlockedBodyEvolutionStage(10_000_000)).toBe(11);
+    expect(FINAL_BODY_EVOLUTION_STAGE).toBe(19);
     expect(new Set(BODY_EVOLUTION_STAGES.map((stage) => stage.imageSrc)).size).toBe(
       BODY_EVOLUTION_STAGES.length
     );
