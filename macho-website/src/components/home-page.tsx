@@ -105,7 +105,7 @@ export function HomePage({ blogItems }: { blogItems: BlogCardData[] }) {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#FCC081" }}>
-      <SiteHeader profileImageSrc={profileImageSrc} showQuestionBox />
+      <SiteHeader profileImageSrc={profileImageSrc} />
 
       {/* Main Content */}
       <main className="px-4 sm:px-6 md:px-12">
