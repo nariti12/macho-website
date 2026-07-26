@@ -4,10 +4,9 @@ import { MessageCircleQuestion } from "lucide-react";
 
 interface SiteHeaderProps {
   profileImageSrc: string;
-  showQuestionBox?: boolean;
 }
 
-export function SiteHeader({ profileImageSrc, showQuestionBox = false }: SiteHeaderProps) {
+export function SiteHeader({ profileImageSrc }: SiteHeaderProps) {
   return (
     <header className="relative z-40 flex flex-col items-center justify-center gap-3 bg-transparent px-4 pb-2 pt-3 text-center transition-all sm:px-6 md:sticky md:top-4 md:flex-row md:items-start md:justify-between md:gap-6 md:px-12 md:pb-4 md:text-left">
       <Link href="/" className="block transition hover:text-[#FFE7C2]">
@@ -46,27 +45,15 @@ export function SiteHeader({ profileImageSrc, showQuestionBox = false }: SiteHea
             Contact
           </Link>
         </nav>
-        {showQuestionBox ? (
-          <Link
-            href="/questions"
-            className="mt-12 hidden w-32 flex-col items-center rounded-[26px] border-2 border-white/70 bg-white/95 px-4 py-4 text-center text-[#7C2D12] shadow-xl transition hover:-translate-y-1 hover:bg-white hover:shadow-2xl md:flex"
-            aria-label="マチョ田の質問箱を開く"
-          >
-            <MessageCircleQuestion className="h-9 w-9 text-[#FF8A23]" aria-hidden="true" />
-            <span className="mt-2 text-sm font-bold">質問箱</span>
-          </Link>
-        ) : null}
       </div>
-      {showQuestionBox ? (
-        <Link
-          href="/questions"
-          className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-50 inline-flex items-center gap-2 rounded-full border-2 border-white bg-[#FF8A23] px-5 py-3 text-sm font-bold text-white shadow-[0_14px_35px_-10px_rgba(124,45,18,0.65)] transition hover:-translate-y-0.5 hover:bg-[#F57200] md:hidden"
-          aria-label="マチョ田の質問箱を開く"
-        >
-          <MessageCircleQuestion className="h-5 w-5" aria-hidden="true" />
-          質問箱
-        </Link>
-      ) : null}
+      <Link
+        href="/questions"
+        className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-50 inline-flex items-center gap-2 rounded-full border-2 border-white bg-[#FF8A23] px-5 py-3 text-sm font-bold text-white shadow-[0_14px_35px_-10px_rgba(124,45,18,0.65)] transition hover:-translate-y-0.5 hover:bg-[#F57200]"
+        aria-label="マチョ田の質問箱を開く"
+      >
+        <MessageCircleQuestion className="h-5 w-5" aria-hidden="true" />
+        質問箱
+      </Link>
     </header>
   );
 }
