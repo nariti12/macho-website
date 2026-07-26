@@ -4075,7 +4075,8 @@ export function MachoClickerPage() {
                 {dumbbellOrbitItems.map((item) => (
                   <span
                     key={`dumbbell-orbit-${item.index}`}
-                    className="macho-cursor pointer-events-none absolute left-1/2 top-1/2 z-40 flex items-center justify-center"
+                    className="macho-cursor pointer-events-none absolute left-1/2 top-1/2 z-20 flex items-center justify-center"
+                    data-testid="macho-dumbbell-orbit"
                     style={
                       {
                         width: item.size,
@@ -4487,11 +4488,12 @@ export function MachoClickerPage() {
                           className={`macho-state-chip absolute right-2 top-2 ${
                             canBuy ? "macho-state-chip-ready" : "macho-state-chip-wait"
                           }`}
+                          data-testid={`shop-state-${upgrade.key}`}
                           aria-hidden="true"
                         >
                           {canBuy ? "✓" : "…"}
                         </span>
-                        <div className="flex items-start gap-3">
+                        <div className="flex items-start gap-3 pr-8">
                           <span
                             className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border-2 shadow-inner ${
                               canBuy ? "border-[#C2410C] bg-[#FFE7C2]" : "border-[#FED7AA] bg-[#FFF4E7] grayscale"
@@ -4500,9 +4502,14 @@ export function MachoClickerPage() {
                             <Image src={upgrade.spriteSrc} alt="" width={58} height={58} className="h-14 w-14 object-contain" />
                           </span>
                           <span className="min-w-0 flex-1">
-                            <span className="flex items-start justify-between gap-2">
+                            <span className="flex flex-wrap items-center gap-2">
                               <span className="font-black">{upgrade.name}</span>
-                              <span className="rounded-full bg-[#7C2D12] px-2 py-1 text-xs font-black text-white">Lv.{level}</span>
+                              <span
+                                className="shrink-0 whitespace-nowrap rounded-full bg-[#7C2D12] px-2 py-1 text-xs font-black text-white"
+                                data-testid={`shop-level-${upgrade.key}`}
+                              >
+                                Lv.{level}
+                              </span>
                             </span>
                             <span className="mt-1 block text-xs font-bold text-[#9A3412]">
                               1個 +{formatRate(unitProduction)}/秒{advancedSystemsUnlocked ? ` / 設備Lv.${buildingLevel}` : ""}

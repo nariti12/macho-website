@@ -99,6 +99,13 @@ test("desktop: click, purchase, settings and save", async ({ page }) => {
   const character = page.getByRole("button", { name: "マチョ田をクリック" });
   for (let count = 0; count < 20; count += 1) await character.click({ force: true });
 
+  const levelBadge = page.getByTestId("shop-level-pushUp");
+  const stateChip = page.getByTestId("shop-state-pushUp");
+  const [levelBox, stateBox] = await Promise.all([levelBadge.boundingBox(), stateChip.boundingBox()]);
+  expect(levelBox).not.toBeNull();
+  expect(stateBox).not.toBeNull();
+  expect((levelBox?.x ?? 0) + (levelBox?.width ?? 0)).toBeLessThanOrEqual((stateBox?.x ?? 0) - 4);
+
   const dumbbell = page.getByRole("button", { name: /ダンベル/ }).last();
   await expect(dumbbell).toBeEnabled();
   await dumbbell.click();
@@ -107,6 +114,17 @@ test("desktop: click, purchase, settings and save", async ({ page }) => {
       page.evaluate(() => JSON.parse(localStorage.getItem("machoda:macho-clicker:v3") ?? "{}").upgrades?.pushUp ?? 0)
     )
     .toBe(1);
+  const dumbbellOrbit = page.getByTestId("macho-dumbbell-orbit").first();
+  await expect(dumbbellOrbit).toBeVisible();
+  const orbitLayers = await page.evaluate(() => {
+    const orbit = document.querySelector<HTMLElement>('[data-testid="macho-dumbbell-orbit"]');
+    const characterButton = document.querySelector<HTMLElement>('[data-testid="macho-character-button"]');
+    return {
+      orbit: Number.parseInt(getComputedStyle(orbit!).zIndex, 10),
+      character: Number.parseInt(getComputedStyle(characterButton!).zIndex, 10),
+    };
+  });
+  expect(orbitLayers.orbit).toBeLessThan(orbitLayers.character);
 
   await page.getByRole("button", { name: "ゲームメニューを開く" }).click();
   const soundButton = page.getByRole("button", { name: /効果音 ON/ }).first();
