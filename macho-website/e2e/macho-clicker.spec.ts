@@ -52,15 +52,17 @@ for (const viewport of [
     await openFreshGame(page);
     await expectNoPageOverflow(page);
     await expectGameFillsViewport(page);
+    const characterBox = await page.getByRole("button", { name: "マチョ田をクリック" }).boundingBox();
+    const characterImageBox = await page.locator(".macho-character-image").boundingBox();
+    expect(characterBox).not.toBeNull();
+    expect(characterImageBox).not.toBeNull();
+    expect((characterBox?.y ?? 0) + (characterBox?.height ?? 0)).toBeLessThanOrEqual(viewport.height + 1);
+    expect((characterImageBox?.y ?? 0) + (characterImageBox?.height ?? 0)).toBeLessThanOrEqual(viewport.height + 1);
     if (viewport.name.startsWith("mobile-")) {
-      const characterBox = await page.getByRole("button", { name: "マチョ田をクリック" }).boundingBox();
-      const characterImageBox = await page.locator(".macho-character-image").boundingBox();
-      expect(characterBox).not.toBeNull();
-      expect(characterImageBox).not.toBeNull();
-      expect((characterBox?.y ?? 0) + (characterBox?.height ?? 0)).toBeLessThanOrEqual(viewport.height + 1);
-      expect((characterImageBox?.y ?? 0) + (characterImageBox?.height ?? 0)).toBeLessThanOrEqual(viewport.height + 1);
       const minimumCharacterHeight = viewport.height <= 520 ? 120 : viewport.height <= 700 ? 180 : 220;
       expect(characterImageBox?.height ?? 0).toBeGreaterThanOrEqual(minimumCharacterHeight);
+    } else {
+      expect(characterImageBox?.height ?? 0).toBeGreaterThanOrEqual(210);
     }
     await page.screenshot({ path: `test-results/visual/${viewport.name}.png`, fullPage: true });
   });
@@ -90,6 +92,40 @@ test("late-game save keeps the simple core screen", async ({ page }) => {
   await expect(page.getByText("結晶研究", { exact: true })).toHaveCount(0);
   await expect(page.getByText("設備Lv", { exact: true })).toHaveCount(0);
   await expectGameFillsViewport(page);
+});
+
+test("final body evolution reaches stage 19 within two seconds and stays in frame", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openFreshGame(page);
+  const saved = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("machoda:macho-clicker:v3") ?? "{}")
+  );
+  await page.addInitScript((seeded) => {
+    localStorage.setItem("machoda:macho-clicker:v3", JSON.stringify(seeded));
+    localStorage.setItem("machoda:macho-clicker:onboarding:v1", "complete");
+  }, {
+    ...saved,
+    muscle: 2_500_000_000,
+    totalMuscle: 2_500_000_000,
+    bodyEvolutionStage: 18,
+    lastSavedAt: Date.now(),
+  });
+  await page.reload({ waitUntil: "domcontentloaded" });
+
+  await expect(page.getByText("現在: 伝説のマチョ田")).toBeVisible();
+  const startedAt = Date.now();
+  await page.getByRole("button", { name: "進化する" }).click({ force: true });
+  await expect(page.getByText("現在: 最終形態")).toBeVisible({ timeout: 2_000 });
+  expect(Date.now() - startedAt).toBeLessThan(2_000);
+  await expect(page.getByText("最終進化済み")).toBeVisible();
+  await expect(page.locator(".macho-character-image")).toHaveAttribute(
+    "src",
+    /stage-19-final-form/
+  );
+  const characterImageBox = await page.locator(".macho-character-image").boundingBox();
+  expect(characterImageBox).not.toBeNull();
+  expect((characterImageBox?.y ?? 0) + (characterImageBox?.height ?? 0)).toBeLessThanOrEqual(901);
+  await expectNoPageOverflow(page);
 });
 
 test("desktop: click, purchase, settings and save", async ({ page }) => {
@@ -226,6 +262,19 @@ test("mobile: three-step guide teaches click, purchase and passive production", 
 
   const character = page.getByTestId("macho-character-button");
   await expect(page.getByTestId("macho-onboarding-card")).toContainText("1/3");
+  const guideStyles = await character.evaluate((element) => {
+    const styles = getComputedStyle(element, "::after");
+    return {
+      borderTopWidth: styles.borderTopWidth,
+      borderRadius: styles.borderRadius,
+      boxShadow: styles.boxShadow,
+      filter: styles.filter,
+    };
+  });
+  expect(guideStyles.borderTopWidth).toBe("0px");
+  expect(guideStyles.borderRadius).toBe("50%");
+  expect(guideStyles.boxShadow).toBe("none");
+  expect(guideStyles.filter).not.toBe("none");
   await character.click({ force: true });
   await expect(page.getByTestId("macho-onboarding-card")).toContainText("2/3");
 
