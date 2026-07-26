@@ -28,12 +28,9 @@ export function QuestionsFeed({
   return (
     <section className="mt-14 sm:mt-20" aria-labelledby="answered-questions-heading">
       <div className="mb-8 text-center">
-        <p className="text-sm font-bold uppercase tracking-[0.24em] text-[#FF8A23]">
-          Questions &amp; Answers
-        </p>
         <h2
           id="answered-questions-heading"
-          className="mt-2 text-2xl font-bold text-[#7C2D12] sm:text-3xl"
+          className="text-2xl font-bold text-[#7C2D12] sm:text-3xl"
         >
           マチョ田の回答
         </h2>

@@ -73,10 +73,6 @@ export default async function QuestionsPage() {
             <h1 className="mt-2 text-3xl font-extrabold text-[#7C2D12] sm:text-4xl">
               マチョ田の質問箱
             </h1>
-            <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-[#6B2A16] sm:text-base">
-              筋トレ、食事、マチョ田について気になることを匿名で聞いてみよう。
-              回答した質問は、質問と回答をセットでこのページに掲載します。
-            </p>
           </section>
 
           <QuestionForm turnstileSiteKey={turnstileSiteKey} />
