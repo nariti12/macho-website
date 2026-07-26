@@ -163,18 +163,12 @@ export function QuestionForm({ turnstileSiteKey }: { turnstileSiteKey: string })
       ) : null}
 
       <div className="mb-6 text-center">
-        <p className="text-sm font-bold uppercase tracking-[0.24em] text-[#FF8A23]">
-          Anonymous Question
-        </p>
         <h2
           id="question-form-heading"
-          className="mt-2 text-2xl font-bold text-[#7C2D12] sm:text-3xl"
+          className="text-2xl font-bold text-[#7C2D12] sm:text-3xl"
         >
-          マチョ田に質問してみよう
+          マチョ田に匿名で質問してみよう
         </h2>
-        <p className="mt-3 text-sm leading-7 text-gray-600">
-          名前・メールアドレス・ログインは必要ありません。
-        </p>
       </div>
 
       <form className="space-y-5" onSubmit={handleSubmit} noValidate>
