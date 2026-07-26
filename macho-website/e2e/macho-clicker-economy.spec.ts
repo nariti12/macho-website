@@ -105,6 +105,13 @@ test.describe("macho clicker economy", () => {
       BODY_EVOLUTION_STAGES.at(-1)?.stage
     );
     expect(getBodyStage(3).label).toBe("三日坊主突破");
+    expect(getBodyStage(4).label).toBe("食生活改善");
+    expect(getBodyStage(5).label).toBe("脱メタボ開始");
+    expect(getBodyStage(6).label).toBe("筋肉の芽");
+    expect(getBodyStage(7).label).toBe("初心者卒業");
+    expect(new Set(BODY_EVOLUTION_STAGES.map((stage) => stage.imageSrc)).size).toBe(
+      BODY_EVOLUTION_STAGES.length
+    );
     expect(getBodyStage(999)).toBe(BODY_EVOLUTION_STAGES[0]);
   });
 
