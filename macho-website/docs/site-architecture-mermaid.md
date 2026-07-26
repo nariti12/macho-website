@@ -1,6 +1,6 @@
 # マチョ田の部屋 Mermaid 構成図
 
-最終更新: 2026-07-15
+最終更新: 2026-07-25
 
 巨大な1枚図にすると読みづらいため、まず全体像を小さく示し、その下に詳細図を分けています。
 
@@ -21,7 +21,8 @@ flowchart LR
 
   api --> microcms[microCMS<br/>Blog]
   api --> supabase[(Supabase<br/>DB)]
-  api --> resend[Resend<br/>お問い合わせ]
+  api --> resend[Resend<br/>お問い合わせ / 質問通知]
+  api --> turnstile[Cloudflare Turnstile<br/>Bot検証]
   api --> rakuten[Rakuten API<br/>価格 / サプリ更新]
 
   cron --> api
@@ -45,12 +46,36 @@ flowchart TB
   layout --> faq["/training-faq<br/>筋トレFAQ"]
   layout --> clicker["/macho-clicker<br/>マチョクリッカー"]
   layout --> contact["/contact<br/>お問い合わせ"]
+  layout --> questions["/questions<br/>匿名質問箱"]
   layout --> privacy["/privacy<br/>プライバシーポリシー"]
 
   home --> homeComponent[src/components/home-page.tsx]
   supplements --> supplementsComponent[src/components/supplements-top-page.tsx]
   clicker --> clickerComponent[src/components/macho-clicker-page.tsx]
   layout --> header[src/components/site-header.tsx]
+```
+
+## 匿名質問箱構成
+
+```mermaid
+flowchart TB
+  user[匿名ユーザー] --> questionsPage["/questions"]
+  questionsPage --> questionForm[src/components/question-form.tsx]
+  questionForm --> questionsApi["POST /api/questions"]
+
+  questionsApi --> origin[Origin / Fetch Metadata / サイズ検証]
+  questionsApi --> attemptLimit[試行レート制限]
+  questionsApi --> turnstile[Cloudflare Turnstile Siteverify]
+  questionsApi --> submissionLimit[投稿レート制限]
+  questionsApi --> supabase[(Supabase)]
+  questionsApi --> resend[Resend 新着通知]
+
+  supabase --> questions[questions]
+  supabase --> rateBuckets[question_rate_limit_buckets]
+
+  owner[運営者<br/>Supabase Dashboard] --> questions
+  questions --> published[status = published]
+  published --> questionsPage
 ```
 
 ## Blog / CMS 構成

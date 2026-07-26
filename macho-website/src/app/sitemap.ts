@@ -18,6 +18,7 @@ const staticRoutes = [
   "/training-faq",
   "/blog",
   "/contact",
+  "/questions",
   "/privacy",
 ];
 

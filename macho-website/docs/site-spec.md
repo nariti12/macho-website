@@ -12,6 +12,7 @@
 - CMS: `microCMS`
 - DB: `Supabase`
 - メール送信: `Resend`
+- Bot対策: `Cloudflare Turnstile`
 - 計測: `Google Analytics`, `Google Tag Manager`
 - アフィリエイト: 楽天アフィリエイト, Amazonアソシエイト
 
@@ -32,6 +33,7 @@
 | `/training-faq` | 筋トレFAQ。かな表記揺れ・類義語を含む全文検索とカテゴリ絞り込みに対応 | `src/app/training-faq/page.tsx` |
 | `/profile` | プロフィール | `src/app/profile/page.tsx` |
 | `/contact` | お問合せフォーム | `src/app/contact/page.tsx` |
+| `/questions` | 匿名質問の投稿と回答済みQ&A一覧 | `src/app/questions/page.tsx` |
 | `/privacy` | プライバシーポリシー | `src/app/privacy/page.tsx` |
 
 ## トップページ
@@ -41,6 +43,19 @@
 - `/api/blogs` も同じ `src/lib/blogs.ts` を利用し、Blogカードの正規化処理を共通化しています。
 - Blogカードの日付は `publishedAt` を使い、ラベルは `公開日` です。
 - 構造化データは `WebSite` と `Organization` を出力します。SNSは X のみを `sameAs` に含めます。
+- デスクトップではProfileと同じ追従領域、モバイルでは右下固定で質問箱CTAを表示します。
+
+## 匿名質問箱
+
+- ページ: `/questions`
+- プロフィールと同じ `public/picture/ore.png` をページ上部と回答カードに使います。
+- 名前、メールアドレス、ログインなしで1,000文字まで送信できます。
+- 質問はSupabaseの `questions` に `pending` で保存し、回答後に `published` へ変更したものだけを公開します。
+- `/api/questions` はCloudflare Turnstile、ハニーポット、本文サイズ制限、同一オリジン検証、Supabaseの原子的レート制限を適用します。
+- 新着質問はResendで運営者へ通知します。通知失敗時も保存済み質問は維持します。
+- 回答と公開はSupabase DashboardのTable Editorから行います。サイト内の管理者ログイン画面はありません。
+
+詳細な運用と制限値は `docs/question-box.md` を参照してください。
 
 ## ブログ
 
@@ -106,6 +121,7 @@
 | `/api/blogs/[id]` | `GET` | Blog詳細取得 |
 | `/api/revalidate` | `POST` | microCMS Webhook用の再検証 |
 | `/api/contact` | `POST` | Resendでお問い合わせメール送信 |
+| `/api/questions` | `POST` | 匿名質問の検証・保存・新着通知 |
 | `/api/macho-clicker/rankings` | `GET`, `POST` | マチョクリッカーランキング取得/登録 |
 | `/api/cron/protein-rankings` | `GET`, `POST` | プロテインランキングの手動更新 |
 
@@ -117,6 +133,8 @@ Supabase migration は `supabase/migrations/` にあります。
 - `product_metrics`: 抽出した内容量、たんぱく質情報、分類情報
 - `rankings`: 表示用ランキング
 - `macho_clicker_scores`: マチョクリッカーランキング
+- `questions`: 匿名質問、回答、公開状態
+- `question_rate_limit_buckets`: 質問箱の短期間レート制限
 
 ## 環境変数
 
@@ -125,6 +143,9 @@ Supabase migration は `supabase/migrations/` にあります。
 - Supabase: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
 - microCMS: `MICROCMS_API_KEY`, `MICROCMS_BASE_URL`, `MICROCMS_REVALIDATE_SECRET`
 - Resend: `RESEND_API_KEY`
+- 質問通知: `QUESTION_NOTIFICATION_EMAIL`
+- 質問レート制限: `QUESTION_RATE_LIMIT_SECRET`
+- Turnstile: `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `TURNSTILE_ALLOWED_HOSTNAMES`
 - Google: `NEXT_PUBLIC_GA_MEASUREMENT_ID`, `NEXT_PUBLIC_GTM_ID`
 - 楽天: `RAKUTEN_APPLICATION_ID`, `RAKUTEN_ACCESS_KEY`, `RAKUTEN_AFFILIATE_ID`, `RAKUTEN_SITE_ORIGIN`
 - 手動更新API: `CRON_SECRET`
