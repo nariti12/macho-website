@@ -1,5 +1,3 @@
-const FINAL_CHARACTER_IMAGE_SRC = "/picture/man.png";
-
 export type BodyEvolutionStage = {
   stage: number;
   label: string;
@@ -10,6 +8,8 @@ export type BodyEvolutionStage = {
   scale: number;
   aura: string;
 };
+
+export const FINAL_BODY_EVOLUTION_STAGE = 19;
 
 export const BODY_EVOLUTION_STAGES = [
   {
@@ -94,12 +94,42 @@ export const BODY_EVOLUTION_STAGES = [
   },
   {
     stage: 8,
-    label: "完成形マチョ",
-    requirement: 10_000_000,
-    imageSrc: FINAL_CHARACTER_IMAGE_SRC,
-    change: "マチョ田の最終形態へ到達する",
+    label: "細マッチョ入口",
+    requirement: 2_000_000,
+    imageSrc: "/picture/macho-evolution/v2/stage-08-lean-muscle-entry.png",
+    change: "腹部が締まり、胸に最初の輪郭が出る",
+    ring: "border-red-100 bg-[#FF7F20]",
+    scale: 1.05,
+    aura: "opacity-87",
+  },
+  {
+    stage: 9,
+    label: "中級トレーニー",
+    requirement: 4_000_000,
+    imageSrc: "/picture/macho-evolution/v2/stage-09-intermediate-trainee.png",
+    change: "肩幅と脚が一段階発達する",
+    ring: "border-red-100 bg-[#FF741D]",
+    scale: 1.06,
+    aura: "opacity-90",
+  },
+  {
+    stage: 10,
+    label: "胸板覚醒",
+    requirement: 7_000_000,
+    imageSrc: "/picture/macho-evolution/v2/stage-10-chest-awakening.png",
+    change: "胸板と上腕三頭筋が厚くなる",
     ring: "border-red-100 bg-[#FF6A1A]",
-    scale: 1.12,
+    scale: 1.07,
+    aura: "opacity-93",
+  },
+  {
+    stage: 11,
+    label: "逆三角形",
+    requirement: 10_000_000,
+    imageSrc: "/picture/macho-evolution/v2/stage-11-v-shape.png",
+    change: "広背筋と肩が育ち、逆三角形が際立つ",
+    ring: "border-red-100 bg-[#FF5F17]",
+    scale: 1.08,
     aura: "opacity-95",
   },
 ] as const satisfies readonly BodyEvolutionStage[];

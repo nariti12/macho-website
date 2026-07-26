@@ -18,6 +18,7 @@ import {
 } from "@/lib/macho-clicker/save";
 import {
   BODY_EVOLUTION_STAGES,
+  FINAL_BODY_EVOLUTION_STAGE,
   getBodyStage,
   getUnlockedBodyEvolutionStage,
 } from "@/lib/macho-clicker/progression";
@@ -3927,7 +3928,11 @@ export function MachoClickerPage() {
                       現在: {bodyStage.label}
                     </div>
                     <div className="mt-1 text-xs font-bold text-[#9A3412]">
-                      {upcomingBodyStage ? `次: ${upcomingBodyStage.label}` : "最終進化済み"}
+                      {upcomingBodyStage
+                        ? `次: ${upcomingBodyStage.label}`
+                        : bodyStage.stage >= FINAL_BODY_EVOLUTION_STAGE
+                          ? "最終進化済み"
+                          : "次の進化を準備中"}
                     </div>
                     {upcomingBodyStage ? (
                       <>
