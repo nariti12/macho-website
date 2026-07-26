@@ -8,8 +8,8 @@ interface SiteHeaderProps {
 
 export function SiteHeader({ profileImageSrc }: SiteHeaderProps) {
   return (
-    <header className="relative z-40 flex flex-col items-center justify-center gap-3 bg-transparent px-4 pb-2 pt-3 text-center transition-all sm:px-6 md:sticky md:top-4 md:flex-row md:items-start md:justify-between md:gap-6 md:px-12 md:pb-4 md:text-left">
-      <Link href="/" className="block transition hover:text-[#FFE7C2]">
+    <header className="pointer-events-none relative z-40 flex flex-col items-center justify-center gap-3 bg-transparent px-4 pb-2 pt-3 text-center transition-all sm:px-6 md:sticky md:top-4 md:flex-row md:items-start md:justify-between md:gap-6 md:px-12 md:pb-4 md:text-left">
+      <Link href="/" className="pointer-events-auto block transition hover:text-[#FFE7C2]">
         <h1 className="text-2xl font-bold leading-tight tracking-tight text-white sm:text-3xl md:text-6xl">
           マチョ田の部屋
         </h1>
@@ -17,7 +17,7 @@ export function SiteHeader({ profileImageSrc }: SiteHeaderProps) {
           〜筋トレについてもう悩まなくていい〜
         </p>
       </Link>
-      <div className="flex w-full items-center justify-center gap-2 sm:gap-3 md:w-auto md:flex-col md:items-center md:gap-3">
+      <div className="pointer-events-auto flex w-full items-center justify-center gap-2 sm:gap-3 md:w-auto md:flex-col md:items-center md:gap-3">
         <Link
           href="/profile"
           className="flex items-center gap-2 rounded-xl bg-white/95 px-3 py-2 text-left text-[#7C2D12] shadow-lg transition hover:scale-[1.02] hover:bg-white md:flex-col md:bg-white md:px-5 md:py-4 md:text-center"
@@ -48,7 +48,7 @@ export function SiteHeader({ profileImageSrc }: SiteHeaderProps) {
       </div>
       <Link
         href="/questions"
-        className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-50 inline-flex items-center gap-2 rounded-full border-2 border-white bg-[#FF8A23] px-5 py-3 text-sm font-bold text-white shadow-[0_14px_35px_-10px_rgba(124,45,18,0.65)] transition hover:-translate-y-0.5 hover:bg-[#F57200]"
+        className="pointer-events-auto fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-50 inline-flex items-center gap-2 rounded-full border-2 border-white bg-[#FF8A23] px-5 py-3 text-sm font-bold text-white shadow-[0_14px_35px_-10px_rgba(124,45,18,0.65)] transition hover:-translate-y-0.5 hover:bg-[#F57200]"
         aria-label="マチョ田の質問箱を開く"
       >
         <MessageCircleQuestion className="h-5 w-5" aria-hidden="true" />
