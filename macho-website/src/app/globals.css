@@ -1308,7 +1308,8 @@ main {
   height: min(52vw, 22rem);
   border: 6px solid rgba(255, 231, 194, 0.8);
   border-radius: 999px;
-  box-shadow: 0 0 30px rgba(255, 138, 35, 0.44);
+  box-shadow: none;
+  filter: drop-shadow(0 0 15px rgba(255, 138, 35, 0.58));
 }
 
 .macho-counter {
@@ -1516,6 +1517,43 @@ main {
   box-shadow: 0 0 0 4px rgba(255, 138, 35, 0.24), 0 0 30px rgba(255, 180, 93, 0.7);
   pointer-events: none;
   animation: macho-guide-pulse 1.15s ease-in-out infinite;
+}
+
+.macho-character-button.macho-guide-target::after {
+  inset: 5% 0 2%;
+  border: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 48%,
+    rgba(255, 211, 138, 0.82) 59%,
+    transparent 72%
+  );
+  box-shadow: none;
+  filter: drop-shadow(0 0 14px rgba(255, 180, 93, 0.72));
+}
+
+@media (min-width: 768px) {
+  .macho-character-zone {
+    min-height: 10rem;
+    flex: 1 1 0;
+    aspect-ratio: auto;
+    margin-block: 0.75rem;
+  }
+
+  .macho-character-zone .macho-character-button {
+    width: min(66vw, 24rem);
+    height: 100%;
+    max-height: 100%;
+  }
+
+  .macho-character-zone .macho-character-image {
+    width: auto;
+    max-width: 100%;
+    height: 94%;
+    max-height: 94%;
+    object-fit: contain;
+  }
 }
 
 @keyframes macho-guide-pulse {
