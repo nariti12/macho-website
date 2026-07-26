@@ -114,11 +114,19 @@ test.describe("macho clicker economy", () => {
     expect(getBodyStage(9).label).toBe("中級トレーニー");
     expect(getBodyStage(10).label).toBe("胸板覚醒");
     expect(getBodyStage(11).label).toBe("逆三角形");
+    expect(getBodyStage(12).label).toBe("バルク期");
+    expect(getBodyStage(13).label).toBe("仕上げ期");
+    expect(getBodyStage(14).label).toBe("上級マッチョ");
+    expect(getBodyStage(15).label).toBe("ゴリマッチョ");
     expect(getUnlockedBodyEvolutionStage(1_999_999)).toBe(7);
     expect(getUnlockedBodyEvolutionStage(2_000_000)).toBe(8);
     expect(getUnlockedBodyEvolutionStage(4_000_000)).toBe(9);
     expect(getUnlockedBodyEvolutionStage(7_000_000)).toBe(10);
     expect(getUnlockedBodyEvolutionStage(10_000_000)).toBe(11);
+    expect(getUnlockedBodyEvolutionStage(20_000_000)).toBe(12);
+    expect(getUnlockedBodyEvolutionStage(40_000_000)).toBe(13);
+    expect(getUnlockedBodyEvolutionStage(70_000_000)).toBe(14);
+    expect(getUnlockedBodyEvolutionStage(100_000_000)).toBe(15);
     expect(FINAL_BODY_EVOLUTION_STAGE).toBe(19);
     expect(new Set(BODY_EVOLUTION_STAGES.map((stage) => stage.imageSrc)).size).toBe(
       BODY_EVOLUTION_STAGES.length
