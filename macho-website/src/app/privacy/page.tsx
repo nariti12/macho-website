@@ -60,7 +60,20 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section className="space-y-3 text-sm leading-6 text-gray-700">
-            <h2 className="text-xl font-semibold text-[#7C2D12]">3. アクセス解析ツールについて</h2>
+            <h2 className="text-xl font-semibold text-[#7C2D12]">3. 匿名質問の取り扱い</h2>
+            <p>
+              質問箱では、名前、メールアドレス、ユーザーアカウントの入力を求めません。送信された質問は、回答および公開可否の確認のために保存し、運営者が回答して公開すると判断した質問のみ、回答とセットで掲載します。
+            </p>
+            <p>
+              連続投稿や不正利用を防止するため、送信元IPアドレスから不可逆な識別値を生成し、短期間の送信回数制限に利用します。生のIPアドレスは質問データベースに保存せず、2日を超えた回数制限用の識別値は次回の質問箱API利用時に削除します。
+            </p>
+            <p>
+              自動投稿対策としてCloudflare Turnstileを利用します。この確認に伴い、Cloudflareにおいて通信情報等が処理される場合があります。
+            </p>
+          </section>
+
+          <section className="space-y-3 text-sm leading-6 text-gray-700">
+            <h2 className="text-xl font-semibold text-[#7C2D12]">4. アクセス解析ツールについて</h2>
             <p>
               当サイトでは、アクセス解析ツール「Googleアナリティクス」を利用しています。Googleアナリティクスは、トラフィックデータの収集のためにCookieを使用しています。
               このデータは匿名で収集されており、個人を特定するものではありません。Cookieを無効にすることで収集を拒否することが可能です。詳しくはお使いのブラウザ設定をご確認ください。
@@ -68,7 +81,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section className="space-y-3 text-sm leading-6 text-gray-700">
-            <h2 className="text-xl font-semibold text-[#7C2D12]">4. 広告の配信について</h2>
+            <h2 className="text-xl font-semibold text-[#7C2D12]">5. 広告の配信について</h2>
             <p>
               当サイトでは、第三者配信の広告サービス（例：Googleアドセンス、A8.net、Amazonアソシエイトなど）を利用しています。これらの広告配信事業者は、ユーザーの興味に応じた商品やサービスの広告を表示するためにCookieを使用することがあります。
               広告配信の詳細やCookieの無効化設定については、各広告配信事業者のプライバシーポリシーをご確認ください。
@@ -76,14 +89,14 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section className="space-y-3 text-sm leading-6 text-gray-700">
-            <h2 className="text-xl font-semibold text-[#7C2D12]">5. Amazonアソシエイトについて</h2>
+            <h2 className="text-xl font-semibold text-[#7C2D12]">6. Amazonアソシエイトについて</h2>
             <p>
               当サイトは、Amazon.co.jpを宣伝・リンクすることによって紹介料を獲得できるアフィリエイトプログラム「Amazonアソシエイト・プログラム」の参加者です。
             </p>
           </section>
 
           <section className="space-y-3 text-sm leading-6 text-gray-700">
-            <h2 className="text-xl font-semibold text-[#7C2D12]">6. 免責事項</h2>
+            <h2 className="text-xl font-semibold text-[#7C2D12]">7. 免責事項</h2>
             <p>
               当サイトに掲載する情報は、正確な内容を提供するよう努めていますが、誤情報が含まれる場合や情報が古くなる場合があります。当サイトに掲載された内容によって生じた損害等について、一切の責任を負いかねますのでご了承ください。
             </p>
@@ -93,21 +106,21 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section className="space-y-3 text-sm leading-6 text-gray-700">
-            <h2 className="text-xl font-semibold text-[#7C2D12]">7. 著作権について</h2>
+            <h2 className="text-xl font-semibold text-[#7C2D12]">8. 著作権について</h2>
             <p>
               当サイトに掲載されている文章・画像・動画などの著作物の著作権は、運営者または正当な権利者に帰属します。無断転載や無断使用を禁止します。
             </p>
           </section>
 
           <section className="space-y-3 text-sm leading-6 text-gray-700">
-            <h2 className="text-xl font-semibold text-[#7C2D12]">8. プライバシーポリシーの変更</h2>
+            <h2 className="text-xl font-semibold text-[#7C2D12]">9. プライバシーポリシーの変更</h2>
             <p>
               本プライバシーポリシーの内容は、法令の改正や運営方針の変更により、事前の予告なく変更されることがあります。最新のプライバシーポリシーは当ページにて常に開示いたします。
             </p>
           </section>
 
           <section className="space-y-3 text-sm leading-6 text-gray-700">
-            <h2 className="text-xl font-semibold text-[#7C2D12]">9. お問い合わせ</h2>
+            <h2 className="text-xl font-semibold text-[#7C2D12]">10. お問い合わせ</h2>
             <p>
               本プライバシーポリシーに関するご質問や、個人情報の取り扱いに関するお問い合わせは、当サイト内の
               {" "}

@@ -7,6 +7,7 @@
 - 全体仕様: `docs/site-spec.md`
 - プロテイン/クレアチン仕様: `docs/protein-rankings.md`
 - 集客・アフィリエイト運用: `docs/site-growth-operations.md`
+- 匿名質問箱の運用・安全対策: `docs/question-box.md`
 - 構成図: `docs/architecture.drawio`
 
 ## Getting Started
@@ -41,6 +42,11 @@ npm run dev
 - `MICROCMS_BASE_URL`
 - `MICROCMS_REVALIDATE_SECRET`
 - `RESEND_API_KEY`
+- `QUESTION_NOTIFICATION_EMAIL`
+- `QUESTION_RATE_LIMIT_SECRET`
+- `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
+- `TURNSTILE_SECRET_KEY`
+- `TURNSTILE_ALLOWED_HOSTNAMES`
 - `NEXT_PUBLIC_GA_MEASUREMENT_ID`
 - `NEXT_PUBLIC_GTM_ID`
 - `RAKUTEN_APPLICATION_ID`
@@ -58,6 +64,7 @@ npm run dev
 - `supabase/migrations/20260405133000_refactor_protein_rankings_for_sales.sql`
 - `supabase/migrations/20260510120000_add_macho_clicker_scores.sql`
 - `supabase/migrations/20260526090000_drop_unused_expert_signals.sql`
+- `supabase/migrations/20260725090000_add_anonymous_questions.sql`
 
 ```bash
 supabase db push
@@ -69,6 +76,8 @@ supabase db push
 - `product_metrics`
 - `rankings`
 - `macho_clicker_scores`
+- `questions`
+- `question_rate_limit_buckets`
 
 ## Ranking Data
 
