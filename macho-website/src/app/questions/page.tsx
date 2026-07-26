@@ -10,6 +10,7 @@ import { buildUrl } from "@/lib/seo";
 export const dynamic = "force-dynamic";
 
 const profileImageSrc = "/picture/ore.png";
+const socialImageSrc = "/images/questions-og.png";
 const pageUrl = buildUrl("/questions");
 
 export const metadata: Metadata = {
@@ -27,10 +28,10 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: buildUrl(profileImageSrc),
-        width: 800,
-        height: 800,
-        alt: "マチョ田のプロフィール写真",
+        url: buildUrl(socialImageSrc),
+        width: 1200,
+        height: 630,
+        alt: "匿名で質問を受付中・マチョ田の質問箱",
       },
     ],
   },
@@ -38,7 +39,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "マチョ田の質問箱｜匿名で質問する",
     description: "名前やログインなしでマチョ田に匿名で質問できます。",
-    images: [buildUrl(profileImageSrc)],
+    images: [buildUrl(socialImageSrc)],
   },
 };
 
