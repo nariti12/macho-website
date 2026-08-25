@@ -83,25 +83,19 @@ const formatUpdatedAt = (value: string | null) =>
       })
     : null;
 
-const isFreshPrice = (updatedAt: string) => Date.now() - Date.parse(updatedAt) <= 14 * 24 * 60 * 60 * 1000;
-
 const formatPricePerKg = (item: RankingCardItem) => {
   const brandKey = getBrandKey(item);
+
+  if (brandKey) {
+    return `${MALE_FIXED_BRAND_CONFIG[brandKey].fallbackPricePerKgYen.toLocaleString("ja-JP")}円`;
+  }
+
   const weightG = item.metrics?.content_weight_g;
   const priceYen = item.product.price_yen;
 
-  if (priceYen && priceYen > 0 && isFreshPrice(item.product.updated_at)) {
-    const effectiveWeightG =
-      weightG && weightG > 0
-        ? weightG
-        : brandKey
-          ? MALE_FIXED_BRAND_CONFIG[brandKey].preferredWeightG
-          : null;
-
-    if (effectiveWeightG) {
-      const pricePerKg = Math.round((priceYen / effectiveWeightG) * 1000);
-      return `${pricePerKg.toLocaleString("ja-JP")}円`;
-    }
+  if (priceYen && priceYen > 0 && weightG && weightG > 0) {
+    const pricePerKg = Math.round((priceYen / weightG) * 1000);
+    return `${pricePerKg.toLocaleString("ja-JP")}円`;
   }
 
   return "楽天で最新価格を確認";
