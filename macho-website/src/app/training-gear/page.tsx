@@ -29,6 +29,7 @@ type GearItem = {
   searchUrl?: string;
   priceSearchUrl?: string;
   amazonUrl?: string;
+  priceSource?: "amazon";
 };
 
 type GearSection = {
@@ -51,12 +52,15 @@ const gearSections: GearSection[] = [
       },
       {
         rank: 2,
-        name: "鬼 ONI",
-        comment: "最初は馴染むまで大変ですが、馴染むと最強です。",
+        name: "ゴールドジム プロレザーベルト",
+        comment: "牛革なので、使い込むほど体に馴染みます。めちゃめちゃ扱いやすいです。",
         searchUrl:
-          "https://search.rakuten.co.jp/search/mall/ONI%E3%80%80%E3%83%91%E3%83%AF%E3%83%BC%E3%83%99%E3%83%AB%E3%83%88/200170/",
-        imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/tfgoods/cabinet/goodsp/compass1534142264.jpg",
-        fallbackPriceYen: 19800,
+          "https://search.rakuten.co.jp/search/mall/%E3%82%B4%E3%83%BC%E3%83%AB%E3%83%89%E3%82%B8%E3%83%A0+%E3%83%97%E3%83%AD%E3%83%AC%E3%82%B6%E3%83%BC%E3%83%99%E3%83%AB%E3%83%88/",
+        amazonUrl:
+          "https://www.amazon.co.jp/s?k=%E3%82%B4%E3%83%BC%E3%83%AB%E3%83%89%E3%82%B8%E3%83%A0+%E3%83%88%E3%83%AC%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E3%83%99%E3%83%AB%E3%83%88+%E3%83%97%E3%83%AD%E3%83%AC%E3%82%B6%E3%83%BC&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
+        imageUrl: "https://shop.r10s.jp/goldsgym/cabinet/ggp/imgrc0075354610.jpg",
+        fallbackPriceYen: 14476,
+        priceSource: "amazon",
       },
       {
         rank: 3,
@@ -146,7 +150,9 @@ const getSections = async () =>
       ...item,
       affiliateUrl: item.searchUrl ? buildRakutenAffiliateUrl(item.searchUrl) : null,
       amazonAffiliateUrl: item.amazonUrl ? buildAmazonAffiliateUrl(item.amazonUrl) : null,
-      priceLabel: item.priceSearchUrl || item.searchUrl
+      priceLabel: item.priceSource === "amazon"
+        ? formatYen(item.fallbackPriceYen)
+        : item.priceSearchUrl || item.searchUrl
         ? await fetchRakutenPriceLabel(item.priceSearchUrl ?? item.searchUrl, item.fallbackPriceYen)
         : formatYen(item.fallbackPriceYen),
     }))),
