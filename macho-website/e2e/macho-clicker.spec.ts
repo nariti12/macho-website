@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { MACHO_CLICKER_SAVE_VERSION } from "../src/lib/macho-clicker/save";
 
 const openFreshGame = async (page: Page) => {
   // Keep UI regression tests deterministic and independent from the optional
@@ -94,7 +95,7 @@ test("late-game save keeps the simple core screen", async ({ page }) => {
   await expectGameFillsViewport(page);
 });
 
-test("final body evolution reaches stage 19 within two seconds and stays in frame", async ({ page }) => {
+test("legacy stage 18 migrates to Lv90 and evolves to Lv100 within two seconds", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openFreshGame(page);
   const saved = await page.evaluate(() =>
@@ -105,6 +106,7 @@ test("final body evolution reaches stage 19 within two seconds and stays in fram
     localStorage.setItem("machoda:macho-clicker:onboarding:v1", "complete");
   }, {
     ...saved,
+    saveVersion: 2,
     muscle: 2_500_000_000,
     totalMuscle: 2_500_000_000,
     bodyEvolutionStage: 18,
@@ -120,7 +122,7 @@ test("final body evolution reaches stage 19 within two seconds and stays in fram
   await expect(page.getByText("最終進化済み")).toBeVisible();
   await expect(page.locator(".macho-character-image")).toHaveAttribute(
     "src",
-    /stage-19-final-form/
+    /macho-face2-lv100.webp/
   );
   const characterImageBox = await page.locator(".macho-character-image").boundingBox();
   expect(characterImageBox).not.toBeNull();
@@ -223,7 +225,7 @@ test("desktop: bulk purchase buys the selected quantity at the exact cumulative 
     )
     .toEqual({
       owned: 10,
-      saveVersion: 2,
+      saveVersion: MACHO_CLICKER_SAVE_VERSION,
     });
   const savedMuscle = await page.evaluate(
     () => JSON.parse(localStorage.getItem("machoda:macho-clicker:v3") ?? "{}").muscle

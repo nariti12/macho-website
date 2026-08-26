@@ -1,6 +1,9 @@
-export const MACHO_CLICKER_SAVE_VERSION = 2;
+import { migrateLegacyBodyEvolutionStage } from "./progression";
+
+export const MACHO_CLICKER_SAVE_VERSION = 3;
 
 const LEGACY_SYSTEM_KEYS = [
+  "bodyEvolutionStage",
   "dailyTrainingPlanId",
   "dailyTrainingDate",
   "dailySupplementIds",
@@ -62,6 +65,9 @@ export const migrateMachoClickerSave = (value: unknown): SaveRecord => {
   return {
     ...value,
     saveVersion: MACHO_CLICKER_SAVE_VERSION,
+    ...(typeof value.bodyEvolutionStage === "number"
+      ? { bodyEvolutionStage: migrateLegacyBodyEvolutionStage(value.bodyEvolutionStage) }
+      : {}),
     previousVersionSnapshot:
       value.previousVersionSnapshot ?? createPreviousVersionSnapshot(value, sourceVersion),
   };

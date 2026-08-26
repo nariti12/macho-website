@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { CSSProperties, MouseEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePressActivation } from "@/hooks/use-press-activation";
+import { MachoEvolvingCharacter } from "@/components/macho-evolving-character";
 import {
   calculateProduction,
   getBuildingCost,
@@ -3909,13 +3910,14 @@ export function MachoClickerPage() {
               </div>
               <div className="macho-evolution-wrap relative z-20 mt-3 w-full">
                 <div className={`macho-evolution-card ${canBodyEvolve ? "macho-evolution-ready" : ""}`}>
-                  {upcomingBodyStage ? (
+                  {isLoaded && upcomingBodyStage ? (
                     <div className="macho-evolution-preview" aria-hidden="true">
                       <Image
                         src={upcomingBodyStage.imageSrc}
                         alt=""
-                        width={56}
-                        height={84}
+                        width={768}
+                        height={1230}
+                        unoptimized
                         className={`h-16 w-11 object-contain transition duration-300 ${
                           canBodyEvolve ? "drop-shadow-lg" : "brightness-0 opacity-45"
                         }`}
@@ -3924,19 +3926,20 @@ export function MachoClickerPage() {
                   ) : null}
                   <div className="min-w-0 flex-1 text-left">
                     <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[#C2410C]">Body Evolution</div>
-                    <div className="mt-1 text-sm font-black text-[#7C2D12]">
-                      現在: {bodyStage.label}
+                    <div className="mt-1 flex items-center gap-1 text-sm font-black text-[#7C2D12]" title={`現在: ${bodyStage.label}（Lv${bodyStage.level}）`}>
+                      <span className="min-w-0 truncate">現在: {bodyStage.label}</span>
+                      <span className="shrink-0 text-xs">Lv{bodyStage.level}</span>
                     </div>
-                    <div className="mt-1 text-xs font-bold text-[#9A3412]">
+                    <div className="mt-1 flex items-center gap-1 text-xs font-bold text-[#9A3412]" title={upcomingBodyStage ? `次: ${upcomingBodyStage.label}（Lv${upcomingBodyStage.level}）` : undefined}>
                       {upcomingBodyStage
-                        ? `次: ${upcomingBodyStage.label}`
+                        ? <><span className="min-w-0 truncate">次: {upcomingBodyStage.label}</span><span className="shrink-0">Lv{upcomingBodyStage.level}</span></>
                         : bodyStage.stage >= FINAL_BODY_EVOLUTION_STAGE
                           ? "最終進化済み"
                           : "次の進化を準備中"}
                     </div>
                     {upcomingBodyStage ? (
                       <>
-                        <div className="macho-evolution-change mt-1 text-[11px] font-semibold leading-4 text-[#9A3412]/85">{upcomingBodyStage.change}</div>
+                        <div className="macho-evolution-change mt-1 line-clamp-2 text-[11px] font-semibold leading-4 text-[#9A3412]/85" title={upcomingBodyStage.change}>{upcomingBodyStage.change}</div>
                         <div className="mt-1 text-[11px] font-black text-[#C2410C]">
                           {canBodyEvolve
                             ? "進化できます"
@@ -4102,23 +4105,16 @@ export function MachoClickerPage() {
                   type="button"
                   {...characterPressHandlers}
                   data-testid="macho-character-button"
-                  className={`macho-character-button macho-breathe group relative z-30 flex w-[min(66vw,24rem)] touch-manipulation items-end justify-center bg-transparent p-0 transition hover:scale-[1.05] ${
+                  className={`macho-character-button group relative z-30 flex w-[min(66vw,24rem)] touch-manipulation items-center justify-center bg-transparent p-0 ${
                     onboardingStep === 0 || (onboardingStep === 1 && state.muscle < upgrades[0].baseCost)
                       ? "macho-guide-target"
                       : ""
                   }`}
                   aria-label="マチョ田をクリック"
                 >
-                  <Image
-                    src={bodyStage.imageSrc}
-                    alt="マチョ田をクリック"
-                    width={280}
-                    height={280}
-                    priority
-                    draggable={false}
-                    className="macho-character-image relative z-10 h-auto w-[min(60vw,24rem)] drop-shadow-[0_28px_30px_rgba(0,0,0,0.65)] transition duration-300 group-hover:scale-105"
-                    style={{ transform: `scale(${bodyStage.scale})` }}
-                  />
+                  {isLoaded ? (
+                    <MachoEvolvingCharacter imageSrc={bodyStage.imageSrc} nextImageSrc={upcomingBodyStage?.imageSrc} />
+                  ) : null}
                 </button>
               </div>
 
@@ -4870,7 +4866,7 @@ export function MachoClickerPage() {
             </div>
             <div className={`macho-visual-panel md:col-span-2 xl:col-span-4 ${desktopDetailPanel === "overview" ? "" : "hidden"}`}>
               <div className="macho-visual-orbit">
-                <Image src={bodyStage.imageSrc} alt="" width={120} height={120} className="relative z-10 h-24 w-24 object-contain drop-shadow-2xl" />
+                <Image src={bodyStage.imageSrc} alt="" width={768} height={1230} unoptimized className="relative z-10 h-24 w-24 object-contain drop-shadow-2xl" />
                 <Image src="/game/macho-clicker/icons/generated-v3/dumbbell.png" alt="" width={44} height={44} className="macho-orbit-icon macho-orbit-icon-1" />
                 <Image src="/game/macho-clicker/icons/generated-v3/protein-workshop.png" alt="" width={44} height={44} className="macho-orbit-icon macho-orbit-icon-2" />
                 <Image src="/game/macho-clicker/icons/generated-v3/golden-protein.png" alt="" width={44} height={44} className="macho-orbit-icon macho-orbit-icon-3" />

@@ -1,225 +1,52 @@
+import { MACHO_CHARACTER_STAGES } from "../characters/macho-face2";
+
 export type BodyEvolutionStage = {
   stage: number;
+  level: number;
   label: string;
   requirement: number;
   imageSrc: string;
   change: string;
-  ring: string;
-  scale: number;
-  aura: string;
 };
 
-export const FINAL_BODY_EVOLUTION_STAGE = 19;
+// Preserve early milestones and the final requirement while adopting the
+// approved 12-asset Lv1–100 catalogue.
+const STAGE_DETAILS: Record<number, { label: string; requirement: number; change: string }> = {
+  1: { label: "トレーニング開始", requirement: 0, change: "細身の身体からスタート" },
+  5: { label: "筋肉の芽", requirement: 500, change: "肩と腕に筋肉の輪郭が出る" },
+  10: { label: "初心者卒業", requirement: 5_000, change: "胸・腹・脚が引き締まる" },
+  20: { label: "中級トレーニー", requirement: 25_000, change: "全身の筋肉が一段階発達する" },
+  30: { label: "胸板覚醒", requirement: 100_000, change: "胸板と腕に厚みが増す" },
+  40: { label: "上級マッチョ", requirement: 1_000_000, change: "肩・背中・脚に力強さが増す" },
+  50: { label: "ブランド代表形態", requirement: 7_000_000, change: "マチョ田のブランド代表形態へ" },
+  60: { label: "限界突破", requirement: 20_000_000, change: "人の限界を超えた筋肉へ成長する" },
+  70: { label: "異次元の入口", requirement: 70_000_000, change: "身体に異次元の力が宿る" },
+  80: { label: "超越マッチョ", requirement: 250_000_000, change: "さらに力強い異形の身体へ" },
+  90: { label: "伝説のマチョ田", requirement: 1_000_000_000, change: "伝説級の肉体へ到達する" },
+  100: { label: "最終形態", requirement: 2_500_000_000, change: "異次元の最終形態へ進化する" },
+};
 
-export const BODY_EVOLUTION_STAGES = [
-  {
-    stage: 0,
-    label: "生活崩壊期",
-    requirement: 0,
-    imageSrc: "/picture/macho-evolution/v2/stage-00-life-collapse.png",
-    change: "ここからトレーニング生活が始まる",
-    ring: "border-white/60 bg-[#FFE7C2]",
-    scale: 0.94,
-    aura: "opacity-10",
-  },
-  {
-    stage: 1,
-    label: "入会決意",
-    requirement: 500,
-    imageSrc: "/picture/macho-evolution/v2/stage-01-gym-decision.png",
-    change: "ジムバッグを持ち、入会を決意する",
-    ring: "border-white/70 bg-[#FFD89A]",
-    scale: 0.96,
-    aura: "opacity-25",
-  },
-  {
-    stage: 2,
-    label: "初トレーニング",
-    requirement: 5_000,
-    imageSrc: "/picture/macho-evolution/v2/stage-02-first-training.png",
-    change: "トレーニングウェアへ着替える",
-    ring: "border-white/70 bg-[#FFC46F]",
-    scale: 0.98,
-    aura: "opacity-40",
-  },
-  {
-    stage: 3,
-    label: "三日坊主突破",
-    requirement: 25_000,
-    imageSrc: "/picture/macho-evolution/v2/stage-03-habit-formed.png",
-    change: "姿勢と清潔感が少し改善する",
-    ring: "border-white/80 bg-[#FFB45D]",
-    scale: 1,
-    aura: "opacity-48",
-  },
-  {
-    stage: 4,
-    label: "食生活改善",
-    requirement: 50_000,
-    imageSrc: "/picture/macho-evolution/v2/stage-04-diet-improvement.png",
-    change: "腹部がわずかに締まり、表情が明るくなる",
-    ring: "border-white/80 bg-[#FFB45D]",
-    scale: 1.01,
-    aura: "opacity-55",
-  },
-  {
-    stage: 5,
-    label: "脱メタボ開始",
-    requirement: 100_000,
-    imageSrc: "/picture/macho-evolution/v2/stage-05-training-wear.png",
-    change: "清潔なトレーニングウェアへ着替える",
-    ring: "border-orange-100 bg-[#FFA33D]",
-    scale: 1.02,
-    aura: "opacity-66",
-  },
-  {
-    stage: 6,
-    label: "筋肉の芽",
-    requirement: 250_000,
-    imageSrc: "/picture/macho-evolution/v2/stage-06-muscle-sprout.png",
-    change: "肩と上腕に最初の筋肉の輪郭が出る",
-    ring: "border-orange-100 bg-[#FF9D2E]",
-    scale: 1.03,
-    aura: "opacity-75",
-  },
-  {
-    stage: 7,
-    label: "初心者卒業",
-    requirement: 1_000_000,
-    imageSrc: "/picture/macho-evolution/v2/stage-07-beginner-graduate.png",
-    change: "背筋が伸び、胸を張った姿勢に自信が出る",
-    ring: "border-red-100 bg-[#FF8A23]",
-    scale: 1.04,
-    aura: "opacity-84",
-  },
-  {
-    stage: 8,
-    label: "細マッチョ入口",
-    requirement: 2_000_000,
-    imageSrc: "/picture/macho-evolution/v2/stage-08-lean-muscle-entry.png",
-    change: "腹部が締まり、胸に最初の輪郭が出る",
-    ring: "border-red-100 bg-[#FF7F20]",
-    scale: 1.05,
-    aura: "opacity-87",
-  },
-  {
-    stage: 9,
-    label: "中級トレーニー",
-    requirement: 4_000_000,
-    imageSrc: "/picture/macho-evolution/v2/stage-09-intermediate-trainee.png",
-    change: "肩幅と脚が一段階発達する",
-    ring: "border-red-100 bg-[#FF741D]",
-    scale: 1.06,
-    aura: "opacity-90",
-  },
-  {
-    stage: 10,
-    label: "胸板覚醒",
-    requirement: 7_000_000,
-    imageSrc: "/picture/macho-evolution/v2/stage-10-chest-awakening.png",
-    change: "胸板と上腕三頭筋が厚くなる",
-    ring: "border-red-100 bg-[#FF6A1A]",
-    scale: 1.07,
-    aura: "opacity-93",
-  },
-  {
-    stage: 11,
-    label: "逆三角形",
-    requirement: 10_000_000,
-    imageSrc: "/picture/macho-evolution/v2/stage-11-v-shape.png",
-    change: "広背筋と肩が育ち、逆三角形が際立つ",
-    ring: "border-red-100 bg-[#FF5F17]",
-    scale: 1.08,
-    aura: "opacity-95",
-  },
-  {
-    stage: 12,
-    label: "バルク期",
-    requirement: 20_000_000,
-    imageSrc: "/picture/macho-evolution/v2/stage-12-bulk-phase.png",
-    change: "全身の筋肉に厚みと重量感が増す",
-    ring: "border-red-100 bg-[#F4511E]",
-    scale: 1.09,
-    aura: "opacity-95",
-  },
-  {
-    stage: 13,
-    label: "仕上げ期",
-    requirement: 40_000_000,
-    imageSrc: "/picture/macho-evolution/v2/stage-13-finishing-phase.png",
-    change: "体脂肪が落ち、筋肉の境目が際立つ",
-    ring: "border-red-100 bg-[#E9471B]",
-    scale: 1.1,
-    aura: "opacity-95",
-  },
-  {
-    stage: 14,
-    label: "上級マッチョ",
-    requirement: 70_000_000,
-    imageSrc: "/picture/macho-evolution/v2/stage-14-advanced-macho.png",
-    change: "ウェアと表情が洗練される",
-    ring: "border-red-100 bg-[#DD3D18]",
-    scale: 1.11,
-    aura: "opacity-95",
-  },
-  {
-    stage: 15,
-    label: "ゴリマッチョ",
-    requirement: 100_000_000,
-    imageSrc: "/picture/macho-evolution/v2/stage-15-gorilla-macho.png",
-    change: "全身の大きさと重量感が一段階増す",
-    ring: "border-red-100 bg-[#D33416]",
-    scale: 1.12,
-    aura: "opacity-100",
-  },
-  {
-    stage: 16,
-    label: "大会準備",
-    requirement: 250_000_000,
-    imageSrc: "/picture/macho-evolution/v2/stage-16-competition-prep.png",
-    change: "胸を張ったポージングとリムライトを得る",
-    ring: "border-red-100 bg-[#C92F15]",
-    scale: 1.13,
-    aura: "opacity-100",
-  },
-  {
-    stage: 17,
-    label: "大会仕上がり",
-    requirement: 500_000_000,
-    imageSrc: "/picture/macho-evolution/v2/stage-17-competition-ready.png",
-    change: "絞りと血管表現が一段階強まる",
-    ring: "border-amber-100 bg-[#B92712]",
-    scale: 1.14,
-    aura: "opacity-100",
-  },
-  {
-    stage: 18,
-    label: "伝説のマチョ田",
-    requirement: 1_000_000_000,
-    imageSrc: "/picture/macho-evolution/v2/stage-18-legendary-machoda.png",
-    change: "専用ウェアと黄金のオーラを得る",
-    ring: "border-amber-100 bg-[#A91F0F]",
-    scale: 1.15,
-    aura: "opacity-100",
-  },
-  {
-    stage: 19,
-    label: "最終形態",
-    requirement: 2_500_000_000,
-    imageSrc: "/picture/macho-evolution/v2/stage-19-final-form.png",
-    change: "顔・体・ウェアを最高品質の完成形へ統合する",
-    ring: "border-yellow-100 bg-[#8F170C]",
-    scale: 1.16,
-    aura: "opacity-100",
-  },
-] as const satisfies readonly BodyEvolutionStage[];
+export const BODY_EVOLUTION_STAGES: readonly BodyEvolutionStage[] = MACHO_CHARACTER_STAGES.map(
+  (asset, stage) => ({ ...asset, stage, ...STAGE_DETAILS[asset.level] }),
+);
+export const FINAL_BODY_EVOLUTION_STAGE = BODY_EVOLUTION_STAGES.length - 1;
 
 export const getUnlockedBodyEvolutionStage = (totalMuscle: number) =>
   BODY_EVOLUTION_STAGES.reduce(
     (highest, stage) => (totalMuscle >= stage.requirement ? stage.stage : highest),
-    0
+    0,
   );
 
 export const getBodyStage = (stage: number) =>
-  BODY_EVOLUTION_STAGES.find((candidate) => candidate.stage === stage) ??
-  BODY_EVOLUTION_STAGES[0];
+  BODY_EVOLUTION_STAGES.find((candidate) => candidate.stage === stage) ?? BODY_EVOLUTION_STAGES[0];
+
+// Old saves store an index into the 20-stage catalogue, not a level.
+export const migrateLegacyBodyEvolutionStage = (stage: number) => {
+  const oldRequirements = [
+    0, 500, 5_000, 25_000, 50_000, 100_000, 250_000, 1_000_000, 2_000_000, 4_000_000,
+    7_000_000, 10_000_000, 20_000_000, 40_000_000, 70_000_000, 100_000_000,
+    250_000_000, 500_000_000, 1_000_000_000, 2_500_000_000,
+  ];
+  const index = Number.isFinite(stage) ? Math.max(0, Math.min(19, Math.floor(stage))) : 0;
+  return getUnlockedBodyEvolutionStage(oldRequirements[index]);
+};

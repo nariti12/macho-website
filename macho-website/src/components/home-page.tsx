@@ -6,6 +6,7 @@ import { useEffect, useRef } from "react";
 
 import { SiteHeader } from "@/components/site-header";
 import type { BlogCardData } from "@/lib/blogs";
+import { MACHO_HERO_IMAGE, MACHO_CHARACTER_WIDTH, MACHO_CHARACTER_HEIGHT } from "@/lib/characters/macho-face2";
 import { buildUrl, toJsonLd } from "@/lib/seo";
 
 const formatDate = (value: string | null) =>
@@ -75,7 +76,6 @@ export function HomePage({ blogItems }: { blogItems: BlogCardData[] }) {
   }, [blogItems]);
 
   const profileImageSrc = "/picture/ore.png";
-  const characterImageSrc = "/picture/man.png";
 
   const structuredData = toJsonLd([
     {
@@ -110,20 +110,21 @@ export function HomePage({ blogItems }: { blogItems: BlogCardData[] }) {
       {/* Main Content */}
       <main className="px-4 sm:px-6 md:px-12">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: structuredData }} />
-        <section className="py-16 sm:py-20 md:py-28">
-          <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-10 lg:flex-row lg:items-center lg:gap-16">
-            <div className="flex w-full justify-center lg:w-auto lg:justify-end">
+        <section className="py-16 sm:py-20 md:pb-20 md:pt-10">
+          <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-10 lg:flex-row lg:items-start lg:gap-16">
+            <div className="flex w-full shrink-0 justify-center py-2 lg:w-[280px] xl:w-[320px]">
               <Image
-                src={characterImageSrc}
+                src={MACHO_HERO_IMAGE}
                 alt="マチョ田キャラクター"
-                width={260}
-                height={260}
+                width={MACHO_CHARACTER_WIDTH}
+                height={MACHO_CHARACTER_HEIGHT}
                 priority
-                className="h-auto w-[180px] max-w-[200px] hover:scale-105 transition-transform duration-300 drop-shadow-2xl sm:w-[200px] lg:w-[240px] xl:w-[260px]"
+                sizes="(min-width: 1280px) 320px, (min-width: 1024px) 280px, (min-width: 640px) 240px, 200px"
+                className="macho-brand-character h-auto w-[200px] object-contain drop-shadow-2xl sm:w-[240px] lg:w-[280px] xl:w-[320px]"
               />
             </div>
 
-            <div className="grid w-full max-w-4xl grid-cols-1 gap-6 text-center sm:grid-cols-2 sm:gap-8">
+            <div className="grid w-full min-w-0 max-w-4xl grid-cols-1 gap-6 text-center sm:grid-cols-2 sm:gap-8">
               {menuItems.map((item, index) => {
                 const lines = item.label.split('\n');
                 const className =

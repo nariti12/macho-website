@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "packageId": "macho-face2",
+  "version": "1.0.0",
+  "character": {
+    "faceId": "face2",
+    "bodyVariant": "male",
+    "websiteHeroLevel": 50,
+    "availableLevels": [
+      1,
+      5,
+      10,
+      20,
+      30,
+      40,
+      50,
+      60,
+      70,
+      80,
+      90,
+      100
+    ]
+  },
+  "canvas": {
+    "width": 1086,
+    "height": 1740,
+    "transparent": true
+  },
+  "delivery": {
+    "webpWidth": 768,
+    "preloadPolicy": "current-and-next-stage-only"
+  },
+  "stages": [
+    {
+      "level": 1,
+      "masterPng": "master/png/macho-face2-lv001.png",
+      "deliveryWebp": "delivery/webp/macho-face2-lv001.webp",
+      "masterSha256": "cb613e28008c754214fdf12b2185601fe05db1ad9cdde4db916174e744d2e44a",
+      "deliverySha256": "21a903d8700c0dcdd103446929ff5116d1062cd13516a8e512c7855bb58675a3"
+    },
+    {
+      "level": 5,
+      "masterPng": "master/png/macho-face2-lv005.png",
+      "deliveryWebp": "delivery/webp/macho-face2-lv005.webp",
+      "masterSha256": "98b98a1bcc4d54bb603cfe332ed49e543ed42e92cffc971b44bf5cd8746e0830",
+      "deliverySha256": "a101aede145eef083f9fc3482731a710b8dae76a9ac5f831d8a0141b4d2930fa"
+    },
+    {
+      "level": 10,
+      "masterPng": "master/png/macho-face2-lv010.png",
+      "deliveryWebp": "delivery/webp/macho-face2-lv010.webp",
+      "masterSha256": "a3f5ca25c1b79c44c0cdc796cf92b2a00eb55239429d062391bcfe697bf576d7",
+      "deliverySha256": "624fc030ecf8cc8687d09c48bdd7ca7b3b299c8960b5aca6a25a245d768ad062"
+    },
+    {
+      "level": 20,
+      "masterPng": "master/png/macho-face2-lv020.png",
+      "deliveryWebp": "delivery/webp/macho-face2-lv020.webp",
+      "masterSha256": "7bf65ed3999d8e5724358a5efc5edef99d99456101ef61d57469c915a7c8ea9c",
+      "deliverySha256": "f303b0bb7767c13a154c437a38a3cf036e7e7d379c837eb60b51e6c8086c5b72"
+    },
+    {
+      "level": 30,
+      "masterPng": "master/png/macho-face2-lv030.png",
+      "deliveryWebp": "delivery/webp/macho-face2-lv030.webp",
+      "masterSha256": "50a0d15ef9242777e85c83ba9eaa27405fa12f081f28db9ccb16bce14dca740d",
+      "deliverySha256": "ca769f26ff59c6bedb5ac67dc92e936f6aa027450fdeae6c60c30c5e27bf7332"
+    },
+    {
+      "level": 40,
+      "masterPng": "master/png/macho-face2-lv040.png",
+      "deliveryWebp": "delivery/webp/macho-face2-lv040.webp",
+      "masterSha256": "6dd1b18481c94c6dc1e61674abcf82aaffbafaa25d3d0201a4fe0ef84336dae5",
+      "deliverySha256": "0e4ed0a4d81b3d2a5fea3a922126e7936e61c07b1e4ec913bb83090894b0fc3c"
+    },
+    {
+      "level": 50,
+      "masterPng": "master/png/macho-face2-lv050.png",
+      "deliveryWebp": "delivery/webp/macho-face2-lv050.webp",
+      "masterSha256": "de77e1d2ee6cb6d424aadc6180f9922368efc9d2468c0e317f927eb848b6aac5",
+      "deliverySha256": "cad304939752f15a89d30c2ec2f95dd55eda62a3bfd8302fbab15e8c2f5fefdb"
+    },
+    {
+      "level": 60,
+      "masterPng": "master/png/macho-face2-lv060.png",
+      "deliveryWebp": "delivery/webp/macho-face2-lv060.webp",
+      "masterSha256": "1b630a31cff6abb2f7b98f0f1bef96850e729bfc407b67d7441f629df1d10242",
+      "deliverySha256": "145e99f1b3674cbc4b4b2d53b7c91336d953ce0a62da4d9a1d3df6fe65c400db"
+    },
+    {
+      "level": 70,
+      "masterPng": "master/png/macho-face2-lv070.png",
+      "deliveryWebp": "delivery/webp/macho-face2-lv070.webp",
+      "masterSha256": "df256391af1c332981b7668f33fd1987c6cdbebc8c8acf66ca40d6bbc196cc82",
+      "deliverySha256": "0d7c660f84113aea0890c67b02239e688c8484b8074cb00cc60287cdf8f5d1de"
+    },
+    {
+      "level": 80,
+      "masterPng": "master/png/macho-face2-lv080.png",
+      "deliveryWebp": "delivery/webp/macho-face2-lv080.webp",
+      "masterSha256": "292589ea2646e1cee68d5625e07b33a9129fbcc70ea5eb5b88a30a689f478854",
+      "deliverySha256": "e9f61e8c721a252f2f60af717a9b866bd5513344845c022d3b98a7deccbe25c8"
+    },
+    {
+      "level": 90,
+      "masterPng": "master/png/macho-face2-lv090.png",
+      "deliveryWebp": "delivery/webp/macho-face2-lv090.webp",
+      "masterSha256": "f3403c462544769bd977db3d689fbe35555dcbcff6e6bbb5e2fe42245a80935e",
+      "deliverySha256": "fd11a8878fd4d3a1d172d3d9a350e9cb412e0574a6210829385d1e2fa0a20e9e"
+    },
+    {
+      "level": 100,
+      "masterPng": "master/png/macho-face2-lv100.png",
+      "deliveryWebp": "delivery/webp/macho-face2-lv100.webp",
+      "masterSha256": "3948e4647a0610da1ec563ebbbcbf77513974350f03813bd7b289dbbbbe5944c",
+      "deliverySha256": "4fd9eb95cdf76d75dca03a88ff44684223d9747128eaf10f098640b8684193b9"
+    }
+  ]
+}
