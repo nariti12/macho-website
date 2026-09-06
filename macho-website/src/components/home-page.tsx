@@ -154,7 +154,7 @@ export function HomePage({ blogItems }: { blogItems: BlogCardData[] }) {
         </section>
 
         <section className="mx-auto mt-4 w-full max-w-6xl overflow-hidden rounded-[32px] bg-[radial-gradient(circle_at_90%_0%,#ff7378_0,transparent_32%),linear-gradient(145deg,#ED1C24_0%,#B8060D_100%)] px-6 py-10 text-white shadow-[0_30px_80px_-45px_rgba(120,0,4,0.9)] sm:px-10 sm:py-12">
-          <div className="grid gap-9 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div>
             <div>
               <div className="flex items-center gap-3">
                 <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#ED1C24]">
@@ -177,9 +177,6 @@ export function HomePage({ blogItems }: { blogItems: BlogCardData[] }) {
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-white/12 px-3 py-2"><Cloud className="h-4 w-4" aria-hidden="true" />オンラインバックアップ</span>
               </div>
             </div>
-            <Link href="/apps/torecha" className="inline-flex min-h-12 items-center justify-center rounded-full bg-white px-7 py-3 text-sm font-black text-[#C90B12] shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl">
-              トレチャを詳しく見る
-            </Link>
           </div>
         </section>
 
