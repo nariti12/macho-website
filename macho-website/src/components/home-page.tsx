@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Bot, Cloud, Dumbbell, MapPinCheck } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 import { SiteHeader } from "@/components/site-header";
@@ -23,6 +24,7 @@ export function HomePage({ blogItems }: { blogItems: BlogCardData[] }) {
   const animationTimeouts = useRef<number[]>([]);
 
   const menuItems = [
+    { label: "筋トレ記録アプリ\nトレチャ", href: "/apps/torecha", wide: true },
     { label: "マチョクリッカー", href: "/macho-clicker", wide: true },
     { label: "マチョ田の\n筋トレメニュー", href: "/menu" },
     { label: "１日摂取カロリー/\nたんぱく質 計算機", href: "/intake-calculator" },
@@ -148,6 +150,36 @@ export function HomePage({ blogItems }: { blogItems: BlogCardData[] }) {
                 );
               })}
             </div>
+          </div>
+        </section>
+
+        <section className="mx-auto mt-4 w-full max-w-6xl overflow-hidden rounded-[32px] bg-[radial-gradient(circle_at_90%_0%,#ff7378_0,transparent_32%),linear-gradient(145deg,#ED1C24_0%,#B8060D_100%)] px-6 py-10 text-white shadow-[0_30px_80px_-45px_rgba(120,0,4,0.9)] sm:px-10 sm:py-12">
+          <div className="grid gap-9 lg:grid-cols-[1fr_auto] lg:items-center">
+            <div>
+              <div className="flex items-center gap-3">
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#ED1C24]">
+                  <Dumbbell className="h-7 w-7" aria-hidden="true" />
+                </span>
+                <div>
+                  <p className="text-xs font-black tracking-[0.18em] text-white/70">TRAINING CHAT</p>
+                  <h2 className="text-xl font-black sm:text-3xl">
+                    <span className="block sm:inline">筋トレ記録アプリ</span>
+                    <span className="block sm:ml-1 sm:inline">「トレチャ」</span>
+                  </h2>
+                </div>
+              </div>
+              <p className="mt-5 max-w-2xl text-sm font-semibold leading-7 text-white/85 sm:text-base">
+                ジムへの入退場、筋トレ、体組成、食事をひとつに記録。キャラクターと一緒に成長できるアプリを開発しています。
+              </p>
+              <div className="mt-5 flex flex-wrap gap-2 text-xs font-bold text-white/90">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/12 px-3 py-2"><MapPinCheck className="h-4 w-4" aria-hidden="true" />ジム自動記録</span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/12 px-3 py-2"><Bot className="h-4 w-4" aria-hidden="true" />AI食事スキャン</span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/12 px-3 py-2"><Cloud className="h-4 w-4" aria-hidden="true" />オンラインバックアップ</span>
+              </div>
+            </div>
+            <Link href="/apps/torecha" className="inline-flex min-h-12 items-center justify-center rounded-full bg-white px-7 py-3 text-sm font-black text-[#C90B12] shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl">
+              トレチャを詳しく見る
+            </Link>
           </div>
         </section>
 

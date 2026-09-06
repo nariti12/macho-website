@@ -49,6 +49,10 @@ body:has(.macho-game-shell) > footer {
   display: none;
 }
 
+body:has(.torecha-app-shell) > footer {
+  display: none;
+}
+
 main {
   position: relative;
 }

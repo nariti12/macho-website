@@ -20,6 +20,10 @@ const staticRoutes = [
   "/contact",
   "/questions",
   "/privacy",
+  "/apps/torecha",
+  "/apps/torecha/privacy",
+  "/apps/torecha/support",
+  "/apps/torecha/terms",
 ];
 
 async function fetchBlogSlugs(): Promise<string[]> {

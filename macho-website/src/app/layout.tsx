@@ -107,6 +107,13 @@ export default function RootLayout({
             >
               お問合せ
             </Link>
+            <span className="hidden h-4 w-px bg-white/40 sm:block" aria-hidden="true" />
+            <Link
+              href="/apps/torecha"
+              className="underline-offset-4 text-white transition hover:text-[#FFE7C2] hover:underline"
+            >
+              トレチャ
+            </Link>
           </div>
         </footer>
       </body>
