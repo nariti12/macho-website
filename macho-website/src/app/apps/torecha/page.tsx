@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
 
 import { TorechaPageShell } from "@/components/torecha-page-shell";
 import { MACHO_CHARACTER_HEIGHT, MACHO_CHARACTER_WIDTH, getMachoCharacterAsset } from "@/lib/characters/macho-face2";
@@ -63,12 +62,12 @@ export default function TorechaPage() {
         <section className="overflow-hidden border-b-2 border-[#171717] px-5 py-12 sm:py-16">
           <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1fr_460px] lg:gap-16">
             <div className="max-w-xl">
-              <h1 className="text-4xl font-black leading-[1.14] tracking-tight text-[#171717] sm:text-6xl">
-                トレーニングも食事も、<br />チャットでかんたん記録。
+              <h1 className="text-[clamp(1.5rem,6vw,3.25rem)] font-black leading-[1.16] tracking-tight text-[#171717]">
+                <span className="block whitespace-nowrap">トレーニングも食事も、</span>
+                <span className="block whitespace-nowrap">チャットで簡単に記録。</span>
               </h1>
               <div className="mt-8 flex flex-wrap items-center gap-4">
                 <span className="rounded-2xl bg-[#171717] px-6 py-4 text-base font-black text-white">App Storeで近日公開</span>
-                <Link href="/apps/torecha/support" className="text-base font-bold text-[#171717] underline decoration-2 underline-offset-4">サポート</Link>
               </div>
             </div>
 
@@ -79,7 +78,9 @@ export default function TorechaPage() {
         </section>
 
         <section className="px-5 py-10 sm:py-16">
-          <div className="mx-auto max-w-5xl border-t-2 border-[#171717]">
+          <div className="mx-auto max-w-5xl">
+            <h2 className="mb-6 text-3xl font-black tracking-tight text-[#171717] sm:mb-8 sm:text-4xl">トレチャの特徴</h2>
+            <div className="border-t-2 border-[#171717]">
             {points.map((point) => (
               <article key={point.number} className="border-b-2 border-[#171717] py-8 sm:py-10">
                 <div className="grid gap-3 sm:grid-cols-[72px_300px_1fr] sm:items-start sm:gap-6">
@@ -112,6 +113,7 @@ export default function TorechaPage() {
                 ) : null}
               </article>
             ))}
+            </div>
           </div>
         </section>
       </main>

@@ -2,8 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 const navigation = [
-  { href: "/apps/torecha", label: "アプリ" },
-  { href: "/apps/torecha/support", label: "サポート" },
+  { href: "/contact", label: "お問い合わせ" },
   { href: "/", label: "マチョ田の部屋" },
 ];
 
