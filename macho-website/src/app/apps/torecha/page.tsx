@@ -1,71 +1,106 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
-import { Bot, ChartNoAxesCombined, Cloud, Dumbbell, MapPinCheck, ShieldCheck } from "lucide-react";
 
 import { TorechaPageShell } from "@/components/torecha-page-shell";
-import { buildUrl } from "@/lib/seo";
+import { MACHO_CHARACTER_HEIGHT, MACHO_CHARACTER_WIDTH, MACHO_HERO_IMAGE } from "@/lib/characters/macho-face2";
+import { buildUrl, toJsonLd } from "@/lib/seo";
 
 const pageUrl = buildUrl("/apps/torecha");
 
 export const metadata: Metadata = {
-  title: "トレチャ｜筋トレ記録アプリ",
-  description: "ジムの入退場、筋トレ、体組成、食事をひとつにつなぐトレーニング記録アプリ「トレチャ」の公式ページです。",
+  title: "トレチャ｜チャットで記録できる筋トレアプリ",
+  description: "筋トレ、体組成、食事をチャットに送るだけ。AI食事スキャンとキャラクター育成にも対応した筋トレ記録アプリです。",
   alternates: { canonical: pageUrl },
-  openGraph: { title: "トレチャ｜筋トレ記録アプリ", description: "筋トレの継続を、記録しやすく楽しく。", url: pageUrl, type: "website" },
+  openGraph: {
+    title: "トレチャ｜チャットで記録できる筋トレアプリ",
+    description: "筋トレも食事も、チャットに送るだけ。",
+    url: pageUrl,
+    type: "website",
+  },
 };
 
-const features = [
-  { icon: MapPinCheck, title: "ジムを自動記録", body: "設定したジムへの入退場を位置情報から判定し、滞在時間を記録します。" },
-  { icon: Dumbbell, title: "トレーニング記録", body: "重量・回数・メモをセットごとに保存。過去の記録や成長もすぐ確認できます。" },
-  { icon: ChartNoAxesCombined, title: "体組成と分析", body: "体重や体脂肪率などを残し、トレーニング記録と一緒に振り返れます。" },
-  { icon: Bot, title: "AI食事スキャン", body: "プレミアムでは食事写真からカロリーと主要栄養素の目安を確認できます。" },
-  { icon: Cloud, title: "オンラインバックアップ", body: "AppleまたはGoogleでログインし、大切な記録をクラウドへ保存できます。" },
-  { icon: ShieldCheck, title: "自分で管理", body: "アプリ内からアカウントとクラウドデータを削除できます。" },
+const points = [
+  {
+    number: "01",
+    title: "チャットに送るだけ",
+    body: "筋トレ、体組成、食事、写真、メモ。入力場所に迷わず、いつものチャットと同じ感覚で残せます。",
+  },
+  {
+    number: "02",
+    title: "写真も記録も、AIに相談",
+    body: "トレチャ Plusなら、食事の写真からカロリーと栄養を推定。これまでの記録をもとに、トレーニングや食事も相談できます。",
+  },
+  {
+    number: "03",
+    title: "通うほど、キャラクターが育つ",
+    body: "ジムの滞在時間を自動で記録。通った時間に合わせて、自分のキャラクターが成長します。",
+  },
 ];
 
 export default function TorechaPage() {
+  const structuredData = toJsonLd({
+    "@context": "https://schema.org",
+    "@type": "MobileApplication",
+    name: "トレチャ",
+    alternateName: "Train Chat",
+    operatingSystem: "iOS",
+    applicationCategory: "HealthApplication",
+    description: "筋トレ、体組成、食事をチャット形式で記録できるアプリ。",
+    url: pageUrl,
+  });
+
   return (
     <TorechaPageShell>
-      <main>
-        <section className="overflow-hidden bg-[radial-gradient(circle_at_80%_10%,#ff757a_0,transparent_32%),linear-gradient(145deg,#ED1C24_0%,#B8060D_100%)] px-5 py-20 text-white sm:py-28">
-          <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
-            <div>
-              <p className="text-sm font-black tracking-[0.2em] text-white/75">TRAINING CHAT</p>
-              <h1 className="mt-5 text-5xl font-black tracking-tight sm:text-7xl">筋トレの継続を、<br />もっと楽しく。</h1>
-              <p className="mt-7 max-w-2xl text-base font-semibold leading-8 text-white/85 sm:text-lg">ジム、トレーニング、体組成、食事の記録をひとつに。キャラクターと一緒に成長できる筋トレ記録アプリ「トレチャ」。</p>
-              <div className="mt-9 flex flex-wrap gap-3">
-                <span className="rounded-full bg-white px-6 py-3 text-sm font-black text-[#C90B12]">App Storeで近日公開</span>
-                <Link href="/apps/torecha/support" className="rounded-full border border-white/50 px-6 py-3 text-sm font-black text-white transition hover:bg-white/10">サポートを見る</Link>
+      <main className="bg-white">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: structuredData }} />
+
+        <section className="overflow-hidden bg-[#FCC081] px-5 py-12 sm:py-16">
+          <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1fr_460px] lg:gap-16">
+            <div className="max-w-xl">
+              <div className="flex items-center gap-4">
+                <Image src="/apps/torecha/icon.webp" alt="トレチャのアプリアイコン" width={88} height={88} priority className="h-[72px] w-[72px] rounded-[18px] sm:h-[88px] sm:w-[88px] sm:rounded-[21px]" />
+                <h1 className="text-4xl font-black tracking-tight text-[#171717] sm:text-6xl">トレチャ</h1>
+              </div>
+              <h2 className="mt-9 text-3xl font-black leading-tight tracking-tight text-[#171717] sm:text-5xl">筋トレも、食事も。<br />チャットに送るだけ。</h2>
+              <p className="mt-6 text-base font-semibold leading-8 text-[#39281b] sm:text-lg">記録のために、複雑な画面を覚える必要はありません。</p>
+              <div className="mt-8 flex flex-wrap items-center gap-4">
+                <span className="rounded-2xl bg-[#171717] px-6 py-4 text-base font-black text-white">App Storeで近日公開</span>
+                <Link href="/apps/torecha/support" className="text-base font-bold text-[#171717] underline decoration-2 underline-offset-4">サポート</Link>
               </div>
             </div>
-            <div className="mx-auto flex aspect-square w-full max-w-[420px] items-center justify-center rounded-[34%] border border-white/20 bg-white/10 shadow-2xl backdrop-blur-sm">
-              <Dumbbell className="h-40 w-40 text-white sm:h-52 sm:w-52" strokeWidth={1.35} aria-hidden="true" />
+
+            <div className="relative mx-auto min-h-[500px] w-full max-w-[440px] sm:min-h-[580px]">
+              <Image
+                src={MACHO_HERO_IMAGE}
+                alt="マチョ田のキャラクター"
+                width={MACHO_CHARACTER_WIDTH}
+                height={MACHO_CHARACTER_HEIGHT}
+                className="absolute bottom-0 left-[-42px] z-10 h-auto w-[170px] object-contain sm:left-[-58px] sm:w-[220px]"
+                sizes="220px"
+              />
+              <div className="absolute right-0 top-0 w-[78%] overflow-hidden rounded-[38px] border-[8px] border-[#171717] bg-[#171717] shadow-[0_24px_60px_-28px_rgba(0,0,0,0.55)] sm:border-[10px]">
+                <Image src="/apps/torecha/app-screen-ai.webp" alt="チャットに食事の写真を記録したトレチャの画面" width={588} height={650} priority className="h-auto w-full" sizes="(min-width: 640px) 340px, 78vw" />
+              </div>
             </div>
           </div>
         </section>
 
-        <section className="px-5 py-16 sm:py-24">
-          <div className="mx-auto max-w-6xl">
-            <p className="text-center text-xs font-black tracking-[0.2em] text-[#ED1C24]">FEATURES</p>
-            <h2 className="mt-3 text-center text-3xl font-black sm:text-4xl">記録が続くための機能</h2>
-            <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {features.map(({ icon: Icon, title, body }) => (
-                <article key={title} className="rounded-[24px] border border-black/5 bg-white p-6 shadow-[0_20px_55px_-42px_rgba(0,0,0,0.5)]">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FFE8E9] text-[#ED1C24]"><Icon className="h-6 w-6" aria-hidden="true" /></span>
-                  <h3 className="mt-5 text-lg font-black">{title}</h3>
-                  <p className="mt-2 text-sm leading-7 text-gray-600">{body}</p>
-                </article>
-              ))}
-            </div>
+        <section className="px-5 py-10 sm:py-16">
+          <div className="mx-auto max-w-5xl border-t-2 border-[#171717]">
+            {points.map((point) => (
+              <article key={point.number} className="grid gap-3 border-b-2 border-[#171717] py-8 sm:grid-cols-[72px_260px_1fr] sm:items-start sm:gap-6 sm:py-10">
+                <span className="text-sm font-black text-[#FF8A23]">{point.number}</span>
+                <h2 className="text-2xl font-black leading-tight text-[#171717]">{point.title}</h2>
+                <p className="max-w-xl text-base leading-8 text-[#4a4a4a]">{point.body}</p>
+              </article>
+            ))}
           </div>
         </section>
 
-        <section className="px-5 pb-20">
-          <div className="mx-auto flex max-w-4xl flex-col items-center rounded-[28px] bg-[#171717] px-6 py-10 text-center text-white sm:px-10">
-            <h2 className="text-2xl font-black">トレチャについてのお問い合わせ</h2>
-            <p className="mt-3 text-sm leading-7 text-white/65">不具合、データ、アカウント削除などはサポートページからご確認ください。</p>
-            <Link href="/apps/torecha/support" className="mt-6 rounded-full bg-[#ED1C24] px-7 py-3 text-sm font-black transition hover:bg-[#FF343A]">サポートページへ</Link>
-          </div>
+        <section className="bg-[#FF8A23] px-5 py-12 text-center text-white sm:py-16">
+          <h2 className="text-3xl font-black">記録を、もっと簡単に。</h2>
+          <p className="mt-4 text-base font-semibold">トレチャは現在、公開に向けて準備中です。</p>
         </section>
       </main>
     </TorechaPageShell>
