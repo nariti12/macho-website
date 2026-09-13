@@ -60,7 +60,7 @@ export default function TorechaPage() {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: structuredData }} />
 
         <section className="overflow-hidden border-b-2 border-[#171717] px-5 py-12 sm:py-16">
-          <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1fr_460px] lg:gap-16">
+          <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1fr_380px] lg:gap-16">
             <div className="max-w-xl">
               <h1 className="text-[clamp(1.5rem,6vw,3.25rem)] font-black leading-[1.16] tracking-tight text-[#171717]">
                 <span className="block whitespace-nowrap">トレーニングも食事も、</span>
@@ -71,8 +71,19 @@ export default function TorechaPage() {
               </div>
             </div>
 
-            <div className="mx-auto w-full max-w-[340px] overflow-hidden rounded-[38px] border-[8px] border-[#171717] bg-[#171717] shadow-[12px_14px_0_#FF8A23] sm:border-[10px]">
-                <Image src="/apps/torecha/app-screen-ai.webp" alt="チャットに食事の写真を記録したトレチャの画面" width={588} height={650} priority className="h-auto w-full" sizes="(min-width: 640px) 340px, 78vw" />
+            <div className="mx-auto w-full max-w-[285px] overflow-hidden rounded-[38px] border-[8px] border-[#171717] bg-[#171717] shadow-[12px_14px_0_#FF8A23] sm:border-[9px]">
+              <div className="relative aspect-[588/1208] overflow-hidden bg-white">
+                <Image
+                  src="/apps/torecha/app-screen-record.jpg"
+                  alt="牛肉の食事写真と栄養評価を記録したトレチャの記録画面"
+                  width={588}
+                  height={1280}
+                  priority
+                  className="absolute inset-x-0 top-0 h-auto w-full"
+                  style={{ transform: "translateY(-5.625%)" }}
+                  sizes="(min-width: 640px) 285px, 72vw"
+                />
+              </div>
             </div>
           </div>
         </section>
