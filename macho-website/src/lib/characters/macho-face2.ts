@@ -1,10 +1,10 @@
-import manifest from "../../../public/images/characters/macho-face2/v1/manifest.json";
+import manifest from "../../../public/images/characters/macho-face2/v3/manifest.json";
 
 export const MACHO_CHARACTER_WIDTH = 768;
 export const MACHO_CHARACTER_HEIGHT = 1230;
 export const MACHO_CHARACTER_STAGES = manifest.stages.map((stage) => ({
   level: stage.level,
-  imageSrc: `/images/characters/${manifest.packageId}/v1/${stage.deliveryWebp.split("/").at(-1)}`,
+  imageSrc: `/images/characters/${manifest.packageId}/v3/${stage.deliveryWebp.split("/").at(-1)}`,
 }));
 
 // Intermediate numeric levels use the nearest approved asset at or below them.

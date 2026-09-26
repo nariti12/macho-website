@@ -1,0 +1,245 @@
+.shell {
+  --ink: #201813;
+  --cream: #fff2db;
+  --orange: #ff8a24;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  color: var(--cream);
+  background: #171412;
+  font-family: var(--font-geist-sans), sans-serif;
+}
+
+.header {
+  position: relative;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: 42px minmax(260px, 620px) minmax(230px, 360px) 1fr 46px 42px;
+  align-items: center;
+  column-gap: clamp(10px, 1.5vw, 22px);
+  flex: none;
+  padding: 10px clamp(12px, 2vw, 28px);
+  background: linear-gradient(115deg, #251c18, #151311 70%);
+  border-bottom: 2px solid #f48b2c;
+  box-shadow: 0 7px 22px #0008;
+}
+
+.backLink, .rankingButton, .menuButton, .mobileClose, .modalTitle button {
+  display: grid; place-items: center; flex: none;
+  width: 42px; height: 42px; border: 1px solid #ffffff55;
+  border-radius: 10px; background: #ffffff14; color: #fff2db;
+  font-size: 23px; line-height: 1; cursor: pointer;
+}
+.backLink { text-decoration: none; }
+.rankingButton { grid-column: 5; justify-self: end; color: #ffd078; }
+.menuButton { grid-column: 6; justify-self: end; font-size: 20px; }
+.progressBlock { min-width: 0; }
+.progressHeading { display: flex; align-items: center; gap: 13px; }
+.levelBadge { display: flex; flex: none; flex-direction: column; align-items: center; justify-content: center; width: 76px; height: 76px; border: 3px solid #ffbb64; border-radius: 16px; background: linear-gradient(145deg, #70401c, #2d2019); box-shadow: inset 0 1px 8px #ffd19d45, 0 3px 10px #0008; }
+.levelBadge small { color: #ffe0b8; font-size: 13px; font-weight: 900; line-height: 1; }
+.levelBadge strong { color: #fff9e9; font-size: 38px; line-height: 1.08; font-variant-numeric: tabular-nums; }
+.levelFlash .levelBadge strong { animation: levelPop .5s ease-out; }
+.progressDetails { flex: 1; min-width: 0; }
+.progressLabels { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-variant-numeric: tabular-nums; }
+.progressLabels strong { color: #fff2dc; font-size: 19px; line-height: 1.2; }
+.progressLabels > span { color: #ffbb64; font-size: 19px; font-weight: 900; }
+.progressTrack { height: 26px; margin-top: 5px; overflow: hidden; border: 2px solid #ffb367; border-radius: 99px; background: #080707; box-shadow: inset 0 2px 5px #000, 0 0 0 2px #4a2c1d; }
+.progressTrack span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(180deg, #ffe28a 0%, #ffa33d 35%, #ef6415 100%); box-shadow: 0 0 14px #ff902c; transition: width .18s ease-out; }
+.progressFoot { margin-top: 5px; color: #f3d4af; font-size: 14px; font-weight: 800; }
+.levelFlash .levelBadge { animation: levelGlow 1.6s ease-out; }
+.levelFlash .progressTrack { box-shadow: 0 0 18px #ffc264, 0 0 0 2px #ffbd61; }
+.stats { display: flex; align-items: stretch; gap: 7px; min-width: 0; }
+.stats > div { display: flex; flex: 1; min-width: 0; flex-direction: column; padding: 5px 10px; border: 1px solid #ffc8843d; border-radius: 9px; background: #fff2db0d; }
+.stats small { color: #dfc6a9; font-size: 11px; font-weight: 800; }
+.stats strong { overflow: hidden; color: #fff7e8; font-size: 20px; line-height: 1.12; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.stats strong span { font-size: .65em; }
+.stats > div:nth-child(2) strong { color: #ffad54; }
+
+.layout { display: flex; flex: 1; min-height: 0; }
+.scene { position: relative; flex: 1; min-width: 0; overflow: hidden; isolation: isolate; background: #3b3029; }
+.background, .background img, .sceneShade { position: absolute; inset: 0; width: 100%; height: 100%; }
+.background img { object-fit: cover; object-position: center 55%; user-select: none; pointer-events: none; }
+.sceneShade { pointer-events: none; background: linear-gradient(180deg, #20181230 0%, transparent 24%, transparent 65%, #0d0a0960 100%); }
+.prop { position: absolute; display: block; pointer-events: none; filter: drop-shadow(0 10px 8px #0005); animation: appear .38s cubic-bezier(.18,1.4,.48,1) both; }
+.prop img { object-fit: contain; }
+.dumbbells { left: 3%; bottom: 5%; width: 25%; height: 20%; z-index: 12; }
+.barbell { left: 1%; bottom: 4%; width: 26%; height: 20%; z-index: 12; }
+.bench { right: 1%; bottom: 7%; width: 32%; height: 29%; z-index: 12; }
+.plateTree { left: 1%; bottom: 22%; width: 13%; height: 31%; z-index: 6; }
+.powerRack { left: 3%; bottom: 33%; width: 28%; height: 44%; z-index: 3; }
+.punchingBag { left: 3%; bottom: 27%; width: 13%; height: 34%; z-index: 6; }
+.rower { left: 23%; bottom: 32%; width: 26%; height: 20%; z-index: 3; }
+.trainingMachine { right: 13%; bottom: 35%; width: 32%; height: 40%; z-index: 3; }
+.treadmill { left: 24%; bottom: 32%; width: 22%; height: 31%; z-index: 3; }
+.proteinWorkshop { right: 0; bottom: 28%; width: 24%; height: 34%; z-index: 4; }
+.ultimateTrainer { right: 2%; bottom: 21%; width: 20%; height: 44%; z-index: 8; }
+.gymRenovation { display: none; }
+.devilDumbbells { right: 3%; bottom: 3%; width: 21%; height: 15%; z-index: 14; filter: drop-shadow(0 0 12px #f244376b); }
+.devilAltar { left: 0; bottom: 19%; width: 26%; height: 31%; z-index: 5; filter: drop-shadow(0 0 12px #f244376b); }
+.devilPowerRack { left: 0; bottom: 31%; width: 34%; height: 51%; z-index: 5; filter: drop-shadow(0 0 12px #f244374d); }
+.energyCore { right: 0; bottom: 28%; width: 17%; height: 35%; z-index: 5; filter: drop-shadow(0 0 13px #ff793277); }
+.characterButton {
+  position: absolute; z-index: 10; left: 50%; bottom: 6%;
+  width: min(47%, 450px); height: min(72%, 680px);
+  padding: 0; border: 0; background: none; transform: translateX(-50%);
+  cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+}
+.characterButton:focus-visible { outline: 3px solid #ff9c32; outline-offset: -3px; border-radius: 30px; }
+.characterInner { display: block; width: 100%; height: 100%; transform-origin: center 70%; filter: drop-shadow(0 15px 12px #0008); }
+.characterInner img { display: block; width: 100%; height: 100%; object-fit: contain; user-select: none; pointer-events: none; }
+.floaters { position: absolute; z-index: 18; inset: 0; pointer-events: none; }
+.floaters span { position: absolute; opacity: 0; color: #fff8e8; font-size: clamp(18px, 3vw, 29px); font-weight: 1000; text-shadow: 0 2px 0 #8b390f, 0 4px 16px #000b; white-space: nowrap; }
+.notice { position: absolute; z-index: 25; top: 5%; left: 50%; width: max-content; max-width: 90%; padding: 10px 16px; border: 1px solid #ffb45d; border-radius: 999px; background: #21150ee8; color: #fff2db; font-size: 14px; font-weight: 900; text-align: center; transform: translateX(-50%); box-shadow: 0 8px 24px #0008; }
+
+.shop { z-index: 20; display: flex; flex-direction: column; flex: none; width: clamp(360px, 30vw, 440px); min-height: 0; border-left: 3px solid #ae713e; background: #211b18; box-shadow: -7px 0 24px #0007; }
+.shopHeader { display: flex; align-items: center; justify-content: space-between; min-height: 61px; padding: 8px 17px; border-bottom: 4px ridge #96603a; background: linear-gradient(90deg, #3b2c25, #211917); box-shadow: inset 0 2px #c3976b55; }
+.shopHeader h2 { margin: 0; color: #fff4e4; font-size: 26px; line-height: 1.15; letter-spacing: .08em; text-shadow: 0 2px 3px #000; }
+.shopWallet { display: flex; align-items: stretch; min-height: 59px; padding: 6px 8px; border-bottom: 1px solid #ad7f51; background: linear-gradient(90deg, #171413, #31241c); }
+.shopWallet > span { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 3px; padding: 2px 9px; color: #e2c7a8; font-size: 12px; font-weight: 800; }
+.shopWallet > span + span { border-left: 1px solid #ae835e; }
+.shopWallet strong { overflow: hidden; color: #ffe0a2; font-size: 19px; line-height: 1; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.shopScroll { display: flex; flex: 1; flex-direction: column; gap: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-color: #ad784c #221c18; padding: 0 10px 16px; background: repeating-linear-gradient(90deg, #2b2521 0, #29231f 38px, #2e2723 39px, #2e2723 40px); }
+.shopSectionLabel { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 0 -10px; padding: 7px 15px; border-top: 1px solid #956239; border-bottom: 1px solid #100d0b; background: linear-gradient(#533829, #2d211c); color: #ffe0ba; font-size: 14px; font-weight: 900; }
+.shopSectionLabel span { color: #f0d6b6; font-size: 12px; }
+.shopCard, .trainingCard { position: relative; display: flex; align-items: center; flex: none; width: 100%; min-height: 78px; padding: 6px 8px; border: 1px solid #a79680; border-bottom-color: #28221e; border-radius: 2px; background: linear-gradient(160deg, #70665e 0%, #504841 42%, #3e3732 100%); box-shadow: inset 0 1px #f8e9d277, inset 0 -3px #1c17144a; color: #fffaf0; text-align: left; cursor: pointer; transition: background .12s ease, box-shadow .12s ease; }
+.shopCard:not(:disabled):hover, .trainingCard:not(:disabled):hover, .shopCard:not(:disabled):focus-visible, .trainingCard:not(:disabled):focus-visible { z-index: 1; outline: 2px solid #ffcc75; outline-offset: -2px; background: linear-gradient(150deg, #9b744b, #604535); box-shadow: inset 0 1px #fff2c8ad, 0 0 12px #ff9b3944; }
+.shopCard:disabled, .trainingCard:disabled { cursor: default; }
+.shopCard.owned { background: linear-gradient(150deg, #53604f, #303a30); }
+.shopCard.locked { background: linear-gradient(150deg, #55504b, #36312e); }
+.shopCard.cannotAfford, .trainingCard.cannotAfford { background: linear-gradient(150deg, #6d6259, #413a34); }
+.shopImage, .trainingIcon { position: relative; display: grid; place-items: center; flex: none; width: 64px; height: 64px; margin-right: 10px; border: 2px solid #ba966d; border-radius: 2px; background: linear-gradient(135deg, #8e8172, #463c34); box-shadow: inset 0 0 8px #0008, 0 1px 2px #0009; }
+.shopImage img, .trainingIcon img { object-fit: contain; filter: brightness(1.23) drop-shadow(0 1px 2px #0009); }
+.locked .shopImage img { filter: grayscale(.35) brightness(1.15); }
+.cardText { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 4px; }
+.cardText strong { overflow-wrap: anywhere; font-size: 17px; line-height: 1.16; text-shadow: 0 1px 3px #000; }
+.cardText > small { color: #f1dfc8; font-size: 12px; font-weight: 800; line-height: 1.1; }
+.cardMeter { display: block; width: 100%; height: 5px; overflow: hidden; border-radius: 99px; background: #191512; box-shadow: inset 0 1px 2px #000; }
+.cardMeter > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #e18332, #c5f594); transition: width .16s ease-out; }
+.cardCost { display: flex; align-items: center; gap: 4px; color: #ffdf9b; font-size: 14px; font-weight: 900; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.cardCost::before { content: "●"; color: #ffc56b; font-size: 12px; text-shadow: 0 1px 2px #502912; }
+.owned .cardCost { color: #d5efbd; }
+.owned .cardCost::before { content: "✓"; color: #b4e58d; }
+.shopCard:not(:disabled) .cardCost, .trainingCard:not(:disabled) .cardCost { color: #baf484; }
+.cardMeta { display: flex; flex: none; flex-direction: column; align-items: flex-end; justify-content: center; min-width: 77px; margin-left: 5px; color: #ffecce; font-variant-numeric: tabular-nums; }
+.cardMeta strong { font-size: 18px; line-height: 1.1; text-shadow: 0 2px 3px #000; }
+.cardMeta small { color: #f0d6bd; font-size: 11px; font-weight: 800; }
+.locked .cardMeta { color: #dfd1bf; }
+.locked .cardMeta small { color: #e5d1bd; }
+.owned .cardMeta { color: #d8f3c3; }
+.mysteryCard { cursor: default; background: linear-gradient(155deg, #494044, #2f292f); border-color: #796b75; }
+.mysteryImage { color: #f0d7e5; font-size: 39px; font-weight: 900; text-shadow: 0 0 12px #d28bb9; }
+.mysteryCard .cardText strong { letter-spacing: .1em; }
+.mysteryCard .cardCost, .mysteryCard .cardMeta { color: #e9c8d9; }
+.mobileClose, .mobileDock { display: none; }
+
+.modalBackdrop { position: fixed; z-index: 90; inset: 0; display: grid; place-items: center; padding: 16px; background: #090707bc; backdrop-filter: blur(5px); }
+.modal { width: min(100%, 430px); max-height: 85dvh; overflow-y: auto; padding: 20px; border: 1px solid #fca55b; border-radius: 20px; background: #211a17; box-shadow: 0 25px 80px #000c; }
+.modalTitle { display: flex; align-items: center; justify-content: space-between; }
+.modalTitle h2 { margin: 0; font-size: 22px; }
+.modal > p { color: #dfcbb2; font-size: 13px; line-height: 1.6; }
+.modal dl { margin: 14px 0; border-top: 1px solid #ffffff2b; }
+.modal dl > div { display: flex; justify-content: space-between; gap: 10px; padding: 9px 0; border-bottom: 1px solid #ffffff2b; font-size: 13px; }
+.modal dt { color: #cfb99d; }
+.modal dd { margin: 0; font-weight: 800; text-align: right; }
+.settingButton { width: 100%; min-height: 44px; margin-top: 8px; border: 1px solid #ffb66588; border-radius: 10px; background: #57371f; color: #fff0dc; font-weight: 800; cursor: pointer; }
+.legacyNote { padding: 9px; border-radius: 8px; background: #ffffff0e; }
+.resetEntry { width: 100%; min-height: 44px; margin-top: 20px; border: 1px solid #d69b75; border-radius: 10px; background: #36241e; color: #ffe2ce; font-size: 14px; font-weight: 800; cursor: pointer; }
+.resetDialog h2 { margin: 0; font-size: 23px; }
+.resetDialog > p { font-size: 15px; }
+.confirmActions { display: flex; gap: 10px; margin-top: 20px; }
+.confirmActions button { flex: 1; min-height: 48px; border: 1px solid #b88a64; border-radius: 10px; background: #3b302a; color: #fff0db; font-size: 14px; font-weight: 900; cursor: pointer; }
+.confirmActions .confirmReset { border-color: #ffa064; background: #b84e28; color: #fff8ef; }
+
+.rankingBackdrop { position: fixed; z-index: 95; inset: 0; display: flex; align-items: center; justify-content: center; padding: 14px; background: #090707bd; backdrop-filter: blur(5px); animation: fadeIn .2s ease-out; }
+.rankingPanel { display: flex; flex-direction: column; width: min(96vw, 900px); height: min(820px, 92dvh); overflow: hidden; border: 2px solid #c58a50; border-radius: 18px; background: #211b17; box-shadow: 0 25px 80px #000d; animation: rankEnter .32s cubic-bezier(.18,.9,.28,1) both; }
+.rankingHeader { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 18px; border-bottom: 2px solid #9e673e; background: linear-gradient(100deg, #503522, #271d18); }
+.rankingHeader small { color: #ffd9a0; font-size: 12px; font-weight: 800; }
+.rankingHeader h2 { margin: 0; font-size: 27px; line-height: 1.15; }
+.rankingHeaderActions { display: flex; gap: 7px; }
+.rankingHeaderActions button { width: 40px; height: 40px; border: 1px solid #ffffff66; border-radius: 9px; background: #ffffff18; color: #fff1da; font-size: 24px; cursor: pointer; }
+.rankingSelf { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 13px 18px; border-bottom: 1px solid #b78855; background: #38281d; }
+.rankingSelf > span { color: #ffe1b9; font-size: 13px; font-weight: 800; }
+.rankingSelf strong { color: #fff4e5; font-size: 24px; font-variant-numeric: tabular-nums; }
+.rankingSelf strong small { font-size: 12px; }
+.rankingList { flex: 1; min-height: 160px; overflow-y: auto; padding: 6px 10px; scrollbar-color: #c48b55 #211b17; }
+.rankingList ol { margin: 0; padding: 0; list-style: none; }
+.rankingList li { display: flex; align-items: center; gap: 14px; min-height: 60px; padding: 9px 14px; border-bottom: 1px solid #ffffff24; }
+.rankingList li.myRank { border-radius: 8px; background: #ffad4430; }
+.rankNumber { display: grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: 50%; background: #6d4629; color: #ffe2af; font-size: 17px; font-weight: 1000; }
+.rankName { flex: 1; min-width: 0; overflow: hidden; font-size: 18px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.rankingList li strong { font-size: 19px; font-variant-numeric: tabular-nums; }
+.rankingList li strong small { color: #e0c5a5; font-size: 11px; }
+.rankingState { margin: 40px 10px; color: #f2d9bd; font-size: 15px; font-weight: 800; text-align: center; }
+.rankingForm { padding: 14px 18px 18px; border-top: 1px solid #a96c3f; background: #2b211a; }
+.rankingForm label { display: block; margin-bottom: 7px; font-size: 14px; font-weight: 900; }
+.rankingForm > div { display: flex; gap: 8px; }
+.rankingForm input { flex: 1; min-width: 0; min-height: 44px; padding: 8px 11px; border: 1px solid #ad8b6c; border-radius: 8px; outline-color: #ffc16d; background: #150f0d; color: #fff6e8; font-size: 16px; }
+.rankingForm button { flex: none; min-width: 96px; border: 1px solid #ffcb7b; border-radius: 8px; background: #f48d2b; color: #241407; font-weight: 1000; cursor: pointer; }
+.rankingForm button:disabled { opacity: .5; cursor: default; }
+.rankingForm p { margin: 8px 0 0; color: #ffe0a4; font-size: 13px; }
+
+@keyframes appear { from { opacity: 0; transform: translateY(15px) scale(.93); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes levelGlow { 0%, 100% { box-shadow: inset 0 1px 8px #ffd19d45, 0 3px 10px #0008; } 25% { box-shadow: 0 0 26px #ffbc50, inset 0 0 18px #ffe090; } }
+@keyframes levelPop { from { transform: scale(1.25); } to { transform: scale(1); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rankEnter { from { opacity: 0; transform: translateY(25px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes rankRise { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+@media (max-width: 799px) {
+  .header { grid-template-columns: 42px minmax(0, 1fr) 42px 42px; row-gap: 8px; padding: 8px 10px 10px; }
+  .backLink { grid-column: 1; grid-row: 1; }
+  .rankingButton { grid-column: 3; grid-row: 1; }
+  .menuButton { grid-column: 4; grid-row: 1; }
+  .progressBlock { grid-column: 1 / -1; grid-row: 2; }
+  .stats { grid-column: 1 / -1; grid-row: 3; }
+  .progressHeading { gap: 10px; }
+  .levelBadge { width: 69px; height: 69px; }
+  .levelBadge strong { font-size: 34px; }
+  .progressLabels strong, .progressLabels > span { font-size: 18px; }
+  .progressFoot { font-size: 13px; }
+  .stats > div { padding: 4px 9px; }
+  .stats strong { font-size: 17px; }
+  .stats small { font-size: 11px; }
+  .scene { width: 100%; }
+  .background img { object-position: center 52%; }
+  .characterButton { width: min(57%, 320px); height: 72%; bottom: 6%; }
+  .powerRack { left: 0; bottom: 31%; width: 35%; height: 43%; }
+  .barbell { left: -2%; bottom: 5%; width: 39%; height: 16%; }
+  .plateTree { left: -2%; bottom: 25%; width: 20%; height: 27%; }
+  .punchingBag { left: -3%; bottom: 31%; width: 20%; height: 29%; }
+  .rower { left: 6%; bottom: 36%; width: 36%; height: 17%; }
+  .trainingMachine { right: 3%; bottom: 32%; width: 37%; height: 42%; }
+  .treadmill { left: 4%; bottom: 37%; width: 37%; height: 28%; }
+  .proteinWorkshop { right: -1%; bottom: 29%; width: 32%; height: 30%; }
+  .ultimateTrainer { right: -2%; bottom: 19%; width: 24%; height: 38%; }
+  .devilPowerRack { left: -3%; bottom: 30%; width: 39%; height: 47%; }
+  .devilAltar { left: -4%; bottom: 20%; width: 41%; height: 27%; }
+  .energyCore { right: -2%; bottom: 32%; width: 25%; height: 31%; }
+  .dumbbells { left: 0; bottom: 6%; width: 34%; height: 16%; }
+  .bench { right: -5%; bottom: 8%; width: 40%; height: 23%; }
+  .devilDumbbells { right: 1%; bottom: 3%; width: 28%; height: 13%; }
+  .shop { position: fixed; z-index: 60; inset: 0; width: 100%; height: 100dvh; border: 0; transform: translateY(105%); transition: transform .24s ease; pointer-events: none; }
+  .shopOpen { transform: translateY(0); pointer-events: auto; }
+  .mobileClose { display: grid; }
+  .shopScroll { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+  .mobileDock { z-index: 25; display: flex; flex: none; align-items: center; justify-content: center; min-height: 62px; padding: 7px 11px max(7px, env(safe-area-inset-bottom)); border-top: 2px solid #ed8a31; background: #1d1714; }
+  .mobileDock button { width: 100%; min-height: 44px; border: 1px solid #ffbf79; border-radius: 11px; background: #f48725; color: #231309; font-size: 15px; font-weight: 1000; cursor: pointer; }
+  .mobileDock button span { margin-left: 4px; font-size: 9px; }
+  .rankingBackdrop { align-items: flex-end; padding: 0; }
+  .rankingPanel { width: 100%; height: 94dvh; border-radius: 18px 18px 0 0; animation: rankRise .28s ease-out both; }
+}
+
+@media (max-height: 570px) {
+  .header { padding-top: 4px; padding-bottom: 5px; }
+  .levelBadge { width: 60px; height: 60px; }
+  .levelBadge strong { font-size: 29px; }
+  .progressTrack { height: 22px; }
+  .characterButton { height: 83%; bottom: 1%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .prop, .progressTrack span, .cardMeter > span, .shop, .levelBadge, .levelBadge strong, .rankingBackdrop, .rankingPanel { animation: none; transition: none; }
+}

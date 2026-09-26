@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 
-import { MachoClickerPage } from "@/components/macho-clicker-page";
+import { MachoClickerV3 } from "@/components/macho-clicker-v3";
 import { buildUrl } from "@/lib/seo";
 
 const pageUrl = buildUrl("/macho-clicker");
-const description = "クリックで筋肉ポイントを稼ぎ、強化メニューでマチョ田級を目指すミニゲームです。";
+const description = "マチョ田をタップして筋肉ポイントを獲得。器具を増やしてジムとタップ力を育て、Lv100を目指すクリッカーゲームです。";
 
 export const metadata: Metadata = {
   title: "マチョクリッカー｜マチョ田の部屋",
@@ -26,5 +26,5 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <MachoClickerPage />;
+  return <MachoClickerV3 />;
 }

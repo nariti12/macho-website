@@ -109,9 +109,9 @@
 
 - ページ: `/macho-clicker`
 - 状態はブラウザの `localStorage` に保存します。
-- ランキングは `/api/macho-clicker/rankings` 経由で Supabase の `macho_clicker_scores` に保存します。
-- ゲーム画像は `public/game/macho-clicker/` 配下のPNGを使います。
-- Supabase環境変数がない場合、ランキング取得は空配列を返します。
+- 現行ゲームのランキングは累計タップ数を `/api/macho-clicker/tap-rankings` 経由で Supabase の `macho_clicker_tap_scores` に保存します。
+- ゲーム画像は `public/game/macho-clicker/v3/` 配下のWebPを使います。
+- Supabase環境変数がない場合、現行ランキングは利用不可として表示します。
 
 ## API
 
@@ -123,6 +123,7 @@
 | `/api/contact` | `POST` | Resendでお問い合わせメール送信 |
 | `/api/questions` | `POST` | 匿名質問の検証・保存・新着通知 |
 | `/api/macho-clicker/rankings` | `GET`, `POST` | マチョクリッカーランキング取得/登録 |
+| `/api/macho-clicker/tap-rankings` | `GET`, `POST` | 現行ゲームの累計タップ数ランキング取得/登録 |
 | `/api/cron/protein-rankings` | `GET`, `POST` | プロテインランキングの手動更新 |
 
 ## データベース
@@ -133,6 +134,7 @@ Supabase migration は `supabase/migrations/` にあります。
 - `product_metrics`: 抽出した内容量、たんぱく質情報、分類情報
 - `rankings`: 表示用ランキング
 - `macho_clicker_scores`: マチョクリッカーランキング
+- `macho_clicker_tap_scores`: 現行ゲームの累計タップ数ランキング
 - `questions`: 匿名質問、回答、公開状態
 - `question_rate_limit_buckets`: 質問箱の短期間レート制限
 

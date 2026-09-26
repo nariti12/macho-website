@@ -1,642 +1,300 @@
 import { expect, test, type Page } from "@playwright/test";
-import { MACHO_CLICKER_SAVE_VERSION } from "../src/lib/macho-clicker/save";
+import {
+  applyTap, buyEquipment, buyTraining, createTapGame, levelFromTaps,
+  levelProgress, LEVEL_100_TAPS, migrateLegacyTapSave, tapPower, tapsForLevel, EQUIPMENT,
+} from "../src/lib/macho-clicker/tap-game";
 
-const openFreshGame = async (page: Page) => {
-  // Keep UI regression tests deterministic and independent from the optional
-  // public ranking API. The API itself is covered by server-side checks.
-  await page.route("**/api/macho-clicker/rankings", (route) =>
-    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ rankings: [] }) })
-  );
+const openGame = async (page: Page) => {
   await page.goto("/macho-clicker", { waitUntil: "domcontentloaded" });
-  await page.evaluate(() => localStorage.clear());
-  await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("button", { name: "マチョ田をクリック" })).toBeVisible();
-  await page.waitForTimeout(750);
+  await expect(page.getByTestId("macho-character-button")).toBeVisible();
 };
 
-const expectNoPageOverflow = async (page: Page) => {
-  const dimensions = await page.evaluate(() => ({
-    viewport: document.documentElement.clientWidth,
-    document: document.documentElement.scrollWidth,
-  }));
-  expect(dimensions.document).toBeLessThanOrEqual(dimensions.viewport + 1);
-};
+test("level curve is tap-based, increasing and reaches Lv100 after 300 hours at two taps per second", () => {
+  expect(LEVEL_100_TAPS).toBe(300 * 60 * 60 * 2);
+  expect(levelFromTaps(0)).toBe(1);
+  expect(levelFromTaps(LEVEL_100_TAPS - 1)).toBe(99);
+  expect(levelFromTaps(LEVEL_100_TAPS)).toBe(100);
+  expect(tapsForLevel(2)).toBeGreaterThanOrEqual(40);
+  for (let level = 2; level <= 100; level += 1) {
+    expect(tapsForLevel(level)).toBeGreaterThan(tapsForLevel(level - 1));
+    expect(levelFromTaps(tapsForLevel(level))).toBe(level);
+  }
+  expect(tapsForLevel(100) - tapsForLevel(99)).toBeGreaterThan(tapsForLevel(11) - tapsForLevel(10));
+  expect(levelProgress(tapsForLevel(50)).percent).toBe(0);
+});
 
-const expectGameFillsViewport = async (page: Page) => {
-  const dimensions = await page.evaluate(() => {
-    const shell = document.querySelector<HTMLElement>(".macho-game-shell");
-    const mainGrid = document.querySelector<HTMLElement>(".macho-main-grid");
-    return {
-      viewportHeight: window.innerHeight,
-      documentHeight: document.documentElement.scrollHeight,
-      shellBottom: shell?.getBoundingClientRect().bottom ?? 0,
-      mainGridBottom: mainGrid?.getBoundingClientRect().bottom ?? 0,
-    };
+test("only taps earn points; equipment and training raise tap power", () => {
+  let game = createTapGame();
+  for (let count = 0; count < 15; count += 1) game = applyTap(game);
+  expect(game.points).toBe(15);
+  expect(game.taps).toBe(15);
+  const withDumbbells = buyEquipment(game, "dumbbells");
+  expect(withDumbbells).not.toBeNull();
+  expect(tapPower(withDumbbells!)).toBe(2);
+  expect(buyEquipment(withDumbbells!, "dumbbells")).toBeNull();
+  expect(buyEquipment({ ...game, points: 1_000 }, "bench")).toBeNull();
+  const withBarbell = buyEquipment({ ...withDumbbells!, points: 70, taps: 50 }, "barbell");
+  expect(withBarbell?.owned).toContain("barbell");
+  const withBench = buyEquipment({ ...withBarbell!, points: 250, taps: 50 }, "bench");
+  expect(withBench?.owned).toContain("bench");
+  expect(levelFromTaps(withBench!.taps)).toBe(2);
+  const trained = buyTraining({ ...withDumbbells!, points: 100 });
+  expect(trained).not.toBeNull();
+  expect(tapPower(trained!)).toBeGreaterThan(tapPower(withDumbbells!));
+  expect(levelFromTaps(trained!.taps)).toBe(levelFromTaps(game.taps));
+});
+
+test("legacy save keeps real taps and purchased equipment without importing idle currency", () => {
+  const migrated = migrateLegacyTapSave({
+    clickCount: 52_000, muscle: 1_000_000_000_000,
+    upgrades: { pushUp: 7, benchPress: 2, dumbbell: 1 },
   });
+  expect(migrated?.taps).toBe(52_000);
+  expect(migrated?.points).toBe(0);
+  expect(migrated?.owned).toEqual(["dumbbells", "bench", "powerRack"]);
+});
 
-  expect(dimensions.documentHeight).toBeLessThanOrEqual(dimensions.viewportHeight + 1);
-  expect(Math.abs(dimensions.shellBottom - dimensions.viewportHeight)).toBeLessThanOrEqual(1);
-  expect(Math.abs(dimensions.mainGridBottom - dimensions.viewportHeight)).toBeLessThanOrEqual(1);
-};
-
-for (const viewport of [
-  { name: "desktop-1440", width: 1440, height: 900 },
-  { name: "desktop-1920", width: 1920, height: 1080 },
-  { name: "mobile-360-browser-ui", width: 360, height: 500 },
-  { name: "mobile-360-short", width: 360, height: 640 },
-  { name: "mobile-390", width: 390, height: 844 },
-  { name: "mobile-430", width: 430, height: 932 },
-  { name: "mobile-landscape-667", width: 667, height: 375 },
-]) {
-  test(`${viewport.name}: layout and screenshot`, async ({ page }) => {
-    await page.setViewportSize({ width: viewport.width, height: viewport.height });
-    await openFreshGame(page);
-    await expectNoPageOverflow(page);
-    await expectGameFillsViewport(page);
-    const characterBox = await page.getByRole("button", { name: "マチョ田をクリック" }).boundingBox();
-    const characterImageBox = await page.locator(".macho-character-image").boundingBox();
-    expect(characterBox).not.toBeNull();
-    expect(characterImageBox).not.toBeNull();
-    expect((characterBox?.y ?? 0) + (characterBox?.height ?? 0)).toBeLessThanOrEqual(viewport.height + 1);
-    expect((characterImageBox?.y ?? 0) + (characterImageBox?.height ?? 0)).toBeLessThanOrEqual(viewport.height + 1);
-    if (viewport.name.startsWith("mobile-")) {
-      const minimumCharacterHeight = viewport.height <= 520 ? 120 : viewport.height <= 700 ? 180 : 220;
-      expect(characterImageBox?.height ?? 0).toBeGreaterThanOrEqual(minimumCharacterHeight);
-    } else {
-      expect(characterImageBox?.height ?? 0).toBeGreaterThanOrEqual(210);
-    }
-    await page.screenshot({ path: `test-results/visual/${viewport.name}.png`, fullPage: true });
-  });
-}
-
-test("late-game save keeps the simple core screen", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await openFreshGame(page);
-  await expect
-    .poll(async () => page.evaluate(() => Boolean(localStorage.getItem("machoda:macho-clicker:v3"))))
-    .toBe(true);
-  await page.evaluate(() => {
-    const key = "machoda:macho-clicker:v3";
-    const saved = JSON.parse(localStorage.getItem(key) ?? "{}");
-    localStorage.setItem(key, JSON.stringify({
-      ...saved,
-      muscle: 1_000_000_000_000,
-      totalMuscle: 1_000_000_000_000,
-      prestigeLevel: 0,
+test("browser migration preserves the old save and explains the new currency", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("machoda:macho-clicker:v3", JSON.stringify({
+      clickCount: 52_000,
+      muscle: 1_000_000_000,
+      upgrades: { pushUp: 1, benchPress: 1 },
     }));
   });
-  await page.reload({ waitUntil: "domcontentloaded" });
-
-  await expect(page.getByRole("button", { name: /仕上げ直し/ })).toBeVisible();
-  await expect(page.getByText("概要", { exact: true })).toHaveCount(0);
-  await expect(page.getByText("日課", { exact: true })).toHaveCount(0);
-  await expect(page.getByText("結晶研究", { exact: true })).toHaveCount(0);
-  await expect(page.getByText("設備Lv", { exact: true })).toHaveCount(0);
-  await expectGameFillsViewport(page);
-});
-
-test("legacy stage 18 migrates to Lv90 and evolves to Lv100 within two seconds", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await openFreshGame(page);
-  const saved = await page.evaluate(() =>
-    JSON.parse(localStorage.getItem("machoda:macho-clicker:v3") ?? "{}")
-  );
-  await page.addInitScript((seeded) => {
-    localStorage.setItem("machoda:macho-clicker:v3", JSON.stringify(seeded));
-    localStorage.setItem("machoda:macho-clicker:onboarding:v1", "complete");
-  }, {
-    ...saved,
-    saveVersion: 2,
-    muscle: 2_500_000_000,
-    totalMuscle: 2_500_000_000,
-    bodyEvolutionStage: 18,
-    lastSavedAt: Date.now(),
-  });
-  await page.reload({ waitUntil: "domcontentloaded" });
-
-  await expect(page.getByText("現在: 伝説のマチョ田")).toBeVisible();
-  const startedAt = Date.now();
-  await page.getByRole("button", { name: "進化する" }).click({ force: true });
-  await expect(page.getByText("現在: 最終形態")).toBeVisible({ timeout: 2_000 });
-  expect(Date.now() - startedAt).toBeLessThan(2_000);
-  await expect(page.getByText("最終進化済み")).toBeVisible();
-  await expect(page.locator(".macho-character-image")).toHaveAttribute(
-    "src",
-    /macho-face2-lv100.webp/
-  );
-  const characterImageBox = await page.locator(".macho-character-image").boundingBox();
-  expect(characterImageBox).not.toBeNull();
-  expect((characterImageBox?.y ?? 0) + (characterImageBox?.height ?? 0)).toBeLessThanOrEqual(901);
-  await expectNoPageOverflow(page);
-});
-
-test("desktop: click, purchase, settings and save", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await openFreshGame(page);
-
-  const character = page.getByRole("button", { name: "マチョ田をクリック" });
-  for (let count = 0; count < 20; count += 1) await character.click({ force: true });
-
-  const levelBadge = page.getByTestId("shop-level-pushUp");
-  const stateChip = page.getByTestId("shop-state-pushUp");
-  const [levelBox, stateBox] = await Promise.all([levelBadge.boundingBox(), stateChip.boundingBox()]);
-  expect(levelBox).not.toBeNull();
-  expect(stateBox).not.toBeNull();
-  expect((levelBox?.x ?? 0) + (levelBox?.width ?? 0)).toBeLessThanOrEqual((stateBox?.x ?? 0) - 4);
-
-  const dumbbell = page.getByRole("button", { name: /ダンベル/ }).last();
-  await expect(dumbbell).toBeEnabled();
-  await dumbbell.click();
-  await expect
-    .poll(async () =>
-      page.evaluate(() => JSON.parse(localStorage.getItem("machoda:macho-clicker:v3") ?? "{}").upgrades?.pushUp ?? 0)
-    )
-    .toBe(1);
-  const dumbbellOrbit = page.getByTestId("macho-dumbbell-orbit").first();
-  await expect(dumbbellOrbit).toBeVisible();
-  const orbitLayers = await page.evaluate(() => {
-    const orbit = document.querySelector<HTMLElement>('[data-testid="macho-dumbbell-orbit"]');
-    const characterButton = document.querySelector<HTMLElement>('[data-testid="macho-character-button"]');
-    return {
-      orbit: Number.parseInt(getComputedStyle(orbit!).zIndex, 10),
-      character: Number.parseInt(getComputedStyle(characterButton!).zIndex, 10),
-    };
-  });
-  expect(orbitLayers.orbit).toBeLessThan(orbitLayers.character);
-
+  await openGame(page);
+  await expect(page.getByTestId("gym-dumbbells")).toBeVisible();
+  await expect(page.getByTestId("gym-bench")).toBeVisible();
+  const saved = await page.evaluate(() => ({
+    old: JSON.parse(localStorage.getItem("machoda:macho-clicker:v3") ?? "{}"),
+    next: JSON.parse(localStorage.getItem("machoda:macho-clicker:v4") ?? "{}"),
+  }));
+  expect(saved.old.muscle).toBe(1_000_000_000);
+  expect(saved.next.taps).toBe(52_000);
+  expect(saved.next.points).toBe(0);
   await page.getByRole("button", { name: "ゲームメニューを開く" }).click();
-  const soundButton = page.getByRole("button", { name: /効果音 ON/ }).first();
-  await soundButton.click();
-  await expect(page.getByRole("button", { name: /効果音 OFF/ }).first()).toBeVisible();
-
-  const lightweightButton = page.getByRole("button", { name: /軽量モード OFF/ }).first();
-  await lightweightButton.click();
-  await expect(page.getByRole("button", { name: /軽量モード ON/ }).first()).toBeVisible();
-
-  // The game auto-saves every five seconds. Reloading verifies the real restore path,
-  // not just the presence of a save button.
-  await page.waitForTimeout(5_500);
-  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("machoda:macho-clicker:v3") ?? "{}"));
-  expect(saved.upgrades.pushUp).toBe(1);
-  expect(saved.lastSavedAt).toBeGreaterThan(0);
-  await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("button", { name: "マチョ田をクリック" })).toBeVisible();
-  await expect
-    .poll(async () =>
-      page.evaluate(() => JSON.parse(localStorage.getItem("machoda:macho-clicker:v3") ?? "{}").upgrades?.pushUp ?? 0)
-    )
-    .toBe(1);
-  await expectNoPageOverflow(page);
+  await expect(page.getByText(/旧記録から累計タップと購入済み器具を引き継ぎました/)).toBeVisible();
 });
 
-test("desktop: bulk purchase buys the selected quantity at the exact cumulative price", async ({ page }) => {
+test("desktop: tapping, purchase, room change and save restore", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await openFreshGame(page);
-  await expect
-    .poll(async () => page.evaluate(() => Boolean(localStorage.getItem("machoda:macho-clicker:v3"))))
-    .toBe(true);
-
-  await page.evaluate(() => {
-    const key = "machoda:macho-clicker:v3";
-    const saved = JSON.parse(localStorage.getItem(key) ?? "{}");
-    localStorage.setItem(
-      key,
-      JSON.stringify({
-        ...saved,
-        muscle: 1_000,
-        totalMuscle: 1_000,
-      })
-    );
-  });
-  await page.reload({ waitUntil: "domcontentloaded" });
-
-  await page.getByRole("button", { name: "×10", exact: true }).click();
-  await page.getByRole("button", { name: "ダンベル、10個購入可能" }).click();
-
-  await expect
-    .poll(async () =>
-      page.evaluate(() => {
-        const saved = JSON.parse(localStorage.getItem("machoda:macho-clicker:v3") ?? "{}");
-        return {
-          owned: saved.upgrades?.pushUp,
-          saveVersion: saved.saveVersion,
-        };
-      })
-    )
-    .toEqual({
-      owned: 10,
-      saveVersion: MACHO_CLICKER_SAVE_VERSION,
-    });
-  const savedMuscle = await page.evaluate(
-    () => JSON.parse(localStorage.getItem("machoda:macho-clicker:v3") ?? "{}").muscle
-  );
-  // The exact 308-point cumulative cost is covered by the pure economy test.
-  // Passive production starts immediately after purchase, so the browser value
-  // is expected to be at or just above the remaining 692 points.
-  expect(savedMuscle).toBeGreaterThanOrEqual(692);
-  expect(savedMuscle).toBeLessThan(710);
-});
-
-test("mobile: tabs remain usable and shop scrolls", async ({ page }) => {
-  await page.setViewportSize({ width: 360, height: 640 });
-  await openFreshGame(page);
-
-  await page.getByRole("button", { name: "ショップ", exact: true }).click();
-  await expect(page.getByText("ショップ", { exact: true }).first()).toBeVisible();
-  await expect(page.getByText("アップグレード", { exact: true })).toBeVisible();
-  await page.screenshot({ path: "test-results/visual/mobile-360-short-shop.png" });
-  await page.mouse.wheel(0, 1_400);
-
-  await page.getByRole("button", { name: "設備", exact: true }).click();
-  await expect(page.getByText("ジム設備", { exact: true })).toBeVisible();
-  await page.screenshot({ path: "test-results/visual/mobile-360-short-equipment.png" });
-
-  await page.getByRole("button", { name: "ゲームメニューを開く" }).click();
-  await expect(page.getByRole("heading", { name: "メニュー" })).toBeVisible();
-  await page.getByRole("button", { name: "保存", exact: true }).click();
-  await expect(page.getByText("保存しました。", { exact: true }).first()).toBeVisible();
-  await expectNoPageOverflow(page);
-});
-
-test("mobile: three-step guide teaches click, purchase and passive production", async ({ page }) => {
-  await page.setViewportSize({ width: 360, height: 640 });
-  await openFreshGame(page);
-
+  await openGame(page);
   const character = page.getByTestId("macho-character-button");
-  await expect(page.getByTestId("macho-onboarding-card")).toContainText("1/3");
-  const guideStyles = await character.evaluate((element) => {
-    const styles = getComputedStyle(element, "::after");
-    return {
-      borderTopWidth: styles.borderTopWidth,
-      borderRadius: styles.borderRadius,
-      boxShadow: styles.boxShadow,
-      filter: styles.filter,
-    };
-  });
-  expect(guideStyles.borderTopWidth).toBe("0px");
-  expect(guideStyles.borderRadius).toBe("50%");
-  expect(guideStyles.boxShadow).toBe("none");
-  expect(guideStyles.filter).not.toBe("none");
+  for (let count = 0; count < 15; count += 1) await character.click({ force: true });
+  await expect(page.getByTestId("macho-points")).toHaveText("15 P");
+  await page.getByTestId("shop-dumbbells").click();
+  await expect(page.getByTestId("gym-dumbbells")).toBeVisible();
+  await expect(page.getByTestId("macho-tap-power")).toHaveText("+2 P");
+  await expect(page.getByRole("button", { name: /タップ強化 Lv 0/ })).toContainText("あと 50 タップ");
   await character.click({ force: true });
-  await expect(page.getByTestId("macho-onboarding-card")).toContainText("2/3");
-
-  for (let count = 0; count < 14; count += 1) await character.click({ force: true });
-  await expect(page.getByTestId("macho-onboarding-shop-card")).toContainText("ダンベルを1個買う");
-  await page.getByRole("button", { name: "ダンベル、1個購入可能" }).click();
-
-  await expect(page.getByTestId("macho-onboarding-card")).toContainText("3/3");
-  await expect(page.getByTestId("macho-onboarding-card")).toContainText("毎秒 +0.1");
-  const characterImageBox = await page.locator(".macho-character-image").boundingBox();
-  expect(characterImageBox).not.toBeNull();
-  expect((characterImageBox?.y ?? 0) + (characterImageBox?.height ?? 0)).toBeLessThanOrEqual(641);
-  await page.getByRole("button", { name: "トレーニング開始" }).click();
-  await expect(page.getByTestId("macho-onboarding-card")).toHaveCount(0);
-});
-
-test("mobile: primary controls meet the 44px touch target", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await openFreshGame(page);
-
-  const controls = [
-    page.getByRole("button", { name: "効果音をオフにする" }),
-    page.getByRole("button", { name: "実績を開く" }),
-    page.getByRole("button", { name: "ゲームメニューを開く" }),
-    page.getByRole("button", { name: "鍛える", exact: true }),
-    page.getByRole("button", { name: "設備", exact: true }),
-    page.getByRole("button", { name: "ショップ", exact: true }),
-  ];
-  for (const control of controls) {
-    const box = await control.boundingBox();
-    expect(box?.width).toBeGreaterThanOrEqual(44);
-    expect(box?.height).toBeGreaterThanOrEqual(44);
-  }
-});
-
-test("sound preference is available from the game header and persists", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await openFreshGame(page);
-
-  await page.getByRole("button", { name: "効果音をオフにする" }).click();
-  await expect(page.getByRole("button", { name: "効果音をオンにする" })).toBeVisible();
+  await expect(page.getByTestId("macho-points")).toHaveText("2 P");
+  await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem("machoda:macho-clicker:v4") ?? "{}").taps)).toBe(16);
   await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("button", { name: "効果音をオンにする" })).toBeVisible();
+  await expect(page.getByTestId("gym-dumbbells")).toBeVisible();
+  await expect(page.getByTestId("macho-tap-power")).toHaveText("+2 P");
 });
 
-test("fresh game: shop reveals only the first equipment and two mysteries", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await openFreshGame(page);
-
-  const shop = page.getByRole("complementary").filter({ has: page.getByRole("heading", { name: "ショップ" }) });
-  await expect(shop.getByRole("button", { name: /ダンベル/ })).toBeVisible();
-  await expect(shop.getByLabel("未解放の設備")).toHaveCount(2);
-  await expect(shop.getByText("腹筋ローラー職人", { exact: true })).toHaveCount(0);
-});
-
-test("mobile: equipment details open in a bottom sheet", async ({ page }) => {
+test("rapid pointer input counts exactly once per press", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await openFreshGame(page);
-  await page.getByRole("button", { name: "ショップ", exact: true }).click();
-
-  await page.getByRole("button", { name: "ダンベルの詳細を開く" }).click();
-  const details = page.getByRole("dialog", { name: "ダンベルの生産詳細" });
-  await expect(details).toBeVisible();
-  await expect(details.getByText("所有数 0")).toBeVisible();
-  await expect(details.getByText("1個あたり")).toBeVisible();
-  await expect(details.getByText("合計生産")).toBeVisible();
-  await expect(details.getByText("価格")).toBeVisible();
-  await page.getByRole("button", { name: "生産詳細を閉じる" }).click();
-  await expect(details).toHaveCount(0);
-});
-
-test("equipment unlock announces itself and animates the revealed row", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await openFreshGame(page);
-  const saved = await page.evaluate(() =>
-    JSON.parse(localStorage.getItem("machoda:macho-clicker:v3") ?? "{}")
-  );
-  await page.addInitScript((seeded) => {
-    localStorage.setItem("machoda:macho-clicker:v3", JSON.stringify(seeded));
-  }, {
-    ...saved,
-    muscle: 99,
-    totalMuscle: 99,
-    lastSavedAt: Date.now(),
-  });
-  await page.reload({ waitUntil: "domcontentloaded" });
-
-  await page.getByRole("button", { name: "マチョ田をクリック" }).click({ force: true });
-  await expect(page.getByText("新設備「腹筋ローラー職人」がショップに解放されました！")).toBeVisible();
-  await expect(page.getByRole("button", { name: /腹筋ローラー職人/ })).toHaveClass(/macho-shop-unlocked/);
-});
-
-test("mobile: rapid touch input stays responsive and counts each tap once", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await openFreshGame(page);
-
-  const character = page.getByTestId("macho-character-button");
-  const inputStyles = await character.evaluate((element) => {
-    const styles = getComputedStyle(element);
-    return {
-      touchAction: styles.touchAction,
-      userSelect: styles.userSelect,
-    };
-  });
-  expect(inputStyles.touchAction).toBe("manipulation");
-  expect(inputStyles.userSelect).toBe("none");
-  await expect(page.locator('[data-effect-slot="gain"]')).toHaveCount(28);
-  await expect(page.locator('[data-effect-slot="spark"]')).toHaveCount(96);
-
-  await character.evaluate((element) => {
-    for (let index = 1; index <= 100; index += 1) {
-      element.dispatchEvent(
-        new PointerEvent("pointerdown", {
-          bubbles: true,
-          cancelable: true,
-          pointerId: index,
-          pointerType: "touch",
-          clientX: 180,
-          clientY: 360,
-          isPrimary: true,
-        })
-      );
-      element.dispatchEvent(
-        new PointerEvent("pointerup", {
-          bubbles: true,
-          cancelable: true,
-          pointerId: index,
-          pointerType: "touch",
-          clientX: 180,
-          clientY: 360,
-          isPrimary: true,
-        })
-      );
-    }
-  });
-
-  await expect(page.getByTestId("macho-click-count")).toHaveText("100");
-  await expect(page.locator('[data-effect-slot="gain"]')).toHaveCount(28);
-  await expect(page.locator('[data-effect-slot="spark"]')).toHaveCount(96);
-  await expect(character).not.toHaveAttribute("data-pressed");
-  await expectNoPageOverflow(page);
-});
-
-test("mobile: left, center and right taps share the same hit target", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await openFreshGame(page);
-
-  const character = page.getByTestId("macho-character-button");
-  const box = await character.boundingBox();
+  await openGame(page);
+  const box = await page.getByTestId("macho-character-button").boundingBox();
   expect(box).not.toBeNull();
-
-  const tapXs = [box!.x + 12, box!.x + box!.width / 2, box!.x + box!.width - 12];
-  await character.evaluate((element, positions) => {
-    positions.forEach((clientX, index) => {
-      const pointerId = index + 1;
-      const options = {
-        bubbles: true,
-        cancelable: true,
-        pointerId,
-        pointerType: "touch",
-        clientX,
-        clientY: 360,
-        isPrimary: true,
-      };
-      element.dispatchEvent(new PointerEvent("pointerdown", options));
-      element.dispatchEvent(new PointerEvent("pointerup", options));
-    });
-  }, tapXs);
-
-  await expect(page.getByTestId("macho-click-count")).toHaveText("3");
-  await expect(character).not.toHaveAttribute("data-pressed");
-});
-
-test("desktop: paced click profiles do not lose inputs or create long tasks", async ({ page }) => {
-  test.setTimeout(45_000);
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await openFreshGame(page);
-
-  await page.evaluate(() => {
-    const monitoredWindow = window as Window & { __machoLongTasks?: number[]; __machoObserver?: PerformanceObserver };
-    monitoredWindow.__machoLongTasks = [];
-    if (PerformanceObserver.supportedEntryTypes.includes("longtask")) {
-      monitoredWindow.__machoObserver = new PerformanceObserver((entries) => {
-        monitoredWindow.__machoLongTasks?.push(...entries.getEntries().map((entry) => entry.duration));
-      });
-      monitoredWindow.__machoObserver.observe({ type: "longtask", buffered: false });
-    }
-  });
-
-  const character = page.getByTestId("macho-character-button");
-  let expectedClicks = 0;
-  for (const clicksPerSecond of [2, 5, 8, 15]) {
-    const clicks = clicksPerSecond * 2;
-    await character.evaluate(
-      async (element, profile) => {
-        for (let index = 0; index < profile.clicks; index += 1) {
-          const pointerId = profile.pointerOffset + index;
-          const options = {
-            bubbles: true,
-            cancelable: true,
-            pointerId,
-            pointerType: "mouse",
-            button: 0,
-            clientX: 320,
-            clientY: 360,
-            isPrimary: true,
-          };
-          element.dispatchEvent(new PointerEvent("pointerdown", options));
-          element.dispatchEvent(new PointerEvent("pointerup", options));
-          await new Promise((resolve) => window.setTimeout(resolve, 1_000 / profile.clicksPerSecond));
-        }
-      },
-      { clicks, clicksPerSecond, pointerOffset: expectedClicks + 1 }
-    );
-    expectedClicks += clicks;
-    await expect(page.getByTestId("macho-click-count")).toHaveText(String(expectedClicks));
-  }
-
-  const longTasks = await page.evaluate(() => {
-    const monitoredWindow = window as Window & { __machoLongTasks?: number[]; __machoObserver?: PerformanceObserver };
-    monitoredWindow.__machoObserver?.disconnect();
-    return monitoredWindow.__machoLongTasks ?? [];
-  });
-  expect(longTasks, `Long Tasks detected: ${longTasks.join(", ")}`).toHaveLength(0);
-});
-
-test("mobile: simultaneous touches count only the first active pointer", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await openFreshGame(page);
-
-  const character = page.getByTestId("macho-character-button");
-  await character.evaluate((element) => {
-    const dispatch = (type: string, pointerId: number, isPrimary: boolean) =>
-      element.dispatchEvent(
-        new PointerEvent(type, {
-          bubbles: true,
-          cancelable: true,
-          pointerId,
-          pointerType: "touch",
-          clientX: 180,
-          clientY: 360,
-          isPrimary,
-        })
-      );
-
-    dispatch("pointerdown", 1, true);
-    dispatch("pointerdown", 2, false);
-    dispatch("pointerup", 2, false);
-    dispatch("pointerup", 1, true);
-  });
-
-  await expect(page.getByTestId("macho-click-count")).toHaveText("1");
-  await expect(character).not.toHaveAttribute("data-pressed");
-});
-
-test("mobile: a drag gesture does not award a click", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await openFreshGame(page);
-
-  const character = page.getByTestId("macho-character-button");
-  await character.evaluate((element) => {
-    element.dispatchEvent(
-      new PointerEvent("pointerdown", {
-        bubbles: true,
-        cancelable: true,
-        pointerId: 1,
-        pointerType: "touch",
-        clientX: 180,
-        clientY: 360,
-        isPrimary: true,
-      })
-    );
-    element.dispatchEvent(
-      new PointerEvent("pointermove", {
-        bubbles: true,
-        cancelable: true,
-        pointerId: 1,
-        pointerType: "touch",
-        clientX: 180,
-        clientY: 400,
-        isPrimary: true,
-      })
-    );
-    element.dispatchEvent(
-      new PointerEvent("pointerup", {
-        bubbles: true,
-        cancelable: true,
-        pointerId: 1,
-        pointerType: "touch",
-        clientX: 180,
-        clientY: 400,
-        isPrimary: true,
-      })
-    );
-  });
-
-  await expect(page.getByTestId("macho-click-count")).toHaveText("0");
-  await expect(character).not.toHaveAttribute("data-pressed");
+  const x = box!.x + box!.width / 2;
+  const y = box!.y + box!.height / 2;
+  for (let count = 0; count < 100; count += 1) await page.mouse.click(x, y);
+  await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem("machoda:macho-clicker:v4") ?? "{}").taps)).toBe(100);
+  await expect(page.getByTestId("macho-points")).toHaveText("100 P");
 });
 
 for (const viewport of [
-  { name: "desktop", width: 1440, height: 900 },
-  { name: "mobile", width: 390, height: 844 },
+  { width: 390, height: 844 },
+  { width: 360, height: 500 },
+  { width: 1440, height: 900 },
 ]) {
-  test(`${viewport.name}: 30-minute session resume keeps production and save healthy`, async ({ page }) => {
-    await page.setViewportSize({ width: viewport.width, height: viewport.height });
-    await openFreshGame(page);
-
-    const before = {
-      muscle: 5,
-      totalMuscle: 20,
-      upgrades: { pushUp: 1 },
-      lastSavedAt: Date.now() - 30 * 60 * 1_000,
-    };
-    // Seed on the next document before React mounts. Writing immediately before
-    // reload would be overwritten by the current component's cleanup save.
-    await page.addInitScript((seeded) => {
-      localStorage.setItem("machoda:macho-clicker:v3", JSON.stringify(seeded));
-    }, before);
-
-    await page.reload({ waitUntil: "domcontentloaded" });
-    await expect(page.getByRole("button", { name: "マチョ田をクリック" })).toBeVisible();
-    await page.waitForTimeout(5_500);
-    const after = await page.evaluate(() => JSON.parse(localStorage.getItem("machoda:macho-clicker:v3") ?? "{}"));
-
-    expect(after.totalMuscle).toBeGreaterThan(before.totalMuscle);
-    expect(after.lastSavedAt).toBeGreaterThan(before.lastSavedAt);
-    await expectNoPageOverflow(page);
+  test(`${viewport.width}x${viewport.height}: gym fits the viewport`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await openGame(page);
+    const dimensions = await page.evaluate(() => ({
+      width: document.documentElement.scrollWidth,
+      height: document.documentElement.scrollHeight,
+      viewportWidth: innerWidth,
+      viewportHeight: innerHeight,
+    }));
+    expect(dimensions.width).toBeLessThanOrEqual(dimensions.viewportWidth + 1);
+    expect(dimensions.height).toBeLessThanOrEqual(dimensions.viewportHeight + 1);
+    const character = await page.getByTestId("macho-character-button").boundingBox();
+    expect(character).not.toBeNull();
+    expect(character!.height).toBeGreaterThan(120);
+    expect(character!.y + character!.height).toBeLessThanOrEqual(viewport.height + 1);
   });
 }
 
-test("all gameplay sounds are delivered", async ({ request }) => {
-  for (const sound of [
-    "click",
-    "buy",
-    "blocked",
-    "unlock",
-    "upgrade",
-    "evolution",
-    "achievement",
-    "golden-spawn",
-    "golden-collect",
-  ]) {
-    const response = await request.get(`/sounds/macho-clicker/${sound}.wav`);
-    expect(response.ok(), `${sound}.wav should be available`).toBeTruthy();
-    expect(response.headers()["content-type"]).toContain("audio");
-  }
+test("mobile: shop opens, purchase appears in the gym and idle time grants nothing", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openGame(page);
+  await page.locator('nav[aria-label="ゲーム操作"] button').click();
+  await expect(page.getByRole("heading", { name: "ショップ" })).toBeVisible();
+  await page.getByRole("button", { name: "ショップを閉じる" }).click();
+  await page.waitForTimeout(300);
+  const character = page.getByTestId("macho-character-button");
+  for (let count = 0; count < 15; count += 1) await character.click({ force: true });
+  await page.locator('nav[aria-label="ゲーム操作"] button').click();
+  await page.getByTestId("shop-dumbbells").click();
+  await expect(page.getByTestId("gym-dumbbells")).toBeVisible();
+  const before = await page.getByTestId("macho-points").textContent();
+  await page.waitForTimeout(1100);
+  expect(await page.getByTestId("macho-points").textContent()).toBe(before);
 });
 
-test("golden protein spawns and grants a reward", async ({ page }) => {
-  await page.addInitScript(() => {
-    Math.random = () => 0;
-  });
-  await page.clock.install({ time: new Date("2026-07-17T12:00:00+09:00") });
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await openFreshGame(page);
+test("mobile: level progress and shop controls stay readable", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openGame(page);
+  await expect(page.getByText("TAP TO TRAIN")).toHaveCount(0);
+  await expect(page.getByText("マチョクリッカー", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("マチョ田をタップして鍛える")).toHaveCount(0);
+  const progress = page.getByRole("progressbar", { name: "次のレベルまでの進捗" });
+  expect((await progress.boundingBox())!.height).toBeGreaterThanOrEqual(22);
+  await page.locator('nav[aria-label="ゲーム操作"] button').click();
+  await expect(page.getByText("BUILD YOUR GYM")).toHaveCount(0);
+  const shopCard = page.getByTestId("shop-dumbbells");
+  expect((await shopCard.boundingBox())!.height).toBeGreaterThanOrEqual(76);
+  const shopTextSize = await shopCard.locator("strong").first().evaluate((element) => parseFloat(getComputedStyle(element).fontSize));
+  expect(shopTextSize).toBeGreaterThanOrEqual(16);
+  const icon = page.locator('img[src$="tap-upgrade.webp"]');
+  await expect(icon).toBeVisible();
+  await expect(icon).toHaveJSProperty("naturalWidth", 512);
+  await expect(page.getByTestId("shop-dumbbells")).toBeVisible();
+  await expect(page.getByTestId("shop-bench")).toHaveCount(0);
+  await expect(page.getByTestId("shop-mystery")).toHaveCount(1);
+  await expect(page.getByTestId("shop-mystery")).toContainText("？？？");
+  await expect(page.getByTestId("shop-mystery")).toContainText("購入後に公開");
+});
 
-  await page.clock.fastForward("05:01");
-  const goldenProtein = page.getByRole("button", { name: /プロテインを獲得$/ });
-  await expect(goldenProtein).toBeVisible();
-  await goldenProtein.click({ force: true });
-  await expect(page.getByText(/Lucky!/).first()).toBeVisible();
+test("buying equipment reveals the next item regardless of level", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => {
+    localStorage.setItem("machoda:macho-clicker:v4", JSON.stringify({
+      version: 4, points: 1_235, totalPoints: 1_235, taps: 0, trainingLevel: 0, owned: [],
+    }));
+  });
+  await openGame(page);
+  await page.locator('nav[aria-label="ゲーム操作"] button').click();
+  await expect(page.getByTestId("shop-barbell")).toHaveCount(0);
+  await page.getByTestId("shop-dumbbells").click();
+  await page.locator('nav[aria-label="ゲーム操作"] button').click();
+  await expect(page.getByTestId("shop-barbell")).toBeVisible();
+  await page.getByTestId("shop-barbell").click();
+  await page.locator('nav[aria-label="ゲーム操作"] button').click();
+  await expect(page.getByTestId("shop-bench")).toBeVisible();
+  await expect(page.getByTestId("gym-dumbbells")).toHaveCount(0);
+  await expect(page.getByTestId("gym-barbell")).toBeVisible();
+  await page.getByTestId("shop-bench").click();
+  await page.locator('nav[aria-label="ゲーム操作"] button').click();
+  await expect(page.getByTestId("shop-plateTree")).toBeVisible();
+  await expect(page.getByTestId("shop-mystery")).toContainText("購入後に公開");
+});
+
+test("shop translates equipment cost into taps at the current earning rate", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openGame(page);
+  await expect(page.getByTestId("shop-dumbbells")).toContainText("あと 15 タップ");
+  await page.getByTestId("macho-character-button").click({ force: true });
+  await expect(page.getByTestId("macho-points")).toHaveText("1 P");
+  await expect(page.getByTestId("shop-dumbbells")).toContainText("あと 14 タップ");
+  await expect(page.getByTestId("shop-mystery")).not.toContainText("70 P");
+});
+
+test("equipment bonus reflects the current training multiplier", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const game = {
+    ...createTapGame(), points: 8_532, totalPoints: 8_532, taps: 1_759,
+    trainingLevel: 13, owned: EQUIPMENT.slice(0, 8).map((item) => item.id),
+  };
+  await page.addInitScript((saved) => localStorage.setItem("machoda:macho-clicker:v4", JSON.stringify(saved)), game);
+  await openGame(page);
+  expect(tapPower(game)).toBeGreaterThan(87);
+  await expect(page.getByRole("button", { name: /タップ強化 Lv 13/ })).toContainText("29,807 P");
+  await expect(page.getByRole("button", { name: /タップ強化 Lv 13/ })).toContainText(`あと ${Math.ceil((29_807 - 8_532) / tapPower(game))} タップ`);
+  const rackWithout = { ...game, owned: game.owned.filter((id) => id !== "powerRack") };
+  await expect(page.getByTestId("shop-powerRack")).toContainText(`+${tapPower(game) - tapPower(rackWithout)} P`);
+  await expect(page.getByTestId("shop-treadmill")).toContainText("900,000 P");
+  await expect(page.getByTestId("shop-mystery")).not.toContainText("3,600,000 P");
+});
+
+test("the complete gym uses the upgraded room and keeps the tap target clear", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript((owned) => localStorage.setItem("machoda:macho-clicker:v4", JSON.stringify({
+    version: 4, points: 0, totalPoints: 0, taps: 2_160_000, trainingLevel: 0, owned,
+  })), EQUIPMENT.map((item) => item.id));
+  await openGame(page);
+  await expect(page.locator('img[src$="legend-gym-mobile.webp"]')).toBeVisible();
+  await expect(page.getByTestId("gym-energyCore")).toBeVisible();
+  await expect(page.getByTestId("gym-devilPowerRack")).toBeVisible();
+  await expect(page.getByTestId("gym-dumbbells")).toHaveCount(0);
+  await expect(page.getByTestId("macho-character-button")).toBeVisible();
+  await page.locator('nav[aria-label="ゲーム操作"] button').click();
+  await expect(page.getByText("16 設置")).toBeVisible();
+  await expect(page.getByTestId("shop-mystery")).toHaveCount(0);
+});
+
+test("menu reset requires confirmation and starts a new local run", async ({ page }) => {
+  await page.addInitScript(() => {
+    if (localStorage.getItem("machoda:macho-clicker:v4")) return;
+    localStorage.setItem("machoda:macho-clicker:v3", JSON.stringify({ clickCount: 100, muscle: 1000 }));
+    localStorage.setItem("machoda:macho-clicker:v4", JSON.stringify({
+      version: 4, points: 123, totalPoints: 138, taps: 100,
+      trainingLevel: 0, owned: ["dumbbells"],
+    }));
+  });
+  await openGame(page);
+  await page.getByRole("button", { name: "ゲームメニューを開く" }).click();
+  await page.getByRole("button", { name: "最初から始める" }).click();
+  await expect(page.getByRole("alertdialog", { name: "最初から始める確認" })).toBeVisible();
+  await page.getByRole("button", { name: "キャンセル" }).click();
+  await expect(page.getByTestId("macho-points")).toHaveText("123 P");
+  await page.getByRole("button", { name: "最初から始める" }).click();
+  await page.getByRole("button", { name: "初期化して始める" }).click();
+  await expect(page.getByTestId("macho-points")).toHaveText("0 P");
+  await expect(page.getByTestId("gym-dumbbells")).toHaveCount(0);
+  const saved = await page.evaluate(() => ({
+    old: JSON.parse(localStorage.getItem("machoda:macho-clicker:v3") ?? "{}"),
+    next: JSON.parse(localStorage.getItem("machoda:macho-clicker:v4") ?? "{}"),
+  }));
+  expect(saved.old.clickCount).toBe(100);
+  expect(saved.next.taps).toBe(0);
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.getByTestId("macho-points")).toHaveText("0 P");
+});
+
+test("header ranking opens over the game and registers cumulative taps", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  let submitted: { nickname: string; taps: number; playerId: string } | null = null;
+  await page.route("**/api/macho-clicker/tap-rankings", async (route) => {
+    if (route.request().method() === "POST") {
+      submitted = route.request().postDataJSON();
+      await route.fulfill({ json: { available: true, items: [
+        { id: "mine", playerId: submitted!.playerId, nickname: submitted!.nickname, taps: submitted!.taps, updatedAt: new Date().toISOString() },
+      ] } });
+      return;
+    }
+    await route.fulfill({ json: { available: true, items: [
+      { id: "first", playerId: "other", nickname: "先輩マッチョ", taps: 42, updatedAt: new Date().toISOString() },
+    ] } });
+  });
+  await openGame(page);
+  await page.getByTestId("macho-character-button").click({ force: true });
+  await page.getByRole("button", { name: "ランキングを開く" }).click();
+  const dialog = page.getByRole("dialog", { name: "累計タップランキング" });
+  await expect(dialog).toBeVisible();
+  const bounds = await dialog.boundingBox();
+  expect(bounds!.height).toBeGreaterThan(750);
+  expect(bounds!.width).toBeGreaterThan(380);
+  await expect(dialog).toContainText("先輩マッチョ");
+  await dialog.getByLabel("自分の記録を登録").fill("テスト筋肉");
+  await dialog.getByRole("button", { name: "登録する" }).click();
+  await expect(dialog).toContainText("記録を登録しました！");
+  expect(submitted?.nickname).toBe("テスト筋肉");
+  expect(submitted?.taps).toBe(1);
+  await dialog.getByRole("button", { name: "ランキングを閉じる" }).click();
+  await expect(dialog).toHaveCount(0);
 });
