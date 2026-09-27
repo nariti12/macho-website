@@ -42,7 +42,9 @@ const positions: Record<EquipmentId, string> = {
   devilDumbbells: styles.devilDumbbells,
   devilAltar: styles.devilAltar,
   devilPowerRack: styles.devilPowerRack,
+  infernoMachine: styles.infernoMachine,
   energyCore: styles.energyCore,
+  devilThrone: styles.devilThrone,
 };
 
 type Overlay = "shop" | "menu" | "ranking" | "reset" | null;

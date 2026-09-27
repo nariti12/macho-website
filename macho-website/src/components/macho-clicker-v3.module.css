@@ -79,7 +79,9 @@
 .devilDumbbells { right: 3%; bottom: 3%; width: 21%; height: 15%; z-index: 14; filter: drop-shadow(0 0 12px #f244376b); }
 .devilAltar { left: 0; bottom: 19%; width: 26%; height: 31%; z-index: 5; filter: drop-shadow(0 0 12px #f244376b); }
 .devilPowerRack { left: 0; bottom: 31%; width: 34%; height: 51%; z-index: 5; filter: drop-shadow(0 0 12px #f244374d); }
+.infernoMachine { right: 14%; bottom: 34%; width: 31%; height: 43%; z-index: 3; filter: drop-shadow(0 0 12px #f244374d); }
 .energyCore { right: 0; bottom: 28%; width: 17%; height: 35%; z-index: 5; filter: drop-shadow(0 0 13px #ff793277); }
+.devilThrone { right: 2%; bottom: 18%; width: 20%; height: 42%; z-index: 8; filter: drop-shadow(0 0 12px #f244374d); }
 .characterButton {
   position: absolute; z-index: 10; left: 50%; bottom: 6%;
   width: min(47%, 450px); height: min(72%, 680px);
@@ -216,8 +218,10 @@
   .proteinWorkshop { right: -1%; bottom: 29%; width: 32%; height: 30%; }
   .ultimateTrainer { right: -2%; bottom: 19%; width: 24%; height: 38%; }
   .devilPowerRack { left: -3%; bottom: 30%; width: 39%; height: 47%; }
+  .infernoMachine { right: 3%; bottom: 32%; width: 37%; height: 42%; }
   .devilAltar { left: -4%; bottom: 20%; width: 41%; height: 27%; }
   .energyCore { right: -2%; bottom: 32%; width: 25%; height: 31%; }
+  .devilThrone { right: -2%; bottom: 19%; width: 24%; height: 38%; }
   .dumbbells { left: 0; bottom: 6%; width: 34%; height: 16%; }
   .bench { right: -5%; bottom: 8%; width: 40%; height: 23%; }
   .devilDumbbells { right: 1%; bottom: 3%; width: 28%; height: 13%; }

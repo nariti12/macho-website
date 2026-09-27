@@ -22,8 +22,10 @@ export const EQUIPMENT = [
   { id: "gymRenovation", name: "伝説のジム改装", cost: 60_000_000, power: 1_000, image: "legend-gym-desktop.webp", zone: "room" },
   { id: "devilDumbbells", name: "デビルダンベル", cost: 250_000_000, power: 3_000, image: "devil-dumbbells.webp", zone: "weights" },
   { id: "devilAltar", name: "デビル祭壇", cost: 1_000_000_000, power: 3_200, image: "devil-altar.webp", zone: "combat" },
-  { id: "devilPowerRack", name: "デビルパワーラック", cost: 4_000_000_000, power: 10_000, image: "devil-power-rack.webp", zone: "rack" },
-  { id: "energyCore", name: "マッスルコア", cost: 32_000_000_000, power: 12_000, image: "energy-core.webp", zone: "protein" },
+  { id: "devilPowerRack", name: "デビルパワーラック", cost: 2_500_000_000, power: 10_000, image: "devil-power-rack.webp", zone: "rack" },
+  { id: "infernoMachine", name: "インフェルノマシン", cost: 5_000_000_000, power: 7_000, image: "inferno-machine.webp", zone: "machine" },
+  { id: "energyCore", name: "マッスルコア", cost: 10_000_000_000, power: 12_000, image: "energy-core.webp", zone: "protein" },
+  { id: "devilThrone", name: "デビル王座", cost: 19_000_000_000, power: 18_000, image: "devil-throne.webp", zone: "trainer" },
 ] as const;
 
 export type EquipmentId = (typeof EQUIPMENT)[number]["id"];

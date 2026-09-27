@@ -1,7 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 import {
   applyTap, buyEquipment, buyTraining, createTapGame, levelFromTaps,
-  levelProgress, LEVEL_100_TAPS, migrateLegacyTapSave, tapPower, tapsForLevel, EQUIPMENT,
+  levelProgress, LEVEL_100_TAPS, migrateLegacyTapSave, normalizeTapSave,
+  tapPower, tapsForLevel, trainingCost, EQUIPMENT,
 } from "../src/lib/macho-clicker/tap-game";
 
 const openGame = async (page: Page) => {
@@ -42,6 +43,48 @@ test("only taps earn points; equipment and training raise tap power", () => {
   expect(trained).not.toBeNull();
   expect(tapPower(trained!)).toBeGreaterThan(tapPower(withDumbbells!));
   expect(levelFromTaps(trained!.taps)).toBe(levelFromTaps(game.taps));
+});
+
+test("equipment purchases stay within reach across the late game", () => {
+  const run = (withTraining: boolean) => {
+    let game = createTapGame();
+    const milestones: number[] = [];
+    for (const item of EQUIPMENT) {
+      while (game.points < item.cost) {
+        const upgradeCost = trainingCost(game.trainingLevel);
+        if (withTraining && upgradeCost <= item.cost * 0.05 && game.points >= upgradeCost) {
+          game = buyTraining(game)!;
+          continue;
+        }
+        const tapsToItem = Math.ceil((item.cost - game.points) / tapPower(game));
+        const tapsToUpgrade = withTraining && upgradeCost <= item.cost * 0.05
+          ? Math.ceil((upgradeCost - game.points) / tapPower(game)) : Infinity;
+        const taps = Math.max(1, Math.min(tapsToItem, tapsToUpgrade));
+        const earned = taps * tapPower(game);
+        game = { ...game, taps: game.taps + taps, points: game.points + earned, totalPoints: game.totalPoints + earned };
+      }
+      game = buyEquipment(game, item.id)!;
+      milestones.push(game.taps);
+    }
+    return milestones;
+  };
+
+  const trained = run(true);
+  const equipmentOnly = run(false);
+  expect(EQUIPMENT).toHaveLength(18);
+  expect(trained.at(-1)).toBeLessThan(300_000);
+  expect(equipmentOnly.at(-1)).toBeLessThan(LEVEL_100_TAPS);
+  const lateGaps = trained.slice(14).map((taps, index) => taps - trained[index + 13]);
+  expect(Math.max(...lateGaps)).toBeLessThan(70_000);
+});
+
+test("existing players keep their owned gear when new purchases are inserted", () => {
+  const saved = normalizeTapSave({
+    ...createTapGame(), owned: EQUIPMENT.filter((item) => item.id !== "infernoMachine" && item.id !== "devilThrone").map((item) => item.id),
+  });
+  expect(saved?.owned).toContain("energyCore");
+  expect(saved?.owned).not.toContain("infernoMachine");
+  expect(EQUIPMENT.find((item) => !saved?.owned.includes(item.id))?.id).toBe("infernoMachine");
 });
 
 test("legacy save keeps real taps and purchased equipment without importing idle currency", () => {
@@ -233,7 +276,7 @@ test("the complete gym uses the upgraded room and keeps the tap target clear", a
   await expect(page.getByTestId("gym-dumbbells")).toHaveCount(0);
   await expect(page.getByTestId("macho-character-button")).toBeVisible();
   await page.locator('nav[aria-label="ゲーム操作"] button').click();
-  await expect(page.getByText("16 設置")).toBeVisible();
+  await expect(page.getByText("18 設置")).toBeVisible();
   await expect(page.getByTestId("shop-mystery")).toHaveCount(0);
 });
 
@@ -293,8 +336,7 @@ test("header ranking opens over the game and registers cumulative taps", async (
   await dialog.getByLabel("自分の記録を登録").fill("テスト筋肉");
   await dialog.getByRole("button", { name: "登録する" }).click();
   await expect(dialog).toContainText("記録を登録しました！");
-  expect(submitted?.nickname).toBe("テスト筋肉");
-  expect(submitted?.taps).toBe(1);
+  expect(submitted).toMatchObject({ nickname: "テスト筋肉", taps: 1 });
   await dialog.getByRole("button", { name: "ランキングを閉じる" }).click();
   await expect(dialog).toHaveCount(0);
 });
