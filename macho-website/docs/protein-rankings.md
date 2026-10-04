@@ -51,6 +51,21 @@
 - INNOCECTとNature InはAmazon商品ページの通常購入価格を週次キャッシュで取得する
 - Amazon価格を取得できない場合は、最後に確認した参考価格を表示する
 
+## 2026-10-04の価格確認
+
+プロテインは本番の手動更新APIから楽天の商品検索APIで再取得し、Supabaseへ保存しました。表示は保存済みの価格と容量から1kgあたりに換算し、取得できない場合だけ参考価格を使います。
+クレアチンはAmazonの同一ASINの商品ページで通常購入（`NEW`）の価格を確認しました。定期購入（`SNS`）、クーポン、ポイント還元は含めません。
+
+| 商品 | 容量 | 商品価格 | 1kgあたり | 確認先 |
+| --- | --- | --- | --- | --- |
+| Verifyst ホエイ | 3kg | 12,053円 | 4,018円 | [楽天](https://item.rakuten.co.jp/verifyst/v00130/) |
+| X-PLOSION ホエイ・ミルクチョコレート | 3kg | 13,790円 | 4,597円 | [楽天](https://item.rakuten.co.jp/x-plosion/10000019/) |
+| Gold Standard・ストロベリーバナナ | 2.27kg | 14,580円 | 6,423円 | [楽天](https://item.rakuten.co.jp/iherb-official/27513/) |
+| INNOCECT クレアチン | 1kg | 2,170円 | 2,170円 | [Amazon](https://www.amazon.co.jp/dp/B0DHTBTPJQ) |
+| Nature In クレアチン | 1kg | 2,490円 | 2,490円 | [Amazon](https://www.amazon.co.jp/dp/B0FY5PBSM1) |
+
+クレアチンの最後に確認した参考価格を変更するとキャッシュキーも変わり、以前の価格キャッシュを使わず再取得します。
+
 ## 運用メモ
 
 - 必須 env:
