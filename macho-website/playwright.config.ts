@@ -2,6 +2,8 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./e2e",
+  // Question-photo tests use their own local fixture server and configuration.
+  testIgnore: "questions.spec.ts",
   fullyParallel: false,
   workers: 1,
   retries: 1,
