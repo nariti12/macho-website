@@ -8,9 +8,11 @@ let requestQueue: Promise<void> = Promise.resolve();
 
 type RakutenPriceResponse = {
   Items?: Array<{
+    itemCode?: string;
     itemPrice?: number;
   }>;
   items?: Array<{
+    itemCode?: string;
     itemPrice?: number;
   }>;
 };
@@ -41,13 +43,13 @@ const getRakutenKeywordFromSearchUrl = (url: string) => {
 
 export const formatYen = (price: number) => `${price.toLocaleString("ja-JP")}円`;
 
-export const fetchRakutenPriceLabel = async (searchUrl: string | undefined, fallbackPriceYen: number) => {
+export const fetchRakutenPriceLabel = async (searchUrl: string | undefined, fallbackPriceYen: number, itemCode?: string) => {
   if (!searchUrl || !process.env.RAKUTEN_APPLICATION_ID || !process.env.RAKUTEN_ACCESS_KEY) {
     return formatYen(fallbackPriceYen);
   }
 
-  const keyword = getRakutenKeywordFromSearchUrl(searchUrl);
-  if (!keyword) {
+  const keyword = itemCode ? null : getRakutenKeywordFromSearchUrl(searchUrl);
+  if (!itemCode && !keyword) {
     return formatYen(fallbackPriceYen);
   }
 
@@ -55,12 +57,13 @@ export const fetchRakutenPriceLabel = async (searchUrl: string | undefined, fall
     const url = new URL(RAKUTEN_ITEM_SEARCH_ENDPOINT);
     url.searchParams.set("applicationId", process.env.RAKUTEN_APPLICATION_ID);
     url.searchParams.set("accessKey", process.env.RAKUTEN_ACCESS_KEY);
-    url.searchParams.set("keyword", keyword);
+    if (itemCode) url.searchParams.set("itemCode", itemCode);
+    else url.searchParams.set("keyword", keyword as string);
     url.searchParams.set("hits", "5");
     url.searchParams.set("page", "1");
     url.searchParams.set("format", "json");
     url.searchParams.set("formatVersion", "2");
-    url.searchParams.set("elements", "itemPrice");
+    url.searchParams.set("elements", "itemCode,itemPrice");
 
     let payload: RakutenPriceResponse | null = null;
 
@@ -90,6 +93,7 @@ export const fetchRakutenPriceLabel = async (searchUrl: string | undefined, fall
     }
 
     const prices = (payload?.Items ?? payload?.items ?? [])
+      .filter((item) => !itemCode || item.itemCode === itemCode)
       .map((item) => item.itemPrice)
       .filter((price): price is number => typeof price === "number" && price > 0);
 
