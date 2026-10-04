@@ -1,11 +1,13 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { hasServiceSupabaseEnv } from "@/lib/supabase/config";
+import { isQuestionImagePath } from "@/lib/question-images";
 
 export type PublishedQuestion = {
   id: string;
   question: string;
   answer: string;
   answerImageUrl: string | null;
+  questionImageUrl: string | null;
   publishedAt: string;
 };
 
@@ -14,6 +16,7 @@ type PublishedQuestionRow = {
   question: string;
   answer: string | null;
   answer_image_url?: string | null;
+  question_image_path?: string | null;
   published_at: string | null;
 };
 
@@ -52,7 +55,11 @@ export async function fetchPublishedQuestions(limit = 50): Promise<PublishedQues
     .not("published_at", "is", null)
     .order("published_at", { ascending: false })
     .limit(safeLimit);
-  let { data, error } = await fetchRows("id, question, answer, answer_image_url, published_at");
+  let { data, error } = await fetchRows("id, question, answer, answer_image_url, question_image_path, published_at");
+
+  if (error?.code === "42703" && error.message.includes("question_image_path")) {
+    ({ data, error } = await fetchRows("id, question, answer, answer_image_url, published_at"));
+  }
 
   // Keep existing answers available if the application is deployed before the migration.
   if (error?.code === "42703" && error.message.includes("answer_image_url")) {
@@ -73,6 +80,7 @@ export async function fetchPublishedQuestions(limit = 50): Promise<PublishedQues
       question: row.question,
       answer: row.answer,
       answerImageUrl: getAnswerImageUrl(row.answer_image_url),
+      questionImageUrl: isQuestionImagePath(row.id, row.question_image_path) ? `/api/questions/${row.id}/image` : null,
       publishedAt: row.published_at,
     }));
 }
