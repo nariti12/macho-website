@@ -21,6 +21,7 @@ type CreatineRecommendation = {
 };
 
 type PreWorkoutRecommendation = {
+  rank: number;
   name: string;
   comment: string;
   imageUrl: string;
@@ -48,13 +49,24 @@ const creatineRecommendations: CreatineRecommendation[] = [
   },
 ];
 
-const preWorkoutRecommendation: PreWorkoutRecommendation = {
-  name: "Kaged（ケージド）",
-  comment: "ケージドは他と比べて成分が凄く良く、値段も高すぎないので、一番バランスが良いのでおすすめです。",
-  imageUrl: "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/kgd/kgd00798/l/114.jpg",
-  iherbUrl:
-    "https://jp.iherb.com/search?kw=%E3%83%97%E3%83%AC%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%A2%E3%82%A6%E3%83%88%E3%80%80kaged",
-};
+const preWorkoutRecommendations: PreWorkoutRecommendation[] = [
+  {
+    rank: 1,
+    name: "GORILLA MODE BASE（ゴリラモードベース）",
+    comment: "5000円以下のプレワークアウトで一番成分が良いです。身体だけでなく脳にも良い成分が入っているので、とても集中できます。\nなので、筋トレだけでなく仕事でここぞという時にもおすすめですね。",
+    imageUrl: "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/gll/gll51259/r/8.jpg",
+    iherbUrl:
+      "https://jp.iherb.com/search?kw=%E3%83%97%E3%83%AC%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%A2%E3%82%A6%E3%83%88%E3%80%80%E3%82%B4%E3%83%AA%E3%83%A9%E3%83%A2%E3%83%BC%E3%83%89%E3%83%99%E3%83%BC%E3%82%B9",
+  },
+  {
+    rank: 2,
+    name: "Kaged Elite（ケージド エリート）",
+    comment: "成分的には全プレワークアウトの中で一番最強です。ただしその分値段は高いです。\n高い値段を許容できるならケージドエリートを買って、ぶち上げましょう。",
+    imageUrl: "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/kgd/kgd47894/r/32.jpg",
+    iherbUrl:
+      "https://jp.iherb.com/search?sug=%E3%83%97%E3%83%AC%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%A2%E3%82%A6%E3%83%88%E3%80%80kaged%20elite&kw=%E3%83%97%E3%83%AC%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%A2%E3%82%A6%E3%83%88%E3%80%80kaged%20elite&rank=2&rawkw=%E3%83%97%E3%83%AC%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%A2%E3%82%A6%E3%83%88%E3%80%80kaged&refererLocation=suggestion",
+  },
+];
 
 const getBrandKey = (item: RankingCardItem) => {
   const sourceExternalId = item.product.source_external_id;
@@ -351,20 +363,20 @@ const CreatineCard = ({
 );
 
 const PreWorkoutCard = ({ item }: { item: PreWorkoutRecommendation }) => (
-  <article id="pre-workout-1" className="grid scroll-mt-24 gap-5 rounded-3xl border border-[#FCD27B] bg-white/95 p-5 shadow-xl sm:grid-cols-[108px_1fr] sm:p-6">
+  <article id={`pre-workout-${item.rank}`} className="grid scroll-mt-24 gap-5 rounded-3xl border border-[#FCD27B] bg-white/95 p-5 shadow-xl sm:grid-cols-[108px_1fr] sm:p-6">
     <div className="flex items-start gap-4 sm:block">
       <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#FF8A23] text-sm font-bold text-white shadow-lg">
-        1
+        {item.rank}
       </div>
       <div className="relative mt-0 aspect-square w-24 overflow-hidden rounded-2xl bg-[#FFF4E7] sm:mt-4 sm:w-[108px]">
-        <Image src={item.imageUrl} alt={item.name} fill sizes="108px" className="object-cover" />
+        <Image src={item.imageUrl} alt={item.name} fill sizes="108px" className="object-contain" />
       </div>
     </div>
 
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
         <h3 className="text-xl font-bold leading-tight text-[#7C2D12]">{item.name}</h3>
-        <p className="text-sm leading-6 text-slate-600">{item.comment}</p>
+        <p className="whitespace-pre-line text-sm leading-6 text-slate-600">{item.comment}</p>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -372,7 +384,7 @@ const PreWorkoutCard = ({ item }: { item: PreWorkoutRecommendation }) => (
           href={item.iherbUrl}
           merchant="iherb"
           productName={item.name}
-          rank={1}
+          rank={item.rank}
           placement="pre-workout-recommendation"
           className="rounded-full bg-[#7C2D12] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#9A3412]"
         >
@@ -426,16 +438,14 @@ export function SupplementsTopPage({
     {
       "@context": "https://schema.org",
       "@type": "ItemList",
-      name: "おすすめプレワークアウト",
-      numberOfItems: 1,
-      itemListElement: [
-        {
-          "@type": "ListItem",
-          position: 1,
-          name: preWorkoutRecommendation.name,
-          url: `${buildUrl("/supplements-ranking")}#pre-workout-1`,
-        },
-      ],
+      name: "おすすめプレワークアウト TOP2",
+      numberOfItems: preWorkoutRecommendations.length,
+      itemListElement: preWorkoutRecommendations.map((item) => ({
+        "@type": "ListItem",
+        position: item.rank,
+        name: item.name,
+        url: `${buildUrl("/supplements-ranking")}#pre-workout-${item.rank}`,
+      })),
     },
   ]);
 
@@ -505,12 +515,16 @@ export function SupplementsTopPage({
 
           <section className="rounded-[32px] bg-white/95 p-6 shadow-2xl sm:p-8">
             <div className="mb-6 flex flex-col gap-3">
-              <h2 className="text-2xl font-bold text-[#7C2D12] sm:text-3xl">おすすめプレワークアウト</h2>
+              <h2 className="text-2xl font-bold text-[#7C2D12] sm:text-3xl">おすすめプレワークアウト TOP2</h2>
               <p className="rounded-2xl bg-[#FFF4E7] px-4 py-3 text-sm leading-7 text-slate-700 sm:text-base">
                 モンスターとかレッドブルを買うくらいならプレワークアウトの方がコスパも良いし、成分も段違いです。プレワークアウトはiHerbが安いのでおすすめです。
               </p>
             </div>
-            <PreWorkoutCard item={preWorkoutRecommendation} />
+            <div className="grid gap-5">
+              {preWorkoutRecommendations.map((item) => (
+                <PreWorkoutCard key={item.rank} item={item} />
+              ))}
+            </div>
           </section>
         </div>
       </main>
