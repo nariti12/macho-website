@@ -98,16 +98,16 @@ const formatUpdatedAt = (value: string | null) =>
 const formatPricePerKg = (item: RankingCardItem) => {
   const brandKey = getBrandKey(item);
 
-  if (brandKey) {
-    return `${MALE_FIXED_BRAND_CONFIG[brandKey].fallbackPricePerKgYen.toLocaleString("ja-JP")}円`;
-  }
-
   const weightG = item.metrics?.content_weight_g;
   const priceYen = item.product.price_yen;
 
   if (priceYen && priceYen > 0 && weightG && weightG > 0) {
     const pricePerKg = Math.round((priceYen / weightG) * 1000);
     return `${pricePerKg.toLocaleString("ja-JP")}円`;
+  }
+
+  if (brandKey) {
+    return `${MALE_FIXED_BRAND_CONFIG[brandKey].fallbackPricePerKgYen.toLocaleString("ja-JP")}円`;
   }
 
   return "楽天で最新価格を確認";

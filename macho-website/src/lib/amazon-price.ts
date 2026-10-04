@@ -20,7 +20,7 @@ const CREATINE_PRICE_TARGETS: Record<
 > = {
   innocect: {
     asin: "B0DHTBTPJQ",
-    fallbackPriceYen: 2_340,
+    fallbackPriceYen: 2_170,
   },
   "nature-in": {
     asin: "B0FY5PBSM1",
@@ -88,12 +88,12 @@ const fetchAmazonOneTimePrice = async (
 
 const cachedAmazonPriceFetchers = Object.fromEntries(
   (Object.keys(CREATINE_PRICE_TARGETS) as CreatinePriceKey[]).map((key) => {
-    const { asin } = CREATINE_PRICE_TARGETS[key];
+    const { asin, fallbackPriceYen } = CREATINE_PRICE_TARGETS[key];
     return [
       key,
       unstable_cache(
         () => fetchAmazonOneTimePrice(asin),
-        ["amazon-creatine-price", asin],
+        ["amazon-creatine-price", asin, String(fallbackPriceYen)],
         { revalidate: AMAZON_PRICE_REVALIDATE_SECONDS }
       ),
     ];
