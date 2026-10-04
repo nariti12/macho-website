@@ -25,6 +25,9 @@ type ShoeItem = {
   name: string;
   comment: string;
   searchUrl: string;
+  itemCode: string;
+  productUrl: string;
+  priceModel: string;
   amazonUrl: string;
   imageUrl: string;
   fallbackPriceYen: number;
@@ -34,17 +37,23 @@ const shoeItems: ShoeItem[] = [
   {
     rank: 1,
     name: "INOV8（イノヴェイト）",
+    itemCode: "store-descente:10042907",
+    productUrl: "https://item.rakuten.co.jp/store-descente/dsninvnt5ssz93m/",
+    priceModel: "BARE-XF PRO（NT5SSZ93M）",
     comment: "ただただかっこいい。トレーニングにも最適なシューズで、個人的No.1。",
     searchUrl:
       "https://search.rakuten.co.jp/search/mall/INOV8%E3%80%80%E3%83%88%E3%83%AC%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0/",
     amazonUrl:
       "https://www.amazon.co.jp/s?k=INOV8+%E3%83%88%E3%83%AC%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E3%82%B7%E3%83%A5%E3%83%BC%E3%82%BA&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
     imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/store-descente/cabinet/542/nt5ssz93m_1001.jpg",
-    fallbackPriceYen: 19800,
+    fallbackPriceYen: 27500,
   },
   {
     rank: 2,
     name: "vibram fivefingers（ビブラム ファイブフィンガーズ）",
+    itemCode: "vibramfivefingers:10004122",
+    productUrl: "https://item.rakuten.co.jp/vibramfivefingers/20w7701/",
+    priceModel: "V-Train2.0 レディース（20W7701）",
     comment: "プロの選手も愛用している方が多いです。イケてるゴリマッチョが履いているイメージです。",
     searchUrl:
       "https://search.rakuten.co.jp/search/mall/%E3%83%93%E3%83%96%E3%83%A9%E3%83%A0+%E3%83%95%E3%82%A1%E3%82%A4%E3%83%96%E3%83%95%E3%82%A3%E3%83%B3%E3%82%AC%E3%83%BC%E3%82%BA/?l-id=pc_header_search_suggest",
@@ -56,35 +65,44 @@ const shoeItems: ShoeItem[] = [
   {
     rank: 3,
     name: "SAGUARO（サグアロ） ベアフットシューズ",
+    itemCode: "saguaro:10000005",
+    productUrl: "https://item.rakuten.co.jp/saguaro/xza32/",
+    priceModel: "XZA32",
     comment: "コスパ最強ベアフットシューズ。まずベアフット系を試したい人にも選びやすいです。",
     searchUrl:
       "https://search.rakuten.co.jp/search/mall/%E3%82%B5%E3%82%B0%E3%82%A2%E3%83%AD+%E3%83%99%E3%82%A2%E3%83%95%E3%83%83%E3%83%88%E3%82%B7%E3%83%A5%E3%83%BC%E3%82%BA/",
     amazonUrl:
       "https://www.amazon.co.jp/s?k=saguaro+%E3%83%99%E3%82%A2%E3%83%95%E3%83%83%E3%83%88%E3%82%B7%E3%83%A5%E3%83%BC%E3%82%BA",
     imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/saguaro/cabinet/09107349/09133691/xza32_15.jpg",
-    fallbackPriceYen: 4580,
+    fallbackPriceYen: 3480,
   },
   {
     rank: 4,
     name: "NIKE Metcon（メトコン）",
+    itemCode: "supersportsxebio:21176263",
+    productUrl: "https://item.rakuten.co.jp/supersportsxebio/108631591011/",
+    priceModel: "フリー メトコン 6（FJ7127-401）",
     comment: "なんだかんだナイキがかっこいい。ナイキ好きなら、まず候補に入れたい一足です。",
     searchUrl:
       "https://search.rakuten.co.jp/search/mall/%E3%83%8A%E3%82%A4%E3%82%AD+%E3%83%A1%E3%83%88%E3%82%B3%E3%83%B3/?l-id=pc_header_search_suggest",
     amazonUrl:
       "https://www.amazon.co.jp/s?k=NIKE+Metcon&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
     imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/supersportsxebio/cabinet/1/8250401/8631591_m.jpg",
-    fallbackPriceYen: 13900,
+    fallbackPriceYen: 7590,
   },
   {
     rank: 5,
     name: "親方寅さん トビシューズ",
+    itemCode: "luce-8:10000086",
+    productUrl: "https://item.rakuten.co.jp/luce-8/tora/",
+    priceModel: "親方寅さん スリッポン",
     comment: "とにかく安い。荷物もかさばらない。現場用シューズですが、筋トレ用としても使いやすいです。",
     searchUrl:
       "https://search.rakuten.co.jp/search/mall/%E5%AF%85%E3%81%95%E3%82%93%E3%80%80%E3%82%B9%E3%83%AA%E3%83%83%E3%83%9D%E3%83%B3%E3%82%B7%E3%83%A5%E3%83%BC%E3%82%BA/",
     amazonUrl:
       "https://www.amazon.co.jp/s?k=%E8%A6%AA%E6%96%B9%E5%AF%85%E3%81%95%E3%82%93+%E3%82%B9%E3%83%AA%E3%83%83%E3%83%9D%E3%83%B3&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
     imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/luce-8/cabinet/1bn863.jpg",
-    fallbackPriceYen: 1980,
+    fallbackPriceYen: 2178,
   },
 ];
 
@@ -112,9 +130,9 @@ export const revalidate = 604800;
 const getItemsWithImages = async () => {
   return Promise.all(shoeItems.map(async (item) => ({
     ...item,
-    affiliateUrl: buildRakutenAffiliateUrl(item.searchUrl),
+    affiliateUrl: buildRakutenAffiliateUrl(item.productUrl),
     amazonAffiliateUrl: buildAmazonAffiliateUrl(item.amazonUrl),
-    priceLabel: await fetchRakutenPriceLabel(item.searchUrl, item.fallbackPriceYen),
+    priceLabel: await fetchRakutenPriceLabel(item.searchUrl, item.fallbackPriceYen, item.itemCode),
   })));
 };
 
@@ -180,6 +198,7 @@ export default async function TrainingWearPage() {
                     <div className="flex flex-col gap-2">
                       <h2 className="text-xl font-bold leading-tight text-[#7C2D12]">{item.name}</h2>
                       <p className="text-sm leading-6 text-slate-600">{item.comment}</p>
+                      <p className="text-xs leading-6 text-slate-500">価格確認モデル: {item.priceModel}</p>
                     </div>
                     <div className="w-fit rounded-2xl bg-[#FFF4E7] px-4 py-3 text-sm text-slate-700 shadow-inner">
                       <div className="text-xs font-semibold uppercase tracking-wide text-[#C2410C]">参考価格</div>
@@ -205,7 +224,7 @@ export default async function TrainingWearPage() {
                         placement="training-shoes-ranking"
                         className="rounded-full bg-[#FF8A23] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#f57200]"
                       >
-                        楽天で探す
+                        楽天で見る
                       </AffiliateLink>
                     </div>
                   </div>
