@@ -77,6 +77,29 @@ export function QuestionsFeed({
                     <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-gray-700 sm:text-base sm:leading-8">
                       {item.answer}
                     </p>
+                    {item.answerImageUrl ? (
+                      <a
+                        href={item.answerImageUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="回答の写真を大きく見る"
+                        className="mt-4 block overflow-hidden rounded-2xl border border-[#FFE0BF] bg-[#FFF9F2] transition hover:border-[#FF8A23] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#FF8A23]"
+                      >
+                        {/* Preserve each uploaded photo's natural proportions without assuming dimensions. */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={item.answerImageUrl}
+                          alt="マチョ田の回答に添付された写真"
+                          loading="lazy"
+                          decoding="async"
+                          referrerPolicy="no-referrer"
+                          className="max-h-[32rem] w-full object-contain"
+                        />
+                        <span className="block px-3 py-2 text-center text-xs text-[#7C2D12]">
+                          タップして写真を大きく見る
+                        </span>
+                      </a>
+                    ) : null}
                     <time
                       dateTime={item.publishedAt}
                       className="mt-4 block text-right text-xs text-gray-400"

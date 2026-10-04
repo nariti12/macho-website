@@ -37,6 +37,37 @@ Supabase DashboardのTable Editorで `questions` を開きます。
 
 `published` には空の回答を設定できません。未回答質問はブラウザから直接取得できず、質問一覧にも表示されません。
 
+### 写真を付けて回答する
+
+初回のみ `supabase/migrations/20261004090000_add_question_answer_images.sql` を適用します。
+`questions.answer_image_url` と、回答写真用の公開Storageバケット `question-answers` が作成されます。
+
+1. Supabase Dashboard → Storage → `question-answers` を開く
+2. 公開する写真をアップロードする（JPEG / PNG / WebP、1枚10 MiBまで）
+3. 写真のメニューから **Get URL** で公開URLをコピーする
+4. Table Editor → `questions` で該当の質問を開く
+5. `answer` に回答文、`answer_image_url` にコピーしたURLを入力する
+6. `status` を `published` にして保存する
+7. `/questions` を開き、回答文と写真が表示されることを確認する
+
+写真は回答文の下に縦横比を保って表示され、タップすると別タブで元の写真を開きます。
+画像なしの場合は `answer_image_url` を `NULL` のままにします。公開済みの回答にも写真を追加できます。
+ファイル名の末尾は `.jpg` / `.jpeg` / `.png` / `.webp` にしてください。HEICの写真はJPEG等に変換してからアップロードします。
+表示できるのは、このSupabaseプロジェクトの `question-answers` バケットにある写真だけです。
+
+このバケットにアップロードした写真はURLを知っている人なら閲覧できます。
+公開してよい回答写真だけを置いてください。回答を `archived` にしても写真そのものは残るため、
+写真も取り下げる場合はStorageから該当ファイルを削除します。
+匿名ユーザーからの画像投稿は受け付けません。
+
+画像欄のマイグレーション適用前でも、従来の文字だけの回答は表示できます。
+
+### 画像表示の検証
+
+`npx playwright test --config playwright.questions.config.ts` で、ローカルのSupabase代替サーバーを使って
+スマホ・PCの写真表示、タップによる拡大、文字だけの回答、未公開質問の除外、外部画像URLの拒否、
+マイグレーション適用前の互換性を確認できます。本番の質問データは変更しません。
+
 ## 連続投稿・大量送信対策
 
 対策は単一機能に依存せず、次の層で行います。
