@@ -17,9 +17,9 @@
 
 ## 投稿フロー
 
-1. ユーザーが質問本文とCloudflare Turnstileのトークンを `/api/questions` に送信
+1. ユーザーが質問本文、任意の写真1枚、Cloudflare Turnstileのトークンを `/api/questions` に送信
 2. APIが送信元、本文サイズ、ハニーポット、レート制限、Turnstileを検証
-3. Supabaseの `questions` に `pending` で保存
+3. 写真があれば検証・再エンコードして非公開Storageへ保存し、Supabaseの `questions` に `pending` で保存
 4. `RESEND_API_KEY` が設定されていれば、運営者へ新着通知を送信
 5. 運営者がSupabase Dashboardで回答を入力し、`status` を `published` に変更
 6. DBトリガーが `answered_at` と `published_at` を設定し、公開一覧へ反映
@@ -58,7 +58,22 @@ Supabase DashboardのTable Editorで `questions` を開きます。
 このバケットにアップロードした写真はURLを知っている人なら閲覧できます。
 公開してよい回答写真だけを置いてください。回答を `archived` にしても写真そのものは残るため、
 写真も取り下げる場合はStorageから該当ファイルを削除します。
-匿名ユーザーからの画像投稿は受け付けません。
+この公開バケットは運営者の回答写真専用です。ユーザーからの添付写真は、別の非公開バケットに保管します。
+
+### ユーザーが添付した写真を確認する
+
+`20261004110000_add_question_submission_images.sql` により、`questions.question_image_path` と非公開バケット `question-images` を追加します。
+
+- 投稿フォームからJPEG・PNG・WebPの静止画を1枚、3 MiBまで添付できます。プレビューと取り外しが可能です。
+- サーバーで実際の画像形式と画素数（最大2400万画素）を検証し、長辺1600px以内のWebPへ変換します。撮影情報・位置情報等のメタデータと元のファイル名は保持しません。
+- 運営者はTable Editorの `question_image_path` をコピーし、Storage → `question-images` で同じファイル名を探してプレビューできます。画像付きの質問は通知メールにもその旨を記載します。
+- 内容と写真を確認したうえで `answer` を入力し、`status` を `published` にすると、質問文の下に添付写真が表示されます。**質問の公開は添付写真の公開も含みます。**
+- 写真を掲載せず質問だけに回答する場合は、公開前に `question_image_path` を `NULL` にします。不要な写真はStorageから削除できます。
+- `pending` / `rejected` / `archived` の写真はサイトの画像配信APIから取得できません。非公開バケットへの直接アクセスも許可しません。
+- 公開を取り下げると画像配信も停止します。配信レスポンスは `no-store` です。ただし公開中に閲覧者が保存した写真まで取り消すことはできません。
+- DB保存に失敗した場合はアップロードした画像を削除します。削除失敗はサーバーログに記録するため、必要に応じて孤立ファイルをStorageから削除します。
+
+既存のCAPTCHAと送信回数制限は画像付き投稿にも適用します。公開画像配信は保存URLを露出せず、`/api/questions/{id}/image` で毎回公開状態を確認します。
 
 画像欄のマイグレーション適用前でも、従来の文字だけの回答は表示できます。
 
@@ -74,7 +89,7 @@ Supabase DashboardのTable Editorで `questions` を開きます。
 
 - Vercel Firewallの自動DDoS緩和
 - 同一オリジンとFetch Metadataの確認
-- 8 KiBを上限としたストリーム読み込み
+- 8 KiB（JSON）または3 MiB + 32 KiB（画像付きフォーム）を上限としたストリーム読み込み
 - 隠し入力によるハニーポット
 - Cloudflare Turnstileのサーバー側Siteverify検証
 - HMAC化した送信元IPによるSupabaseの原子的レート制限

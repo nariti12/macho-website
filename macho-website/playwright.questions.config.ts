@@ -19,6 +19,8 @@ export default defineConfig({
         NEXT_PUBLIC_SUPABASE_URL: "http://localhost:4319",
         SUPABASE_SERVICE_ROLE_KEY: "question-test-service-key",
         NEXT_PUBLIC_TURNSTILE_SITE_KEY: "",
+        TURNSTILE_SECRET_KEY: "",
+        RESEND_API_KEY: "",
       },
     },
   ],

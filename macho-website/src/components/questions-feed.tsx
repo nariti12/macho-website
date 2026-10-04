@@ -57,6 +57,13 @@ export function QuestionsFeed({
                 <p className="whitespace-pre-wrap break-words text-base font-semibold leading-8 text-[#6B2A16] sm:text-lg">
                   {item.question}
                 </p>
+                {item.questionImageUrl ? (
+                  <a href={item.questionImageUrl} target="_blank" rel="noopener noreferrer" aria-label="質問の写真を大きく見る" className="mt-4 block rounded-2xl border border-[#FFE0BF] bg-white p-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={item.questionImageUrl} alt="質問に添付された写真" loading="lazy" decoding="async" className="max-h-[32rem] w-full rounded-xl object-contain" />
+                    <span className="block py-2 text-center text-xs text-[#7C2D12]">タップして写真を大きく見る</span>
+                  </a>
+                ) : null}
                 <span
                   className="absolute -bottom-3 left-10 h-6 w-6 rotate-45 bg-[#FFF2E4]"
                   aria-hidden="true"
