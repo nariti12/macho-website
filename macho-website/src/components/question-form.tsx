@@ -3,7 +3,6 @@
 import Link from "next/link";
 import Script from "next/script";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { MAX_QUESTION_IMAGE_BYTES, QUESTION_IMAGE_MIME_TYPES } from "@/lib/question-images";
 
 const MAX_QUESTION_LENGTH = 1_000;
 
@@ -33,9 +32,6 @@ declare global {
 
 export function QuestionForm({ turnstileSiteKey }: { turnstileSiteKey: string }) {
   const [question, setQuestion] = useState("");
-  const [image, setImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState("");
-  const imageInputRef = useRef<HTMLInputElement | null>(null);
   const [website, setWebsite] = useState("");
   const [turnstileToken, setTurnstileToken] = useState("");
   const [turnstileReady, setTurnstileReady] = useState(false);
@@ -50,16 +46,6 @@ export function QuestionForm({ turnstileSiteKey }: { turnstileSiteKey: string })
     question.trim().length > 0 &&
     status !== "submitting" &&
     (!captchaRequired || Boolean(turnstileToken));
-
-  useEffect(() => {
-    if (!image) {
-      setImagePreview("");
-      return;
-    }
-    const preview = URL.createObjectURL(image);
-    setImagePreview(preview);
-    return () => URL.revokeObjectURL(preview);
-  }, [image]);
 
   useEffect(() => {
     if (
@@ -127,14 +113,16 @@ export function QuestionForm({ turnstileSiteKey }: { turnstileSiteKey: string })
     setErrorMessage("");
 
     try {
-      const form = new FormData();
-      form.set("question", question);
-      form.set("website", website);
-      form.set("turnstileToken", turnstileToken);
-      if (image) form.set("image", image);
       const response = await fetch("/api/questions", {
         method: "POST",
-        body: form,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          question,
+          website,
+          turnstileToken,
+        }),
       });
 
       const data = (await response.json().catch(() => ({}))) as { error?: string };
@@ -149,8 +137,6 @@ export function QuestionForm({ turnstileSiteKey }: { turnstileSiteKey: string })
       }
 
       setQuestion("");
-      setImage(null);
-      if (imageInputRef.current) imageInputRef.current.value = "";
       setWebsite("");
       setStatus("success");
       resetTurnstile();
@@ -207,43 +193,6 @@ export function QuestionForm({ turnstileSiteKey }: { turnstileSiteKey: string })
           >
             {questionLength.toLocaleString("ja-JP")} / {MAX_QUESTION_LENGTH.toLocaleString("ja-JP")}
           </span>
-        </div>
-
-        <div className="rounded-2xl border border-[#FFD5AB] bg-[#FFF9F2] p-4">
-          <label className="block text-sm font-semibold text-[#7C2D12]">
-            写真を添付（任意）
-            <input
-              ref={imageInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              disabled={status === "submitting"}
-              className="mt-3 block w-full min-w-0 text-sm font-normal file:mr-3 file:rounded-full file:border-0 file:bg-[#FFE0BF] file:px-4 file:py-2 file:text-[#7C2D12]"
-              onChange={(event) => {
-                const file = event.target.files?.[0] ?? null;
-                if (file && (!QUESTION_IMAGE_MIME_TYPES.includes(file.type) || file.size > MAX_QUESTION_IMAGE_BYTES)) {
-                  setImage(null);
-                  event.target.value = "";
-                  setStatus("error");
-                  setErrorMessage("写真はJPEG・PNG・WebP、3MB以下で選んでください。");
-                  return;
-                }
-                setImage(file);
-                setStatus("idle");
-                setErrorMessage("");
-              }}
-            />
-          </label>
-          <p className="mt-2 text-xs leading-6 text-gray-600">JPEG・PNG・WebPを1枚、3MBまで。添付写真も回答時に公開される場合があります。</p>
-          {imagePreview ? (
-            <div className="mt-3">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={imagePreview} alt="添付する写真のプレビュー" className="max-h-64 w-full rounded-xl object-contain" />
-              <button type="button" disabled={status === "submitting"} className="mt-2 text-sm text-[#C2410C] underline" onClick={() => {
-                setImage(null);
-                if (imageInputRef.current) imageInputRef.current.value = "";
-              }}>写真を取り外す</button>
-            </div>
-          ) : null}
         </div>
 
         <div className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">

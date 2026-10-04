@@ -35,6 +35,13 @@ createServer(async (request, response) => {
     response.end(JSON.stringify({ rows: rows.slice(4), uploadedFiles: uploads.size }));
     return;
   }
+  if (url.pathname === "/fixture/legacy-image") {
+    const id = "11111111-1111-4111-8111-111111111111";
+    rows.push({ id, question: "以前の画像付き質問", answer: "回答文は引き続き表示", status: "published", published_at: "2026-10-04T00:00:00Z", question_image_path: `${id}.webp`, answer_image_url: null });
+    uploads.set(`${id}.webp`, image);
+    response.end("ok");
+    return;
+  }
   if (url.pathname === "/fixture/publish") {
     const row = rows.find((row) => row.id === url.searchParams.get("id"));
     row.status = url.searchParams.get("status") ?? "published";

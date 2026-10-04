@@ -1,6 +1,5 @@
 import { expect, test } from "@playwright/test";
 import { readFile } from "node:fs/promises";
-import sharp from "sharp";
 
 test.beforeEach(async ({ request }) => {
   await request.get("http://localhost:4319/fixture?legacy=false");
@@ -42,58 +41,17 @@ test("text answers remain available before the image migration is applied", asyn
   await expect(page.getByRole("link", { name: "回答の写真を大きく見る" })).toHaveCount(0);
 });
 
-test("a submitted photo stays private until published and disappears when archived", async ({ page, request }) => {
+test("visitors cannot attach photos and multipart image submissions are rejected", async ({ page, request }) => {
   await page.goto("/questions");
-  await page.getByRole("textbox", { name: "質問内容" }).fill("この写真のフォームを見てください");
-  await page.getByLabel("写真を添付（任意）").setInputFiles("public/images/questions-og.png");
-  await expect(page.getByRole("img", { name: "添付する写真のプレビュー" })).toBeVisible();
-  await page.getByRole("button", { name: "写真を取り外す" }).click();
-  await expect(page.getByRole("img", { name: "添付する写真のプレビュー" })).toHaveCount(0);
-  await page.getByLabel("写真を添付（任意）").setInputFiles("public/images/questions-og.png");
-  await page.getByRole("button", { name: "匿名で質問を送る", exact: true }).click();
-  await expect(page.getByText("質問を受け付けました！", { exact: false })).toBeVisible();
-  const { rows } = await (await request.get("http://localhost:4319/fixture/state")).json();
-  const id = rows[0].id;
-  expect((await request.get(`/api/questions/${id}/image`)).status()).toBe(404);
-  await page.reload();
-  await expect(page.getByText("この写真のフォームを見てください", { exact: true })).toHaveCount(0);
-  await request.get(`http://localhost:4319/fixture/publish?id=${id}`);
-  await page.reload();
-  const questionPhoto = page.locator("article").filter({ hasText: "この写真のフォームを見てください" }).getByRole("img", { name: "質問に添付された写真" });
-  await expect(questionPhoto).toBeVisible();
-  await expect.poll(() => questionPhoto.evaluate((element: HTMLImageElement) => element.naturalWidth)).toBeGreaterThan(0);
-  const publishedImage = await request.get(`/api/questions/${id}/image`);
-  expect(publishedImage.status()).toBe(200);
-  expect(publishedImage.headers()["cache-control"]).toContain("no-store");
-  expect(publishedImage.headers()["content-type"]).toContain("image/webp");
-  await request.get(`http://localhost:4319/fixture/publish?id=${id}&status=archived`);
-  expect((await request.get(`/api/questions/${id}/image`)).status()).toBe(404);
-});
-
-test("the server rejects fake images and oversized attachments", async ({ request }) => {
-  const invalid = await request.post("/api/questions", { multipart: {
-    question: "画像の形式検証", image: { name: "fake.png", mimeType: "image/png", buffer: Buffer.from("not an image") },
-  }});
-  expect(invalid.status()).toBe(400);
-  const oversized = await request.post("/api/questions", { multipart: {
-    question: "画像の容量検証", image: { name: "huge.png", mimeType: "image/png", buffer: Buffer.alloc(3 * 1024 * 1024 + 1) },
-  }});
-  expect(oversized.status()).toBe(413);
-});
-
-test("failed question saves remove uploaded files, and rate limits stop uploads", async ({ request }) => {
+  await expect(page.locator('input[type="file"]')).toHaveCount(0);
   const photo = await readFile("public/images/questions-og.png");
-  await request.get("http://localhost:4319/fixture?failInsert=true");
-  const failed = await request.post("/api/questions", { multipart: {
-    question: "保存失敗の確認", image: { name: "photo.png", mimeType: "image/png", buffer: photo },
+  const response = await request.post("/api/questions", { multipart: {
+    question: "ユーザー側の画像添付は停止", image: { name: "photo.png", mimeType: "image/png", buffer: photo },
   }});
-  expect(failed.status()).toBe(500);
-  expect((await (await request.get("http://localhost:4319/fixture/state")).json()).uploadedFiles).toBe(0);
-  await request.get("http://localhost:4319/fixture?denyRate=true");
-  const limited = await request.post("/api/questions", { multipart: {
-    question: "投稿制限の確認", image: { name: "photo.png", mimeType: "image/png", buffer: photo },
-  }});
-  expect(limited.status()).toBe(429);
+  expect(response.status()).toBe(415);
+  const state = await (await request.get("http://localhost:4319/fixture/state")).json();
+  expect(state.uploadedFiles).toBe(0);
+  expect(state.rows).toHaveLength(0);
 });
 
 test("existing JSON text-only submissions continue to work", async ({ request }) => {
@@ -101,21 +59,10 @@ test("existing JSON text-only submissions continue to work", async ({ request })
   expect(response.status()).toBe(201);
 });
 
-test("uploaded photos are resized and stripped of metadata before being served", async ({ request }) => {
-  const photo = await sharp({ create: { width: 2200, height: 1000, channels: 3, background: "#ddaa88" } })
-    .jpeg().withMetadata({ exif: { IFD0: { Artist: "Private test photographer" } } }).toBuffer();
-  expect((await sharp(photo).metadata()).exif).toBeDefined();
-  const response = await request.post("/api/questions", { multipart: {
-    question: "写真の撮影情報の確認", image: { name: "personal-name.jpg", mimeType: "image/jpeg", buffer: photo },
-  }});
-  expect(response.status()).toBe(201);
-  const { rows } = await (await request.get("http://localhost:4319/fixture/state")).json();
-  await request.get(`http://localhost:4319/fixture/publish?id=${rows[0].id}`);
-  const image = await request.get(`/api/questions/${rows[0].id}/image`);
-  expect(image.status()).toBe(200);
-  const metadata = await sharp(await image.body()).metadata();
-  expect(metadata.width).toBe(1600);
-  expect(metadata.format).toBe("webp");
-  expect(metadata.exif).toBeUndefined();
-  expect(metadata.xmp).toBeUndefined();
+test("previous user photo attachments are hidden and their image URLs no longer work", async ({ page, request }) => {
+  await request.get("http://localhost:4319/fixture/legacy-image");
+  await page.goto("/questions");
+  await expect(page.locator("article").filter({ hasText: "以前の画像付き質問" })).toContainText("回答文は引き続き表示");
+  await expect(page.getByRole("img", { name: "質問に添付された写真" })).toHaveCount(0);
+  expect((await request.get("/api/questions/11111111-1111-4111-8111-111111111111/image")).status()).toBe(404);
 });

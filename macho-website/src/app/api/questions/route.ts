@@ -2,9 +2,6 @@ import { createHmac, randomUUID } from "node:crypto";
 
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
-import sharp from "sharp";
-
-import { MAX_QUESTION_IMAGE_BYTES, QUESTION_IMAGE_BUCKET, QUESTION_IMAGE_MIME_TYPES } from "@/lib/question-images";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { hasServiceSupabaseEnv } from "@/lib/supabase/config";
@@ -32,7 +29,6 @@ type TurnstileResult = {
 };
 
 class RequestTooLargeError extends Error {}
-class InvalidImageError extends Error {}
 
 const noStoreHeaders = {
   "Cache-Control": "private, no-store, max-age=0",
@@ -94,57 +90,31 @@ const escapeHtml = (value: string) =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 
-const readLimitedBody = async (request: Request, maxBytes: number) => {
+const readLimitedJson = async (request: Request) => {
   if (!request.body) {
-    return new Uint8Array();
+    return {};
   }
 
   const reader = request.body.getReader();
+  const decoder = new TextDecoder();
   let receivedBytes = 0;
-  const chunks: Uint8Array[] = [];
+  let rawBody = "";
 
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
 
     receivedBytes += value.byteLength;
-    if (receivedBytes > maxBytes) {
+    if (receivedBytes > MAX_REQUEST_BYTES) {
       await reader.cancel();
       throw new RequestTooLargeError("Request body exceeded the configured limit.");
     }
 
-    chunks.push(value);
+    rawBody += decoder.decode(value, { stream: true });
   }
 
-  const bytes = new Uint8Array(receivedBytes);
-  let offset = 0;
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return bytes;
-};
-
-const normalizeImage = async (file: File) => {
-  if (file.size > MAX_QUESTION_IMAGE_BYTES) throw new RequestTooLargeError();
-  if (!file.size || !QUESTION_IMAGE_MIME_TYPES.includes(file.type)) throw new InvalidImageError();
-
-  try {
-    const input = Buffer.from(await file.arrayBuffer());
-    const image = sharp(input, { limitInputPixels: 24_000_000, failOn: "warning" });
-    const metadata = await image.metadata();
-    const mimeType = metadata.format === "jpeg" ? "image/jpeg" : `image/${metadata.format}`;
-    if (mimeType !== file.type || !QUESTION_IMAGE_MIME_TYPES.includes(mimeType) || (metadata.pages ?? 1) > 1) {
-      throw new InvalidImageError();
-    }
-    // Re-encode pixels without retaining EXIF/location metadata or the original filename.
-    const output = await image.rotate().resize(1600, 1600, { fit: "inside", withoutEnlargement: true }).webp({ quality: 80 }).toBuffer();
-    if (output.byteLength > MAX_QUESTION_IMAGE_BYTES) throw new RequestTooLargeError();
-    return output;
-  } catch (error) {
-    if (error instanceof RequestTooLargeError) throw error;
-    throw new InvalidImageError();
-  }
+  rawBody += decoder.decode();
+  return JSON.parse(rawBody) as unknown;
 };
 
 const getRateLimitHash = (request: Request) => {
@@ -240,7 +210,7 @@ const verifyTurnstile = async (token: string, request: Request) => {
   }
 };
 
-const notifyOwner = async (question: string, hasImage: boolean) => {
+const notifyOwner = async (question: string) => {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return;
 
@@ -259,10 +229,9 @@ const notifyOwner = async (question: string, hasImage: boolean) => {
           ${safeQuestion}
         </div>
         <p>Supabase の <strong>questions</strong> テーブルから回答・公開してください。</p>
-        ${hasImage ? '<p>写真が添付されています。question_image_path のファイル名を、Storage の question-images で確認してください。質問を公開すると写真も表示されます。</p>' : ''}
       </div>
     `,
-    text: `マチョ田の質問箱に新しい匿名質問が届きました。\n\n${question}\n\nSupabase の questions テーブルから回答・公開してください。${hasImage ? '\n写真が添付されています。question_image_path のファイル名を、Storage の question-images で確認してください。質問を公開すると写真も表示されます。' : ''}`,
+    text: `マチョ田の質問箱に新しい匿名質問が届きました。\n\n${question}\n\nSupabase の questions テーブルから回答・公開してください。`,
   });
 };
 
@@ -284,14 +253,12 @@ export async function POST(request: Request) {
     }
 
     const contentType = request.headers.get("content-type")?.toLowerCase() ?? "";
-    const isMultipart = contentType.startsWith("multipart/form-data;");
-    if (!isMultipart && !contentType.startsWith("application/json")) {
+    if (!contentType.startsWith("application/json")) {
       return jsonResponse({ error: "送信形式が正しくありません。" }, { status: 415 });
     }
 
     const contentLength = Number(request.headers.get("content-length") ?? 0);
-    const maxBytes = isMultipart ? MAX_QUESTION_IMAGE_BYTES + 32_768 : MAX_REQUEST_BYTES;
-    if (contentLength > maxBytes) {
+    if (contentLength > MAX_REQUEST_BYTES) {
       return jsonResponse({ error: "送信データが大きすぎます。" }, { status: 413 });
     }
 
@@ -299,26 +266,7 @@ export async function POST(request: Request) {
       return jsonResponse({ error: "このサイト以外からは送信できません。" }, { status: 403 });
     }
 
-    const bytes = await readLimitedBody(request, maxBytes);
-    let parsedBody: unknown;
-    let attachment: File | null = null;
-    if (isMultipart) {
-      let form: FormData;
-      try {
-        // Retain the original boundary, which is case-sensitive.
-        form = await new Response(bytes, { headers: { "Content-Type": request.headers.get("content-type")! } }).formData();
-      } catch {
-        return jsonResponse({ error: "送信内容を読み取れませんでした。" }, { status: 400 });
-      }
-      const images = form.getAll("image");
-      if (images.length > 1 || (images.length === 1 && !(images[0] instanceof File))) {
-        return jsonResponse({ error: "写真は1枚だけ添付できます。" }, { status: 400 });
-      }
-      attachment = images[0] instanceof File && images[0].size > 0 ? images[0] : null;
-      parsedBody = { question: form.get("question"), website: form.get("website"), turnstileToken: form.get("turnstileToken") };
-    } else {
-      parsedBody = JSON.parse(new TextDecoder().decode(bytes));
-    }
+    const parsedBody = await readLimitedJson(request);
     if (!parsedBody || typeof parsedBody !== "object" || Array.isArray(parsedBody)) {
       return jsonResponse({ error: "送信内容を読み取れませんでした。" }, { status: 400 });
     }
@@ -385,41 +333,23 @@ export async function POST(request: Request) {
     }
 
     const supabase = createSupabaseAdminClient();
-    const id = randomUUID();
-    const imagePath = attachment ? `${id}.webp` : null;
-    if (attachment && imagePath) {
-      const image = await normalizeImage(attachment);
-      const { error } = await supabase.storage.from(QUESTION_IMAGE_BUCKET).upload(imagePath, image, {
-        contentType: "image/webp", upsert: false,
-      });
-      if (error) throw new Error(`Failed to store question image: ${error.message}`);
-    }
     const { error } = await supabase.from("questions").insert({
-      id,
       question,
       status: "pending",
-      ...(imagePath ? { question_image_path: imagePath } : {}),
     });
 
     if (error) {
-      if (imagePath) {
-        const { error: cleanupError } = await supabase.storage.from(QUESTION_IMAGE_BUCKET).remove([imagePath]);
-        if (cleanupError) console.error("Failed to remove orphaned question image", cleanupError.message);
-      }
       throw new Error(`Failed to save anonymous question: ${error.message}`);
     }
 
     try {
-      await notifyOwner(question, Boolean(imagePath));
+      await notifyOwner(question);
     } catch (error) {
       console.error("Failed to send question notification", error);
     }
 
     return jsonResponse({ ok: true }, { status: 201 });
   } catch (error) {
-    if (error instanceof InvalidImageError) {
-      return jsonResponse({ error: "写真はJPEG・PNG・WebPの静止画像を選んでください。" }, { status: 400 });
-    }
     if (error instanceof RequestTooLargeError) {
       return jsonResponse({ error: "送信データが大きすぎます。" }, { status: 413 });
     }
