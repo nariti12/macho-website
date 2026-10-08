@@ -26,6 +26,7 @@ export function TorechaPageShell({ children }: { children: React.ReactNode }) {
           <span className="font-bold">© マチョ田の部屋</span>
           <div className="flex flex-wrap gap-5 font-bold">
             <Link href="/apps/torecha/privacy" className="hover:underline">プライバシーポリシー</Link>
+            <Link href="/apps/torecha/delete-account" className="hover:underline">アカウント削除</Link>
             <Link href="/apps/torecha/terms" className="hover:underline">利用規約</Link>
           </div>
         </div>

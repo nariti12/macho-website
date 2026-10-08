@@ -15,9 +15,9 @@ export default function TorechaSupportPage() {
     <TorechaDocument title="サポート" lead="トレチャの設定、データ、アカウントについてのご案内です。">
       <section><h2>位置情報とジムの自動記録</h2><p>ジムへの入退場をアプリを閉じている間も記録するには、iPhoneの「設定」からトレチャの位置情報を「常に」に設定し、正確な位置情報を有効にしてください。</p></section>
       <section><h2>オンラインバックアップ</h2><p>設定画面の「オンラインバックアップ」からAppleまたはGoogleでログインすると、トレチャ Plusでバックアップを利用できます。復元すると端末内の対象記録がクラウド上の記録で置き換わります。写真ファイル本体は復元されません。</p></section>
-      <section><h2>アカウントを削除する</h2><ol className="space-y-2 pl-5 [&_li]:list-decimal"><li>トレチャを開きます。</li><li>ホーム画面の設定を開きます。</li><li>「オンラインバックアップ」を開きます。</li><li>「アカウントとクラウドデータを削除」を選択します。</li><li>本人確認を完了し、削除を確定します。</li></ol><p className="mt-3">アカウント削除ではクラウドデータを削除します。端末内の記録は残り、App Storeのサブスクリプションは自動解約されません。</p></section>
-      <section><h2>サブスクリプションの解約</h2><p>iPhoneの「設定」→ Apple Account →「サブスクリプション」からトレチャを選択して解約できます。</p></section>
-      <section><h2>お問い合わせ</h2><p>解決しない場合は、利用端末、iOSバージョン、発生した操作を添えて<Link href="/contact" className="font-bold text-[#ED1C24] underline">お問い合わせフォーム</Link>からご連絡ください。</p></section>
+      <section><h2>アカウントを削除する</h2><ol className="space-y-2 pl-5 [&_li]:list-decimal"><li>トレチャを開きます。</li><li>ホーム画面の設定を開きます。</li><li>「オンラインバックアップ」を開きます。</li><li>「アカウントとクラウドデータを削除」を選択します。</li><li>本人確認を完了し、削除を確定します。</li></ol><p className="mt-3">アカウント削除ではクラウドデータを削除します。端末内の記録は残り、App Store・Google Playの定期購入は自動解約されません。</p><p className="mt-3">アプリを開けない場合や、購入状況管理データ・通知メールを含めて削除を依頼する場合は、<Link href="/apps/torecha/delete-account" className="font-bold text-[#ED1C24] underline">アカウント削除のご依頼</Link>をご利用ください。</p></section>
+      <section><h2>サブスクリプションの解約</h2><p>iPhoneの「設定」→ Apple Account →「サブスクリプション」からトレチャを選択して解約できます。AndroidではGoogle Play ストア → プロフィール →「お支払いと定期購入」→「定期購入」からトレチャを選んで解約してください。</p></section>
+      <section><h2>お問い合わせ</h2><p>解決しない場合は、利用端末、OSバージョン、発生した操作を添えて<Link href="/contact" className="font-bold text-[#ED1C24] underline">お問い合わせフォーム</Link>からご連絡ください。</p></section>
     </TorechaDocument>
   );
 }

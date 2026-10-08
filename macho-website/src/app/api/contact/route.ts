@@ -55,7 +55,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "メール送信設定が完了していません。" }, { status: 500 });
     }
 
-    await resend.emails.send({
+    const { error } = await resend.emails.send({
       from: "Machoda Contact <onboarding@resend.dev>",
       to: contactRecipient,
       subject: `[お問い合わせ] ${inferredSubject}`,
@@ -63,6 +63,11 @@ export async function POST(request: Request) {
       html: htmlContent,
       text: textContent,
     });
+
+    if (error) {
+      console.error("Contact email provider rejected the request", error.name);
+      return NextResponse.json({ error: "送信に失敗しました。時間をおいて再度お試しください。" }, { status: 502 });
+    }
 
     return NextResponse.json({ ok: true });
   } catch (error) {

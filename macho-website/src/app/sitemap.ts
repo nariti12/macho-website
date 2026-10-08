@@ -22,6 +22,7 @@ const staticRoutes = [
   "/privacy",
   "/apps/torecha",
   "/apps/torecha/privacy",
+  "/apps/torecha/delete-account",
   "/apps/torecha/support",
   "/apps/torecha/terms",
 ];
