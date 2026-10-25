@@ -1,3 +1,4 @@
+// Game browser checks are archived after publication ended on 2026-10-25.
 import { expect, test, type Page } from "@playwright/test";
 import { BODY_EVOLUTION_STAGES } from "../src/lib/macho-clicker/progression";
 import { MACHO_CLICKER_SAVE_VERSION } from "../src/lib/macho-clicker/save";
@@ -69,7 +70,7 @@ for (const viewport of [
 ]) {
   for (const stage of [0, 6, 11]) {
     const current = BODY_EVOLUTION_STAGES[stage];
-    test(`game ${viewport.name} Lv${current.level}: full body and current/next-only requests`, async ({ page }) => {
+    test.skip(`game ${viewport.name} Lv${current.level}: full body and current/next-only requests`, async ({ page }) => {
       await page.setViewportSize(viewport);
       const characterRequests = new Set<number>();
       page.on("request", (request) => {
@@ -95,7 +96,7 @@ for (const viewport of [
   }
 }
 
-test("all 12 stages evolve in one stable rectangle and crossfade", async ({ page }) => {
+test.skip("all 12 stages evolve in one stable rectangle and crossfade", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await seedGame(page, 0);
   await page.goto("/macho-clicker", { waitUntil: "domcontentloaded" });
@@ -131,7 +132,7 @@ test("all 12 stages evolve in one stable rectangle and crossfade", async ({ page
   await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem("machoda:macho-clicker:v3")!).bodyEvolutionStage)).toBe(11);
 });
 
-test("reduced motion disables evolution fades", async ({ page }) => {
+test.skip("reduced motion disables evolution fades", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await seedGame(page, 10);
   await page.goto("/macho-clicker", { waitUntil: "domcontentloaded" });

@@ -1,3 +1,4 @@
+// Game browser checks are archived after publication ended on 2026-10-25.
 import { expect, test, type Page } from "@playwright/test";
 import {
   applyTap, buyEquipment, buyTraining, createTapGame, levelFromTaps,
@@ -97,7 +98,7 @@ test("legacy save keeps real taps and purchased equipment without importing idle
   expect(migrated?.owned).toEqual(["dumbbells", "bench", "powerRack"]);
 });
 
-test("browser migration preserves the old save and explains the new currency", async ({ page }) => {
+test.skip("browser migration preserves the old save and explains the new currency", async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem("machoda:macho-clicker:v3", JSON.stringify({
       clickCount: 52_000,
@@ -119,7 +120,7 @@ test("browser migration preserves the old save and explains the new currency", a
   await expect(page.getByText(/旧記録から累計タップと購入済み器具を引き継ぎました/)).toBeVisible();
 });
 
-test("desktop: tapping, purchase, room change and save restore", async ({ page }) => {
+test.skip("desktop: tapping, purchase, room change and save restore", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openGame(page);
   const character = page.getByTestId("macho-character-button");
@@ -137,7 +138,7 @@ test("desktop: tapping, purchase, room change and save restore", async ({ page }
   await expect(page.getByTestId("macho-tap-power")).toHaveText("+2 P");
 });
 
-test("rapid pointer input counts exactly once per press", async ({ page }) => {
+test.skip("rapid pointer input counts exactly once per press", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await openGame(page);
   const box = await page.getByTestId("macho-character-button").boundingBox();
@@ -154,7 +155,7 @@ for (const viewport of [
   { width: 360, height: 500 },
   { width: 1440, height: 900 },
 ]) {
-  test(`${viewport.width}x${viewport.height}: gym fits the viewport`, async ({ page }) => {
+  test.skip(`${viewport.width}x${viewport.height}: gym fits the viewport`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await openGame(page);
     const dimensions = await page.evaluate(() => ({
@@ -172,7 +173,7 @@ for (const viewport of [
   });
 }
 
-test("mobile: shop opens, purchase appears in the gym and idle time grants nothing", async ({ page }) => {
+test.skip("mobile: shop opens, purchase appears in the gym and idle time grants nothing", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await openGame(page);
   await page.locator('nav[aria-label="ゲーム操作"] button').click();
@@ -189,7 +190,7 @@ test("mobile: shop opens, purchase appears in the gym and idle time grants nothi
   expect(await page.getByTestId("macho-points").textContent()).toBe(before);
 });
 
-test("mobile: level progress and shop controls stay readable", async ({ page }) => {
+test.skip("mobile: level progress and shop controls stay readable", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await openGame(page);
   await expect(page.getByText("TAP TO TRAIN")).toHaveCount(0);
@@ -213,7 +214,7 @@ test("mobile: level progress and shop controls stay readable", async ({ page }) 
   await expect(page.getByTestId("shop-mystery")).toContainText("購入後に公開");
 });
 
-test("buying equipment reveals the next item regardless of level", async ({ page }) => {
+test.skip("buying equipment reveals the next item regardless of level", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(() => {
     localStorage.setItem("machoda:macho-clicker:v4", JSON.stringify({
@@ -237,7 +238,7 @@ test("buying equipment reveals the next item regardless of level", async ({ page
   await expect(page.getByTestId("shop-mystery")).toContainText("購入後に公開");
 });
 
-test("shop translates equipment cost into taps at the current earning rate", async ({ page }) => {
+test.skip("shop translates equipment cost into taps at the current earning rate", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openGame(page);
   await expect(page.getByTestId("shop-dumbbells")).toContainText("あと 15 タップ");
@@ -247,7 +248,7 @@ test("shop translates equipment cost into taps at the current earning rate", asy
   await expect(page.getByTestId("shop-mystery")).not.toContainText("70 P");
 });
 
-test("equipment bonus reflects the current training multiplier", async ({ page }) => {
+test.skip("equipment bonus reflects the current training multiplier", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   const game = {
     ...createTapGame(), points: 8_532, totalPoints: 8_532, taps: 1_759,
@@ -264,7 +265,7 @@ test("equipment bonus reflects the current training multiplier", async ({ page }
   await expect(page.getByTestId("shop-mystery")).not.toContainText("3,600,000 P");
 });
 
-test("the complete gym uses the upgraded room and keeps the tap target clear", async ({ page }) => {
+test.skip("the complete gym uses the upgraded room and keeps the tap target clear", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript((owned) => localStorage.setItem("machoda:macho-clicker:v4", JSON.stringify({
     version: 4, points: 0, totalPoints: 0, taps: 2_160_000, trainingLevel: 0, owned,
@@ -280,7 +281,7 @@ test("the complete gym uses the upgraded room and keeps the tap target clear", a
   await expect(page.getByTestId("shop-mystery")).toHaveCount(0);
 });
 
-test("menu reset requires confirmation and starts a new local run", async ({ page }) => {
+test.skip("menu reset requires confirmation and starts a new local run", async ({ page }) => {
   await page.addInitScript(() => {
     if (localStorage.getItem("machoda:macho-clicker:v4")) return;
     localStorage.setItem("machoda:macho-clicker:v3", JSON.stringify({ clickCount: 100, muscle: 1000 }));
@@ -309,7 +310,7 @@ test("menu reset requires confirmation and starts a new local run", async ({ pag
   await expect(page.getByTestId("macho-points")).toHaveText("0 P");
 });
 
-test("header ranking opens over the game and registers cumulative taps", async ({ page }) => {
+test.skip("header ranking opens over the game and registers cumulative taps", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   let submitted: { nickname: string; taps: number; playerId: string } | null = null;
   await page.route("**/api/macho-clicker/tap-rankings", async (route) => {

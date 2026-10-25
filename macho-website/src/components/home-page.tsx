@@ -24,7 +24,6 @@ export function HomePage({ blogItems }: { blogItems: BlogCardData[] }) {
 
   const menuItems = [
     { label: "筋トレ記録アプリ\nトレチャ", href: "/apps/torecha", wide: true },
-    { label: "マチョクリッカー", href: "/macho-clicker", wide: true },
     { label: "マチョ田の\n筋トレメニュー", href: "/menu" },
     { label: "１日摂取カロリー/\nたんぱく質 計算機", href: "/intake-calculator" },
     { label: "おすすめサプリ\n(プロテイン/クレアチン/プレワークアウト)", href: "/supplements-ranking" },
