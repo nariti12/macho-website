@@ -8,7 +8,6 @@ const MICROCMS_API_KEY = process.env.MICROCMS_API_KEY ?? "";
 
 const staticRoutes = [
   "/",
-  "/macho-clicker",
   "/profile",
   "/menu",
   "/intake-calculator",

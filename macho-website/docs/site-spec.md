@@ -2,7 +2,7 @@
 
 ## 目的
 
-`macho-website` は、筋トレ情報、実体験ベースのおすすめ商品、計算ツール、ブログ、ミニゲームをまとめた Next.js App Router 製サイトです。デザインはオレンジ基調で、共通ヘッダー、角丸カード、商品カード、外部ECボタンを中心に構成しています。
+`macho-website` は、筋トレ情報、実体験ベースのおすすめ商品、計算ツール、ブログをまとめた Next.js App Router 製サイトです。デザインはオレンジ基調で、共通ヘッダー、角丸カード、商品カード、外部ECボタンを中心に構成しています。
 
 ## 技術スタック
 
@@ -23,7 +23,7 @@
 | `/` | トップページ。メニュー導線とBlog最新6件を表示 | `src/components/home-page.tsx` |
 | `/blog` | microCMS のブログ一覧 | `src/app/blog/page.tsx` |
 | `/blog/[id]` | ブログ詳細。通常本文と吹き出しブロックに対応 | `src/app/blog/[id]/page.tsx` |
-| `/macho-clicker` | マチョクリッカーゲーム | `src/components/macho-clicker-page.tsx` |
+| `/macho-clicker` | 公開終了。ホームへ恒久リダイレクト | `src/app/macho-clicker/page.tsx` |
 | `/menu` | マチョ田の筋トレメニュー | `src/app/menu/page.tsx` |
 | `/intake-calculator` | 1日摂取カロリー/たんぱく質計算機 | `src/app/intake-calculator/_components/intake-calculator.tsx` |
 | `/supplements-ranking` | おすすめサプリ | `src/components/supplements-top-page.tsx` |
@@ -106,13 +106,12 @@
 - イベントには購入先、商品名、順位、ページパス、配置、遷移先URLを含めます。
 - GA4側の確認方法と日常運用は `docs/site-growth-operations.md` を参照してください。
 
-## マチョクリッカー
+## マチョクリッカー（公開終了）
 
-- ページ: `/macho-clicker`
-- 状態はブラウザの `localStorage` に保存します。
-- 現行ゲームのランキングは累計タップ数を `/api/macho-clicker/tap-rankings` 経由で Supabase の `macho_clicker_tap_scores` に保存します。
-- ゲーム画像は `public/game/macho-clicker/v3/` 配下のWebPを使います。
-- Supabase環境変数がない場合、現行ランキングは利用不可として表示します。
+- 2026-10-25に公開を終了しました。ホームのリンクとサイトマップから除外しています。
+- `/macho-clicker` はホームへ恒久リダイレクトします（308）。
+- 新旧ランキングAPIはGET・POSTとも410を返し、DBの読み取り・書き込みを行いません。
+- ゲームのソース・素材・過去のランキングデータ・ブラウザの保存データは削除していません。
 
 ## API
 
@@ -123,8 +122,8 @@
 | `/api/revalidate` | `POST` | microCMS Webhook用の再検証 |
 | `/api/contact` | `POST` | Resendでお問い合わせメール送信 |
 | `/api/questions` | `POST` | 匿名質問の検証・保存・新着通知 |
-| `/api/macho-clicker/rankings` | `GET`, `POST` | マチョクリッカーランキング取得/登録 |
-| `/api/macho-clicker/tap-rankings` | `GET`, `POST` | 現行ゲームの累計タップ数ランキング取得/登録 |
+| `/api/macho-clicker/rankings` | `GET`, `POST` | 公開終了（410） |
+| `/api/macho-clicker/tap-rankings` | `GET`, `POST` | 公開終了（410） |
 | `/api/cron/protein-rankings` | `GET`, `POST` | プロテインランキングの手動更新 |
 
 ## データベース
@@ -134,8 +133,8 @@ Supabase migration は `supabase/migrations/` にあります。
 - `products`: 楽天由来の商品基本情報
 - `product_metrics`: 抽出した内容量、たんぱく質情報、分類情報
 - `rankings`: 表示用ランキング
-- `macho_clicker_scores`: マチョクリッカーランキング
-- `macho_clicker_tap_scores`: 現行ゲームの累計タップ数ランキング
+- `macho_clicker_scores`: 公開終了した旧ランキング（保管）
+- `macho_clicker_tap_scores`: 公開終了した累計タップ数ランキング（保管）
 - `questions`: 匿名質問、回答、公開状態
 - `question_rate_limit_buckets`: 質問箱の短期間レート制限
 
