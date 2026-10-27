@@ -6,7 +6,8 @@ const navigation = [
   { href: "/", label: "マチョ田の部屋" },
 ];
 
-export function TorechaPageShell({ children }: { children: React.ReactNode }) {
+export function TorechaPageShell({ children, language = "ja" }: { children: React.ReactNode; language?: "ja" | "en" | "ko" }) {
+  const legalUrl = (path: string) => language === "ja" ? path : `${path}?lang=${language}`;
   return (
     <div className="torecha-app-shell min-h-screen bg-[#FCC081] text-[#171717]">
       <header className="sticky top-0 z-40 border-b-2 border-[#171717] bg-[#FCC081]/95 backdrop-blur-sm">
@@ -25,9 +26,9 @@ export function TorechaPageShell({ children }: { children: React.ReactNode }) {
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-5">
           <span className="font-bold">© マチョ田の部屋</span>
           <div className="flex flex-wrap gap-5 font-bold">
-            <Link href="/apps/torecha/privacy" className="hover:underline">プライバシーポリシー</Link>
+            <Link href={legalUrl("/apps/torecha/privacy")} className="hover:underline">プライバシーポリシー</Link>
             <Link href="/apps/torecha/delete-account" className="hover:underline">アカウント削除</Link>
-            <Link href="/apps/torecha/terms" className="hover:underline">利用規約</Link>
+            <Link href={legalUrl("/apps/torecha/terms")} className="hover:underline">利用規約</Link>
           </div>
         </div>
       </footer>

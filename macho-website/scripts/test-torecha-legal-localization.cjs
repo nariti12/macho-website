@@ -47,3 +47,31 @@ test('translated legal copy retains all current Japanese policy sections and del
     }
   }
 });
+
+test('translated policies retain the existing website contact form and use the visible message label', () => {
+  for (const lang of ['en', 'ko']) {
+    for (const page of ['privacy', 'terms']) {
+      const html = nodes(render(page, '?lang=' + lang).tree).find(n => n.props?.dangerouslySetInnerHTML).props.dangerouslySetInnerHTML.__html;
+      assert.ok(html.includes('href="/contact"'), page + ' ' + lang + ' contact link');
+    }
+    const html = nodes(render('delete-account', '?lang=' + lang).tree).find(n => n.props?.dangerouslySetInnerHTML).props.dangerouslySetInnerHTML.__html;
+    assert.ok(html.includes('メッセージ'));
+  }
+});
+
+test('legal footer links retain the selected language and default links remain Japanese', () => {
+  const exports = {};
+  vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(root, 'src/components/torecha-page-shell.tsx'), 'utf8'), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true },
+  }).outputText, { exports, require(name) {
+    if (name === 'react/jsx-runtime') return { jsx, jsxs: jsx };
+    if (name === 'next/link') return { __esModule: true, default: 'Link' };
+    if (name === 'next/image') return { __esModule: true, default: 'Image' };
+    throw new Error(name);
+  } });
+  for (const language of [undefined, 'ja', 'en', 'ko']) {
+    const links = nodes(exports.TorechaPageShell({ children: null, language })).filter(n => n.type === 'Link').map(n => n.props.href);
+    for (const page of ['privacy', 'terms']) assert.ok(links.includes('/apps/torecha/' + page + (language && language !== 'ja' ? '?lang=' + language : '')));
+  }
+  for (const lang of ['en', 'ko']) assert.equal(render('privacy', '?lang=' + lang).tree.props.language, lang);
+});
