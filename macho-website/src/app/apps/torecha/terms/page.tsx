@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TorechaLocalizedLegal, LegalLanguageLinks } from "@/components/torecha-localized-legal";
 
 import { TorechaDocument } from "@/components/torecha-page-shell";
 import { buildUrl } from "@/lib/seo";
@@ -12,12 +13,13 @@ export const metadata: Metadata = {
 
 export default function TorechaTermsPage() {
   return (
-    <TorechaDocument title="利用規約" lead="制定日：2026年9月13日。この利用規約（以下「本規約」）は、トレチャ運営者（以下「運営者」）が提供するトレチャ（以下「本アプリ」）の利用条件を定めます。">
+    <TorechaLocalizedLegal page="terms"><TorechaDocument title="利用規約" lead="制定日：2026年9月13日。この利用規約（以下「本規約」）は、トレチャ運営者（以下「運営者」）が提供するトレチャ（以下「本アプリ」）の利用条件を定めます。">
+      <LegalLanguageLinks />
       <section><h2>1. 本規約への同意</h2><p>利用者は、本規約および<Link href="/apps/torecha/privacy" className="font-bold text-[#ED1C24] underline">プライバシーポリシー</Link>に同意して本アプリを利用するものとします。</p></section>
       <section><h2>2. 本アプリの内容</h2><p>本アプリは、トレーニング、体組成、食事、ジム利用等の記録、AIによる解析・助言、キャラクター育成、通知、広告表示、購入機能およびオンラインバックアップ等を提供します。機能の一部には、端末の権限、アカウント登録、有料プランまたは通信環境が必要です。</p></section>
       <section><h2>3. 健康・AI情報に関する注意</h2><p>本アプリに表示される栄養値、消費量、体組成、AIによる回答その他の情報は推定または一般的な参考情報であり、医療行為、診断、治療、処方または専門家の助言を目的としません。利用者は自身の体調と能力に応じて安全に利用し、健康上の懸念がある場合は医師その他の専門家へ相談してください。緊急時には本アプリを使用せず、地域の緊急通報先へ連絡してください。</p></section>
       <section><h2>4. アカウントとデータ</h2><p>利用者は、ログイン情報を適切に管理し、正確な情報を入力するものとします。端末内データの消失に備え、必要に応じてオンラインバックアップを利用してください。アカウント削除は本アプリの「設定」→「オンラインバックアップ」から行えます。</p></section>
-      <section><h2>5. 有料プラン</h2><p>有料プランの価格、期間および無料体験の有無は購入画面に表示されます。サブスクリプションは、更新日の24時間前までに解約されない限り自動更新されます。支払い、更新、解約および返金はApp Storeのアカウント設定とAppleの条件に従います。本アプリを削除しただけでは解約されません。購入情報は本アプリ内から復元できます。</p></section>
+      <section><h2>5. 有料プラン</h2><p>有料プランの価格、期間および無料体験の有無は購入画面に表示されます。サブスクリプションは解約されない限り自動更新されます。解約の期限、支払い、更新および返金は、購入したストア（iOSはApp Store、AndroidはGoogle Play）のアカウント設定と各ストアの条件に従います。本アプリやアカウントを削除しただけでは解約されません。購入情報は本アプリ内から復元できます。</p></section>
       <section><h2>6. 広告</h2><p>無料プランでは第三者の広告を表示する場合があります。広告の内容およびリンク先の商品・サービスは広告主が提供します。不適切または年齢に適さないと思われる広告は、本アプリの「設定」→「お問い合わせ・不具合・機能要望」から報告してください。</p></section>
       <section><h2>7. 禁止事項</h2><ul><li>法令、公序良俗または第三者の権利を侵害する行為</li><li>虚偽情報の送信、なりすまし、不正アクセス、解析・改変その他の不正利用</li><li>本アプリ、外部サービスまたは他の利用者の利用を妨げる行為</li><li>本アプリを本来の目的を超えて営利利用し、または運営者の権利を侵害する行為</li></ul></section>
       <section><h2>8. 知的財産権</h2><p>本アプリおよび本アプリ内の文章、画像、プログラム等に関する権利は、運営者または正当な権利者に帰属します。利用者が入力・保存した内容に関する権利は利用者に留保されますが、運営者は本アプリの提供に必要な範囲でこれを処理できます。</p></section>
@@ -26,6 +28,6 @@ export default function TorechaTermsPage() {
       <section><h2>11. Appleとの関係</h2><p>iOS版には、本規約に加えてAppleの標準エンドユーザ使用許諾契約（Standard EULA）が適用されます。本規約とAppleの条件が抵触する場合は、適用されるAppleの条件および法令が優先します。</p></section>
       <section><h2>12. 本規約の変更</h2><p>運営者は、法令や機能の変更等に応じて本規約を改定する場合があります。重要な変更は、本アプリまたは本ページ上でお知らせします。</p></section>
       <section><h2>13. 準拠法・お問い合わせ</h2><p>本規約は日本法に準拠します。紛争が生じた場合は、適用法令に従って解決します。お問い合わせは、本アプリの「設定」→「お問い合わせ・不具合・機能要望」、または<Link href="/contact" className="font-bold text-[#ED1C24] underline">お問い合わせフォーム</Link>からお願いします。</p></section>
-    </TorechaDocument>
+    </TorechaDocument></TorechaLocalizedLegal>
   );
 }
