@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TorechaLocalizedLegal, LegalLanguageLinks } from "@/components/torecha-localized-legal";
 
 import { TorechaDocument } from "@/components/torecha-page-shell";
 import { buildUrl } from "@/lib/seo";
@@ -14,7 +15,8 @@ export const metadata: Metadata = {
 
 export default function TorechaPrivacyPage() {
   return (
-    <TorechaDocument title="プライバシーポリシー" lead="制定日：2026年9月6日　最終改定日：2026年10月7日。トレチャ運営者（以下「運営者」）は、トレチャ（以下「本アプリ」）における利用者情報を、以下の方針に基づいて取り扱います。">
+    <TorechaLocalizedLegal page="privacy"><TorechaDocument title="プライバシーポリシー" lead="制定日：2026年9月6日　最終改定日：2026年10月7日。トレチャ運営者（以下「運営者」）は、トレチャ（以下「本アプリ」）における利用者情報を、以下の方針に基づいて取り扱います。">
+      <LegalLanguageLinks />
       <section><h2>1. 取得する情報</h2><ul><li>AppleまたはGoogleでのログインに必要なユーザー識別子、メールアドレス、表示名等</li><li>トレーニング、体組成、食事、キャラクター、ジム利用に関する記録</li><li>利用者が明示的に読み取りを許可したAppleヘルスケア上の体重、体脂肪率、ウエスト、身長</li><li>ジムへの入退場判定に必要な位置情報（バックグラウンドで取得する場合を含みます）</li><li>AI食事スキャンまたはAIパーソナルへ利用者が送信した画像、質問、および回答生成に必要な範囲で要約したアプリ内記録</li><li>商品・サブスクリプションの購入状況</li><li>お問い合わせ時の入力内容、任意の氏名・メールアドレス、アプリ版・OS等の診断情報</li><li>広告SDKが処理するIPアドレスから推定されるおおよその位置、端末・アプリ識別子、広告の表示・操作、診断・パフォーマンス情報</li></ul></section>
       <section><h2>2. 利用目的</h2><p>本アプリの提供、本人確認、記録・バックアップ・復元、ジム入退場の自動記録、AIによる食事分析および助言、購入状況の確認、広告の配信・効果測定、不具合調査、不正利用防止、セキュリティ確保、お問い合わせ対応のために利用します。</p></section>
       <section><h2>3. 外部サービスへの送信</h2><p>本アプリは、Firebase（認証・データ保存・サーバー処理・診断）、Google Sign-InおよびSign in with Apple（ログイン）、Google AdMob（広告）、RevenueCat（購入状況管理）、OpenAI（AI回答・画像解析）を利用します。必要な情報は、各機能の提供に必要な範囲でこれらの事業者へ送信され、各事業者の規約・プライバシーポリシーおよび適用法令に従って処理されます。国外のサーバーで処理される場合があります。</p></section>
@@ -27,6 +29,6 @@ export default function TorechaPrivacyPage() {
       <section><h2>10. 安全管理</h2><p>運営者は、アクセス制御、通信の暗号化、認証その他の合理的な安全管理措置を講じ、利用者情報の漏えい、滅失、改ざん等の防止に努めます。</p></section>
       <section><h2>11. 本ポリシーの変更</h2><p>本ポリシーは、法令や機能の変更に応じて改定する場合があります。重要な変更は本アプリまたは本ページ上でお知らせします。</p></section>
       <section><h2>12. お問い合わせ</h2><p>本ポリシーおよび利用者情報に関するお問い合わせは、本アプリの「設定」→「お問い合わせ・不具合・機能要望」、または<Link href="/contact" className="font-bold text-[#ED1C24] underline">マチョ田の部屋 お問い合わせフォーム</Link>からお願いします。</p></section>
-    </TorechaDocument>
+    </TorechaDocument></TorechaLocalizedLegal>
   );
 }

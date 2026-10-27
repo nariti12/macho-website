@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TorechaLocalizedLegal, LegalLanguageLinks } from "@/components/torecha-localized-legal";
 
 import { TorechaDocument } from "@/components/torecha-page-shell";
 import { buildUrl } from "@/lib/seo";
@@ -14,7 +15,8 @@ const linkStyle = "font-bold text-[#ED1C24] underline underline-offset-4";
 
 export default function TorechaDeleteAccountPage() {
   return (
-    <TorechaDocument title="アカウント削除" lead="トレチャのアカウントと関連データの削除をご希望の方へ。アプリをアンインストールした後も、お問い合わせから申請できます。">
+    <TorechaLocalizedLegal page="delete-account"><TorechaDocument title="アカウント削除" lead="トレチャのアカウントと関連データの削除をご希望の方へ。アプリをアンインストールした後も、お問い合わせから申請できます。">
+      <LegalLanguageLinks />
       <section>
         <h2>お問い合わせから申請する</h2>
         <p>件名を「トレチャ アカウント削除依頼」とし、本文にログインに使用したメールアドレスとログイン方法（Google または Apple）を記載してください。本人確認後に対応します。</p>
@@ -38,6 +40,6 @@ export default function TorechaDeleteAccountPage() {
         <p>「設定」→「オンラインバックアップ」→「アカウントとクラウドデータを削除」から操作できます。購入状況管理データや通知メールも含めた削除は、上記のお問い合わせから申請してください。</p>
         <p className="mt-3"><Link href="/apps/torecha/privacy" className={linkStyle}>プライバシーポリシー</Link></p>
       </section>
-    </TorechaDocument>
+    </TorechaDocument></TorechaLocalizedLegal>
   );
 }
