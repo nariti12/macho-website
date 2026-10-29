@@ -86,6 +86,11 @@ export default function PrivacyPolicyPage() {
               当サイトでは、第三者配信の広告サービス（例：Googleアドセンス、A8.net、Amazonアソシエイトなど）を利用しています。これらの広告配信事業者は、ユーザーの興味に応じた商品やサービスの広告を表示するためにCookieを使用することがあります。
               広告配信の詳細やCookieの無効化設定については、各広告配信事業者のプライバシーポリシーをご確認ください。
             </p>
+            <p>
+              Googleは広告の配信・効果測定のためにCookie、IPアドレス、その他の識別子等を使用する場合があります。Googleによる情報の取り扱いと利用者による設定については、
+              <a href="https://policies.google.com/technologies/partner-sites" className="text-[#FF8A23] underline">Googleのサービスを使用するサイトやアプリから収集した情報の使用</a>
+              をご確認ください。
+            </p>
           </section>
 
           <section className="space-y-3 text-sm leading-6 text-gray-700">
