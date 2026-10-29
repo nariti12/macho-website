@@ -67,7 +67,7 @@ export default function TorechaPage() {
                 <span className="block whitespace-nowrap">チャットで簡単に記録。</span>
               </h1>
               <div className="mt-8 flex flex-wrap items-center gap-4">
-                <span className="rounded-2xl bg-[#171717] px-6 py-4 text-base font-black text-white">App Storeで近日公開</span>
+                <a href="https://apps.apple.com/app/id6808664886" className="rounded-2xl bg-[#171717] px-6 py-4 text-base font-black text-white underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#171717]">App Storeでダウンロード</a>
               </div>
             </div>
 
