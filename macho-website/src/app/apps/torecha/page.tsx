@@ -48,7 +48,7 @@ export default function TorechaPage() {
     "@type": "MobileApplication",
     name: "トレチャ",
     alternateName: "Train Chat",
-    operatingSystem: "iOS",
+    operatingSystem: "iOS, Android",
     applicationCategory: "HealthApplication",
     description: "筋トレ、体組成、食事をチャット形式で記録できるアプリ。",
     url: pageUrl,
@@ -68,6 +68,7 @@ export default function TorechaPage() {
               </h1>
               <div className="mt-8 flex flex-wrap items-center gap-4">
                 <a href="https://apps.apple.com/app/id6808664886" className="rounded-2xl bg-[#171717] px-6 py-4 text-base font-black text-white underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#171717]">App Storeでダウンロード</a>
+                <a href="https://play.google.com/store/apps/details?id=com.machoapp.trainchat" className="rounded-2xl bg-[#171717] px-6 py-4 text-base font-black text-white underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#171717]">Google Playでダウンロード</a>
               </div>
             </div>
 
