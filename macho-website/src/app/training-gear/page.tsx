@@ -4,33 +4,24 @@ import type { Metadata } from "next";
 import { AffiliateLink } from "@/components/affiliate-link";
 import { SiteHeader } from "@/components/site-header";
 import { buildAmazonAffiliateUrl, buildRakutenAffiliateUrl } from "@/lib/protein-rankings/links";
-import { fetchRakutenPriceLabel, formatYen } from "@/lib/rakuten-price";
+import { formatYen } from "@/lib/rakuten-price";
 import { buildUrl, toJsonLd } from "@/lib/seo";
 
 const profileImageSrc = "/picture/ore.png";
 const pageUrl = buildUrl("/training-gear");
 
-const formatLastUpdated = () =>
-  new Date().toLocaleString("ja-JP", {
-    timeZone: "Asia/Tokyo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+const priceCheckedOn = "2026年11月14日";
 
 type GearItem = {
   rank: number;
   name: string;
   comment: string;
   imageUrl: string;
-  fallbackPriceYen: number;
+  priceYen: number;
   searchUrl?: string;
-  priceSearchUrl?: string;
   amazonUrl?: string;
   officialUrl?: string;
-  priceSource?: "amazon";
+  priceSourceUrl: string;
 };
 
 type GearSection = {
@@ -50,7 +41,8 @@ const gearSections: GearSection[] = [
         officialUrl: "https://www.sbdapparel.jp/products/list.php?category_id=9",
         comment: "憧れのSBD。でも価格が高騰しすぎて買えません。高杉や・・・。",
         imageUrl: "https://shop.r10s.jp/jumblestore/cabinet/05987/2341684105987-01.jpg",
-        fallbackPriceYen: 48800,
+        priceYen: 50800,
+        priceSourceUrl: "https://www.sbdapparel.jp/products/list.php?category_id=9",
       },
       {
         rank: 2,
@@ -61,8 +53,8 @@ const gearSections: GearSection[] = [
         amazonUrl:
           "https://www.amazon.co.jp/s?k=%E3%82%B4%E3%83%BC%E3%83%AB%E3%83%89%E3%82%B8%E3%83%A0+%E3%83%88%E3%83%AC%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E3%83%99%E3%83%AB%E3%83%88+%E3%83%97%E3%83%AD%E3%83%AC%E3%82%B6%E3%83%BC&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
         imageUrl: "https://shop.r10s.jp/goldsgym/cabinet/ggp/imgrc0075354610.jpg",
-        fallbackPriceYen: 14476,
-        priceSource: "amazon",
+        priceYen: 15400,
+        priceSourceUrl: "https://fitnessshop.jp/collections/gear/products/453443173-4",
       },
       {
         rank: 3,
@@ -70,7 +62,8 @@ const gearSections: GearSection[] = [
         officialUrl: "https://jurassic-gear.com/products/jurassic-original-leather-belt",
         comment: "木澤さんの魂が込められたベルト。",
         imageUrl: "https://fitnessshop.jp/cdn/shop/files/2d9c4804812069d1138604546f3593c3_1200x1200.png?v=1684400831",
-        fallbackPriceYen: 19800,
+        priceYen: 19800,
+        priceSourceUrl: "https://jurassic-gear.com/products/jurassic-original-leather-belt",
       },
       {
         rank: 4,
@@ -78,11 +71,11 @@ const gearSections: GearSection[] = [
         comment: "迷ったらこれ。王道ベルト。コスパ・品質ともに良し。",
         searchUrl:
           "https://search.rakuten.co.jp/search/mall/%E3%82%B4%E3%83%BC%E3%83%AB%E3%83%89%E3%82%B8%E3%83%A0+%E3%83%AC%E3%82%B6%E3%83%BC+%E3%83%91%E3%83%AF%E3%83%BC%E3%83%99%E3%83%AB%E3%83%88/",
-        priceSearchUrl: "https://search.rakuten.co.jp/search/mall/G3368/",
         amazonUrl:
           "https://www.amazon.co.jp/s?k=%E3%82%B4%E3%83%BC%E3%83%AB%E3%83%89%E3%82%B8%E3%83%A0+%E3%83%88%E3%83%AC%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E3%83%99%E3%83%AB%E3%83%88",
         imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/powerpit/cabinet/04825845/imgrc0092518792.jpg",
-        fallbackPriceYen: 7150,
+        priceYen: 7150,
+        priceSourceUrl: "https://fitnessshop.jp/products/453443183-36",
       },
       {
         rank: 5,
@@ -90,7 +83,8 @@ const gearSections: GearSection[] = [
         comment: "レバーで細かく腹圧をかけれて、カチャカチャ音が癖になります。マチョ田も愛用してます。",
         officialUrl: "https://bukiya.net/products/oni737?variant=47700514996451",
         imageUrl: "https://cdn.shopify.com/s/files/1/0659/6172/2083/files/1j.jpg?v=1765868623",
-        fallbackPriceYen: 22000,
+        priceYen: 22000,
+        priceSourceUrl: "https://bukiya.net/products/oni737?variant=47700514996451",
       },
     ],
   },
@@ -107,7 +101,8 @@ const gearSections: GearSection[] = [
         amazonUrl:
           "https://www.amazon.co.jp/s?k=versa+gripps+%E3%83%91%E3%83%AF%E3%83%BC%E3%82%B0%E3%83%AA%E3%83%83%E3%83%97",
         imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/tkikaku/cabinet/traininggoods/vgripps/powergripps-aii2.jpg",
-        fallbackPriceYen: 11980,
+        priceYen: 11280,
+        priceSourceUrl: "https://item.rakuten.co.jp/tkikaku/vg-pro/",
       },
       {
         rank: 2,
@@ -118,7 +113,8 @@ const gearSections: GearSection[] = [
         amazonUrl:
           "https://www.amazon.co.jp/s?k=%E3%82%B4%E3%83%BC%E3%83%AB%E3%83%89%E3%82%B8%E3%83%A0+%E3%83%91%E3%83%AF%E3%83%BC%E3%82%B0%E3%83%AA%E3%83%83%E3%83%97&__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A",
         imageUrl: "https://thumbnail.image.rakuten.co.jp/@0_mall/goldsgym/cabinet/ggp/3710-2.jpg",
-        fallbackPriceYen: 10450,
+        priceYen: 14300,
+        priceSourceUrl: "https://fitnessshop.jp/collections/gear/products/453443177",
       },
     ],
   },
@@ -145,24 +141,19 @@ export const metadata: Metadata = {
 
 export const revalidate = 604800;
 
-const getSections = async () =>
-  Promise.all(gearSections.map(async (section) => ({
+const getSections = () =>
+  gearSections.map((section) => ({
     ...section,
-    items: await Promise.all(section.items.map(async (item) => ({
+    items: section.items.map((item) => ({
       ...item,
       affiliateUrl: item.searchUrl ? buildRakutenAffiliateUrl(item.searchUrl) : null,
       amazonAffiliateUrl: item.amazonUrl ? buildAmazonAffiliateUrl(item.amazonUrl) : null,
-      priceLabel: item.priceSource === "amazon"
-        ? formatYen(item.fallbackPriceYen)
-        : item.priceSearchUrl || item.searchUrl
-        ? await fetchRakutenPriceLabel(item.priceSearchUrl ?? item.searchUrl, item.fallbackPriceYen)
-        : formatYen(item.fallbackPriceYen),
-    }))),
-  })));
+      priceLabel: formatYen(item.priceYen),
+    })),
+  }));
 
 export default async function TrainingGearPage() {
-  const sections = await getSections();
-  const updatedAtLabel = formatLastUpdated();
+  const sections = getSections();
   const itemListStructuredData = toJsonLd(
     sections.map((section, sectionIndex) => ({
       "@context": "https://schema.org",
@@ -194,7 +185,7 @@ export default async function TrainingGearPage() {
                 {`トレーニングするなら「トレーニングベルト」と「パワーグリップ」は用意しておきたいです。トレーニングベルトは腹圧を高めて腰をサポートし、高重量トレーニング時により効かせるために役立ちます。
 またパワーグリップは、握力を補助してくれるため、主に背中トレーニングで狙った筋肉に集中しやすくなり、効率よく追い込めます。`}
               </p>
-              <p className="text-sm text-slate-500">最終更新: {updatedAtLabel}</p>
+              <p className="text-sm text-slate-500">税込参考価格の確認日: {priceCheckedOn}</p>
             </div>
           </section>
 
@@ -237,6 +228,7 @@ export default async function TrainingGearPage() {
                       <div className="w-fit rounded-2xl bg-[#FFF4E7] px-4 py-3 text-sm text-slate-700 shadow-inner">
                         <div className="text-xs font-semibold uppercase tracking-wide text-[#C2410C]">参考価格</div>
                         <div className="mt-1 font-medium text-slate-800">{item.priceLabel}</div>
+                        <a href={item.priceSourceUrl} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-xs underline">価格の確認先</a>
                       </div>
 
                       {item.affiliateUrl || item.amazonAffiliateUrl || item.officialUrl ? (
