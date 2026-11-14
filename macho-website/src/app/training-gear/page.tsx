@@ -47,6 +47,7 @@ const gearSections: GearSection[] = [
       {
         rank: 1,
         name: "SBD",
+        officialUrl: "https://www.sbdapparel.jp/products/list.php?category_id=9",
         comment: "憧れのSBD。でも価格が高騰しすぎて買えません。高杉や・・・。",
         imageUrl: "https://shop.r10s.jp/jumblestore/cabinet/05987/2341684105987-01.jpg",
         fallbackPriceYen: 48800,
@@ -66,6 +67,7 @@ const gearSections: GearSection[] = [
       {
         rank: 3,
         name: "木澤さんベルト",
+        officialUrl: "https://jurassic-gear.com/products/jurassic-original-leather-belt",
         comment: "木澤さんの魂が込められたベルト。",
         imageUrl: "https://fitnessshop.jp/cdn/shop/files/2d9c4804812069d1138604546f3593c3_1200x1200.png?v=1684400831",
         fallbackPriceYen: 19800,
