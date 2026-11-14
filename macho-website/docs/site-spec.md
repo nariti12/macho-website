@@ -93,7 +93,8 @@
 - `/training-wear` はトレーニングシューズTOP5を静的定義します。
 - シューズの参考価格は掲載写真に対応する楽天商品コードを指定して取得します。価格確認モデルを併記し、楽天ボタンはその商品ページへ遷移します。取得できない場合は最後に確認した参考価格を表示します。
 - `/training-gear` はトレーニングベルトとパワーグリップを静的定義します。
-- 楽天検索URLがある商品は楽天APIから参考価格を取得し、週次再検証で更新します。
+- シューズは楽天APIから参考価格を取得し、週次再検証で更新します。
+- トレーニングギアは販売ページで確認した税込参考価格と確認日・確認先を表示します。
 - Amazon / 公式サイトのみの商品は固定価格を表示します。
 - 楽天URLは `buildRakutenAffiliateUrl`、Amazon URLは `buildAmazonAffiliateUrl` でアフィリエイトURLに変換します。
 - Amazonのタグは `src/lib/protein-rankings/links.ts` の `AMAZON_ASSOCIATE_TAG` で管理します。
