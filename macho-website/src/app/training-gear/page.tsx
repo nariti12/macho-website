@@ -29,6 +29,7 @@ type GearItem = {
   searchUrl?: string;
   priceSearchUrl?: string;
   amazonUrl?: string;
+  officialUrl?: string;
   priceSource?: "amazon";
 };
 
@@ -83,12 +84,11 @@ const gearSections: GearSection[] = [
       },
       {
         rank: 5,
-        name: "P.L.College",
-        comment: "レバー式タイプでいい感じのやつです。",
-        amazonUrl:
-          "https://www.amazon.co.jp/P-L-College-P-L-College%E3%83%91%E3%83%AF%E3%83%BC%E3%83%99%E3%83%AB%E3%83%88-%E3%83%91%E3%83%AF%E3%83%BC%E3%83%81%E3%83%A5%E3%83%BC%E3%83%96%E9%96%8B%E7%99%BA-%E3%83%88%E3%83%AC%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0%E3%83%99%E3%83%AB%E3%83%88-M/dp/B0F53HGKQP/ref=sr_1_6?sr=8-6",
-        imageUrl: "https://m.media-amazon.com/images/I/31unTrG-pXL.jpg",
-        fallbackPriceYen: 18000,
+        name: "ONI ラチェットレバーベルト",
+        comment: "レバーで細かく腹圧をかけれて、カチャカチャ音が癖になります。マチョ田も愛用してます。",
+        officialUrl: "https://bukiya.net/products/oni737?variant=47700514996451",
+        imageUrl: "https://cdn.shopify.com/s/files/1/0659/6172/2083/files/1j.jpg?v=1765868623",
+        fallbackPriceYen: 22000,
       },
     ],
   },
@@ -237,8 +237,20 @@ export default async function TrainingGearPage() {
                         <div className="mt-1 font-medium text-slate-800">{item.priceLabel}</div>
                       </div>
 
-                      {item.affiliateUrl || item.amazonAffiliateUrl ? (
+                      {item.affiliateUrl || item.amazonAffiliateUrl || item.officialUrl ? (
                         <div className="flex flex-wrap items-center gap-3">
+                          {item.officialUrl ? (
+                            <AffiliateLink
+                              href={item.officialUrl}
+                              merchant="official"
+                              productName={item.name}
+                              rank={item.rank}
+                              placement={`training-gear-${section.title}`}
+                              className="rounded-full bg-[#7C2D12] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#9A3412]"
+                            >
+                              公式サイトで見る
+                            </AffiliateLink>
+                          ) : null}
                           {item.amazonAffiliateUrl ? (
                             <AffiliateLink
                               href={item.amazonAffiliateUrl}

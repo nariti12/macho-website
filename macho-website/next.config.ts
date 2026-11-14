@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
+        hostname: "cdn.shopify.com",
+        pathname: "/s/files/1/0659/6172/2083/files/1j.jpg",
+      },
+      {
+        protocol: "https",
         hostname: "images.microcms-assets.io",
         pathname: "/assets/**",
       },
